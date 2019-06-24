@@ -14,3 +14,6 @@ pub type Aabb = vek::Aabb<f64>;
 
 pub type Rgba = vek::Rgba<f64>;
 pub type Rgb = vek::Rgb<f64>;
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct Radians(f64);

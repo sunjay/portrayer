@@ -1,6 +1,6 @@
 use crate::math::Rgb;
 use crate::scene::SceneNode;
-use crate::camera::Camera;
+use crate::camera::{CameraSettings, Camera};
 use crate::light::Light;
 
 #[derive(Debug)]
@@ -51,7 +51,7 @@ impl<T: Target> Target for &mut T {
 #[derive(Debug)]
 pub struct RenderSettings<'a> {
     pub scene: &'a SceneNode,
-    pub camera: &'a Camera,
+    pub camera: CameraSettings,
     pub lights: &'a [Light],
     pub ambient: Rgb,
 }
@@ -59,6 +59,7 @@ pub struct RenderSettings<'a> {
 impl<'a> RenderSettings<'a> {
     /// Render the configured scene to the given target using the configured settings
     pub fn render<T: Target>(&self, target: &mut T) {
+        let camera = Camera::new(self.camera, target);
         unimplemented!()
     }
 }
