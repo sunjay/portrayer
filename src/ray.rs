@@ -2,8 +2,8 @@ use std::f64::{EPSILON, INFINITY};
 use std::ops::Range;
 
 use crate::math::{Vec3, Vec4, Mat4, Rgb};
-use crate::scene::{Scene, SceneNode, Geometry};
-use crate::light::Light;
+use crate::scene::{Scene, SceneNode};
+use crate::material::Material;
 
 /// Represents the result of a ray intersection and stores information about it
 #[derive(Debug)]
@@ -21,8 +21,8 @@ pub struct RayIntersection<'a> {
     /// error.) Make sure you normalize when it matters.
     normal: Vec3,
 
-    /// The geometry that was intersected
-    geometry: &'a Geometry,
+    /// The material of the geometry that was intersected
+    material: &'a Material,
 }
 
 pub trait RayHit {
@@ -67,6 +67,12 @@ impl Ray {
     pub fn color(&self, scene: &Scene, background: Rgb) -> Rgb {
         let mut t_range = Range {start: EPSILON, end: INFINITY};
         let hit = self.cast(&scene.root, &mut t_range);
-        unimplemented!()
+
+        match hit {
+            Some(hit) => {
+                hit.material.hit_color(scene, background, self.direction, hit.hit_point, hit.normal)
+            },
+            None => background,
+        }
     }
 }
