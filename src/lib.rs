@@ -1,3 +1,2 @@
-pub mod intersect;
-pub mod bounded;
 pub mod math;
+pub mod ray;
