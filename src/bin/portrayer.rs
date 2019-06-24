@@ -1,5 +1,5 @@
 use portrayer::*;
 
 fn main() {
-    
+
 }
