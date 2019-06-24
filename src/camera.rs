@@ -1,5 +1,6 @@
 use crate::math::{Vec3, Mat4, Radians};
 use crate::render::{Target, TargetInfo};
+use crate::ray::Ray;
 
 #[derive(Debug, Clone, Copy)]
 pub struct CameraSettings {
@@ -30,7 +31,7 @@ impl Camera {
     }
 
     /// Returns the ray at the given pixel (x, y) position
-    pub fn ray_at(&self, (x, y): (usize, usize)) {
+    pub fn ray_at(&self, (x, y): (usize, usize)) -> Ray {
         unimplemented!()
     }
 }

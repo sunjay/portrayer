@@ -1,7 +1,7 @@
 use crate::math::Rgb;
-use crate::scene::SceneNode;
+use crate::scene::Scene;
 use crate::camera::{CameraSettings, Camera};
-use crate::light::Light;
+use crate::texture::Texture;
 
 #[derive(Debug)]
 pub struct TargetInfo {
@@ -47,19 +47,25 @@ impl<T: Target> Target for &mut T {
     }
 }
 
-/// Represents the complete parameters needed to render an image
-#[derive(Debug)]
-pub struct RenderSettings<'a> {
-    pub scene: &'a SceneNode,
-    pub camera: CameraSettings,
-    pub lights: &'a [Light],
-    pub ambient: Rgb,
-}
+/// Render the configured scene to the given target using the configured settings
+pub fn render<T: Target, U: Texture>(
+    scene: &Scene,
+    camera: CameraSettings,
+    target: &mut T,
+    background: U,
+) {
+    let camera = Camera::new(camera, target);
+    let TargetInfo {width, height, ..} = target.target_info();
 
-impl<'a> RenderSettings<'a> {
-    /// Render the configured scene to the given target using the configured settings
-    pub fn render<T: Target>(&self, target: &mut T) {
-        let camera = Camera::new(self.camera, target);
-        unimplemented!()
+    for y in 0..height {
+        for x in 0..width {
+            let ray = camera.ray_at((x, y));
+
+            let background_color = background.at(x, y);
+            let color = ray.color(scene, background_color);
+
+            // Unsafe because we are guaranteeing that the (x, y) value is in the valid range
+            unsafe { target.set_pixel(x, y, color); }
+        }
     }
 }
