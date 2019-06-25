@@ -84,10 +84,9 @@ impl Material {
                 let normal_light = normal.dot(light_dir).max(0.0);
                 let diffuse = self.diffuse * light.color * normal_light;
 
-                let mut specular = Rgb::from(0.0);
                 // Check if there is any specular component of the material. Allows us to avoid
                 // some calculations for non-specular materials.
-                if self.specular.are_all_positive() {
+                let specular = if self.specular.iter().any(|&v| v > EPSILON) {
                     // half-vector -- halway between the light vector and the view vector. If this
                     // is aligned with the normal, we have angle of incidence == angle of
                     // reflection (mirror reflection)
@@ -101,8 +100,11 @@ impl Material {
                     // with the same values
                     // Source: https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
                     let normal_half_shiny = normal.dot(half).max(0.0).powf(4.0 * self.shininess);
-                    specular = self.specular * light.color * normal_half_shiny;
-                }
+
+                    self.specular * light.color * normal_half_shiny
+                } else {
+                    Rgb::from(0.0)
+                };
 
                 // Attenuate light contribution before adding to the final color
                 color += (diffuse + specular) / attenuation;
