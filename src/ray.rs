@@ -72,8 +72,11 @@ impl Ray {
     ) -> Option<(RayIntersection, &'a Material)> {
         // Take the ray from its current coordinate system and put it into the local coordinate
         // system of the current node
+        let local_ray = self.transformed(node.inverse_trans());
+
+        // These will be used to transform the hit point and normal back into the
+        // previous coordinate system
         let trans = node.trans();
-        let local_ray = self.transformed(trans);
         let normal_trans = node.normal_trans();
 
         // The resulting hit and material (initially None)
@@ -115,10 +118,8 @@ impl Ray {
         let hit = self.cast(&scene.root, &mut t_range);
 
         match hit {
-            Some((hit, mat)) => {
-                mat.hit_color(scene, background, self.direction, hit.hit_point, hit.normal,
-                    recursion_depth)
-            },
+            Some((hit, mat)) => mat.hit_color(scene, background, self.direction, hit.hit_point,
+                hit.normal, recursion_depth),
             None => background,
         }
     }
