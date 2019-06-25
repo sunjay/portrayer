@@ -41,49 +41,49 @@ impl Material {
             return background;
         }
 
-		// Vector from hit point to the eye (ray origin)
-		// Note that this is the same as -ray.direction() since the ray intersects with the
-		// hit point
-		let view = -ray_dir;
-		// Surface normal of hit point
+        // Vector from hit point to the eye (ray origin)
+        // Note that this is the same as -ray.direction() since the ray intersects with the
+        // hit point
+        let view = -ray_dir;
+        // Surface normal of hit point
         // Need to normalize because the normal provided is not guaranteed to be a unit vector
-		let normal = normal.normalized();
+        let normal = normal.normalized();
 
-		// Start with the ambient color since that is always added
+        // Start with the ambient color since that is always added
         // Need to multiply by the diffuse color because the ambient light is still affected by the
         // color of the object
-		let mut color = scene.ambient * self.diffuse;
-		for light in scene.lights {
-			// Vector from hit point to the light source
-			// NOTE: This is **flipped** from the actual direction of light from the light source
-			let hit_to_light = light.position - hit_point;
+        let mut color = scene.ambient * self.diffuse;
+        for light in scene.lights {
+            // Vector from hit point to the light source
+            // NOTE: This is **flipped** from the actual direction of light from the light source
+            let hit_to_light = light.position - hit_point;
 
-			// The distance r between the light source and the hit point. Used to
-			// attenuate the light.
-			let light_dist = hit_to_light.magnitude();
+            // The distance r between the light source and the hit point. Used to
+            // attenuate the light.
+            let light_dist = hit_to_light.magnitude();
 
             // The direction towards the light from the hit point
             // Reusing the already calculated magnitude to normalize
-			let light_dir = hit_to_light / light_dist;
+            let light_dir = hit_to_light / light_dist;
 
-			// attenuation - based on the light falloff values
-			let attenuation = light.falloff.at_distance(light_dist);
+            // attenuation - based on the light falloff values
+            let attenuation = light.falloff.at_distance(light_dist);
 
             // Cast a ray to the light to determine if anything is between this point and the light
             // If there is something, this point must be in "shadow" since it cannot be hit by the
             // light directly.
             let shadow_ray = Ray::new(hit_point, light_dir);
-			// The EPSILON helps avoid self-intersections (and "shadow acne")
+            // The EPSILON helps avoid self-intersections (and "shadow acne")
             let mut shadow_t_range = Range {start: EPSILON, end: INFINITY};
 
-			// Only add diffuse if not shadowed by another object
-			if shadow_ray.cast(scene.root, &mut shadow_t_range).is_none() {
+            // Only add diffuse if not shadowed by another object
+            if shadow_ray.cast(scene.root, &mut shadow_t_range).is_none() {
                 // Want the max diffuse when the light is directly aligned with the surface normal.
                 // Using normal.dot(light_dir) == cos(angle between normal and light)
                 // we can accomplish this effect.
-				// Need to max with zero so we can ignore backface contributions
-				let normal_light = normal.dot(light_dir).max(0.0);
-				let diffuse = self.diffuse * light.color * normal_light;
+                // Need to max with zero so we can ignore backface contributions
+                let normal_light = normal.dot(light_dir).max(0.0);
+                let diffuse = self.diffuse * light.color * normal_light;
 
                 let mut specular = Rgb::from(0.0);
                 // Check if there is any specular component of the material. Allows us to avoid
@@ -97,18 +97,18 @@ impl Material {
                     // That produces the highest specular value when our light is perfectly aligned
                     let half = (view + light_dir).normalized();
 
-					// Need to multiply shininess by 4 because the angle in Blinn-Phong is much
-					// smaller than in Phong so it needs that extra boost in order to work the same
-					// with the same values
+                    // Need to multiply shininess by 4 because the angle in Blinn-Phong is much
+                    // smaller than in Phong so it needs that extra boost in order to work the same
+                    // with the same values
                     // Source: https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
                     let normal_half_shiny = normal.dot(half).max(0.0).powf(4.0 * self.shininess);
-					specular = self.specular * light.color * normal_half_shiny;
-				}
+                    specular = self.specular * light.color * normal_half_shiny;
+                }
 
-				// Attenuate light contribution before adding to the final color
-				color += (diffuse + specular) / attenuation;
-			}
-		}
+                // Attenuate light contribution before adding to the final color
+                color += (diffuse + specular) / attenuation;
+            }
+        }
 
         // Check if there is any reflective component of the material.
         // Allows us to avoid some recursion for non-reflective materials.
@@ -122,6 +122,6 @@ impl Material {
             color += reflected_color * self.reflectivity;
         }
 
-		color
+        color
     }
 }
