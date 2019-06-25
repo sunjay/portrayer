@@ -53,26 +53,37 @@ impl Camera {
     pub fn ray_at(&self, (x, y): (usize, usize)) -> Ray {
         // NDC = Normalized Device Coordinates
 
+        // This function goes through 4 coordinate systems:
+
+        // Screen Space  ==>  Ray Tracing NDC  ==>  View Space  ==>  World Space
+        // o ------> x        o ------> x           ^ y (-1, 1)           ^ y
+        // |      (0, w)      |      (0, 1)         |                     |
+        // |                  |               ----- o -----> x      ----- o -----> x
+        // v                  v                   / |    (-1, 1)        / |
+        //   y (0, h)           y (0, 1)        -z  |  Right-handed   +z  |    Right-handed
+        //
+        // w = width, h = height, 3rd axis comes out of the screen towards you
+
         // Ray tracing NDC is between 0 and 1 (inclusive)
         // +0.5 so in the middle of the pixel square
         let pixel_ndc_y = (y as f64 + 0.5) / self.height;
-        // Map to -1 to 1 (screen space) (& flip axis)
-        let pixel_screen_y = (1.0 - 2.0*pixel_ndc_y) * self.fov_factor;
+        // Map to -1 to 1 (view space) (& flip axis)
+        let pixel_view_y = (1.0 - 2.0*pixel_ndc_y) * self.fov_factor;
 
         // Ray tracing NDC is between 0 and 1 (inclusive)
         // +0.5 so in the middle of the pixel square
         let pixel_ndc_x = (x as f64 + 0.5) / self.width;
-        // Map to -1 to 1 (screen space)
+        // Map to -1 to 1 (view space)
         // Let y remain fixed, but scale x by the aspect ratio to get the right dimensions
         // (changes the range of x to be bigger than y if the aspect ratio > 1.0
         // or smaller if aspect ratio < 1.0)
-        let pixel_screen_x = (2.0*pixel_ndc_x - 1.0) * self.aspect_ratio * self.fov_factor;
+        let pixel_view_x = (2.0*pixel_ndc_x - 1.0) * self.aspect_ratio * self.fov_factor;
 
         // Image plane is 1.0 unit ahead of the camera/eye in camera/view space.
-        // Using -1.0 because right-handed.
-        let pixel_camera = Vec3::new(pixel_screen_x, pixel_screen_y, -1.0);
+        // Using -1.0 because view space is right-handed.
+        let pixel_view = Vec3::new(pixel_view_x, pixel_view_y, -1.0);
         // Transform to world coordinates from camera space
-        let pixel_world = pixel_camera.transformed_point(self.view_to_world);
+        let pixel_world = pixel_view.transformed_point(self.view_to_world);
         // The ray goes from the eye to the pixel_world coordinate
         let ray_dir = (pixel_world - self.eye).normalized();
 
