@@ -39,7 +39,8 @@ impl Camera {
 
         Self {
             eye: cam.eye,
-            view_to_world: Mat4::look_at_rh(cam.eye, cam.center, cam.up),
+            // Need to invert because look_at returns a world-to-view matrix by default
+            view_to_world: Mat4::look_at_rh(cam.eye, cam.center, cam.up).inverted(),
             // This assumes that the camera is 1.0 unit away from the image plane
             fov_factor: (cam.fovy.get()/2.0).tan(),
             aspect_ratio: width / height,
