@@ -107,20 +107,20 @@ impl Material {
 
 				// Attenuate light contribution before adding to the final color
 				color += (diffuse + specular) / attenuation;
-
-				// Check if there is any reflective component of the material.
-				// Allows us to avoid some recursion for non-reflective materials.
-				if self.reflectivity > 0.0 {
-					// r = v - 2N(v dot N) where v = ray direction, N = normal
-					let reflect_dir = ray_dir - normal * 2.0 * ray_dir.dot(normal);
-
-					// Add reflection via recursive ray tracing
-                    let reflected_ray = Ray::new(hit_point, reflect_dir);
-                    let reflected_color = reflected_ray.color(scene, background, recursion_depth + 1);
-					color += reflected_color * self.reflectivity;
-				}
 			}
 		}
+
+        // Check if there is any reflective component of the material.
+        // Allows us to avoid some recursion for non-reflective materials.
+        if self.reflectivity > 0.0 {
+            // r = v - 2N(v dot N) where v = ray direction, N = normal
+            let reflect_dir = ray_dir - normal * 2.0 * ray_dir.dot(normal);
+
+            // Add reflection via recursive ray tracing
+            let reflected_ray = Ray::new(hit_point, reflect_dir);
+            let reflected_color = reflected_ray.color(scene, background, recursion_depth + 1);
+            color += reflected_color * self.reflectivity;
+        }
 
 		color
     }
