@@ -1,7 +1,6 @@
-use std::f64::{EPSILON, INFINITY};
 use std::ops::Range;
 
-use crate::math::{Vec3, Rgb};
+use crate::math::{EPSILON, INFINITY, Vec3, Rgb};
 use crate::scene::Scene;
 use crate::ray::Ray;
 

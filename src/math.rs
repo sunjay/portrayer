@@ -2,7 +2,11 @@
 //! to use it with floats. This module exports type aliases that allow us to not have to specify
 //! that we are using "f64" all the time.
 
-use std::f64::EPSILON;
+pub use std::f64::INFINITY;
+
+/// This constant is a "fudge factor" used to account for floating point error in calculations.
+/// It is different from machine epsilon because we accumulate quite a bit more error than that.
+pub const EPSILON: f64 = 0.00001;
 
 pub type Vec2 = vek::Vec2<f64>;
 pub type Vec3 = vek::Vec3<f64>;
