@@ -1,18 +1,16 @@
 use crate::math::Rgb;
 
 pub trait Texture {
-    /// Sample the texture at the given point
+    /// Sample the texture at the given point.
     ///
-    /// # Panics
-    ///
-    /// The texture may panic if x or y are not in a valid range.
-    fn at(&self, x: usize, y: usize) -> Rgb;
+    /// Both x and y are between 0.0 and 1.0.
+    fn at(&self, x: f64, y: f64) -> Rgb;
 }
 
 /// Allows any arbitrary function to be used as a texture as long as it has the signature:
-///     fn(x: usize, y: usize) -> Rgb
-impl<T> Texture for T where T: Fn(usize, usize) -> Rgb {
-    fn at(&self, x: usize, y: usize) -> Rgb {
+///     fn(x: f64, y: f64) -> Rgb
+impl<T> Texture for T where T: Fn(f64, f64) -> Rgb {
+    fn at(&self, x: f64, y: f64) -> Rgb {
         (*self)(x, y)
     }
 }

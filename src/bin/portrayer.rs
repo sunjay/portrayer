@@ -43,7 +43,8 @@ fn main() -> io::Result<()> {
         ambient: Rgb {r: 0.3, g: 0.3, b: 0.3},
     };
 
-    image.draw(&scene, cam, |_, _| Rgb::black());
+    image.draw(&scene, cam,
+        |_, y| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - y) + Rgb::blue() * y);
 
     image.save("test.png")
 }

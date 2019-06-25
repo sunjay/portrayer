@@ -44,7 +44,7 @@ pub trait Target: Sized {
             for x in 0..width {
                 let ray = camera.ray_at((x, y));
 
-                let background_color = background.at(x, y);
+                let background_color = background.at(x as f64 / width as f64, y as f64 / height as f64);
                 let color = ray.color(scene, background_color, 0);
 
                 // Gamma correction to ensure that image colors are closer to what we want them
