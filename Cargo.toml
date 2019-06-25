@@ -6,4 +6,7 @@ edition = "2018"
 
 [dependencies]
 vek = "0.9"
+image = "0.21"
+
+[dev-dependencies]
 assert_approx_eq = "1.1"

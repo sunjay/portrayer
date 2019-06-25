@@ -18,7 +18,7 @@ pub struct TargetInfo {
 /// It is assumed that the target has pixels that can be indexed from
 /// x = 0..target_info.width and y = 0..target.height. The image space is assumed to
 /// go left to right on the x axis and top to bottom on the y axis.
-pub trait Target {
+pub trait Target: Sized {
     /// Returns information about the given target used for rendering
     fn target_info(&self) -> TargetInfo;
 
@@ -31,6 +31,31 @@ pub trait Target {
     ///
     /// Unsafe for performance reasons: this method is allowed to skip bounds checking
     unsafe fn set_pixel(&mut self, x: usize, y: usize, color: Rgb);
+
+    /// Draw the given scene to this target using the given camera settings and background texture
+    fn draw<T: Texture>(
+        &mut self,
+        scene: &Scene,
+        camera: CameraSettings,
+        background: T,
+    ) {
+        let camera = Camera::new(camera, self);
+        let TargetInfo {width, height, ..} = self.target_info();
+
+        for y in 0..height {
+            for x in 0..width {
+                let ray = camera.ray_at((x, y));
+
+                let background_color = background.at(x, y);
+                let color = ray.color(scene, background_color, 0);
+
+                //TODO: gamma correction
+
+                // Unsafe because we are guaranteeing that the (x, y) value is in the valid range
+                unsafe { self.set_pixel(x, y, color); }
+            }
+        }
+    }
 }
 
 impl<T: Target> Target for &mut T {
@@ -47,25 +72,31 @@ impl<T: Target> Target for &mut T {
     }
 }
 
-/// Render the configured scene to the given target using the configured settings
-pub fn render<T: Target, U: Texture>(
-    scene: &Scene,
-    camera: CameraSettings,
-    target: &mut T,
-    background: U,
-) {
-    let camera = Camera::new(camera, target);
-    let TargetInfo {width, height, ..} = target.target_info();
-
-    for y in 0..height {
-        for x in 0..width {
-            let ray = camera.ray_at((x, y));
-
-            let background_color = background.at(x, y);
-            let color = ray.color(scene, background_color, 0);
-
-            // Unsafe because we are guaranteeing that the (x, y) value is in the valid range
-            unsafe { target.set_pixel(x, y, color); }
+impl Target for image::RgbImage {
+    fn target_info(&self) -> TargetInfo {
+        TargetInfo {
+            width: self.width() as usize,
+            height: self.height() as usize,
+            gamma: 2.2,
         }
+    }
+
+    unsafe fn get_pixel(&self, x: usize, y: usize) -> Rgb {
+        let [r, g, b] = self.get_pixel(x as u32, y as u32).data;
+        Rgb {
+            r: r as f64 / 255.0,
+            g: g as f64 / 255.0,
+            b: b as f64 / 255.0,
+        }
+    }
+
+    unsafe fn set_pixel(&mut self, x: usize, y: usize, color: Rgb) {
+        self.put_pixel(x as u32, y as u32, image::Rgb {
+            data: [
+                (color.r * 255.0) as u8,
+                (color.g * 255.0) as u8,
+                (color.b * 255.0) as u8,
+            ],
+        });
     }
 }

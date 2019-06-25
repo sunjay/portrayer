@@ -8,9 +8,20 @@ use crate::math::{Vec3, Rgb};
 /// This allows light to become darker as the distance to the light increases
 #[derive(Debug)]
 pub struct Falloff {
-    c0: f64,
-    c1: f64,
-    c2: f64,
+    pub c0: f64,
+    pub c1: f64,
+    pub c2: f64,
+}
+
+impl Default for Falloff {
+    fn default() -> Self {
+        Self {
+            // Results in attenuation = 1.0 (no effect)
+            c0: 1.0,
+            c1: 0.0,
+            c2: 0.0,
+        }
+    }
 }
 
 impl Falloff {

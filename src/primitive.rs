@@ -11,6 +11,12 @@ pub enum Primitive {
     Sphere(Sphere),
 }
 
+impl From<Sphere> for Primitive {
+    fn from(sphere: Sphere) -> Self {
+        Primitive::Sphere(sphere)
+    }
+}
+
 impl RayHit for Primitive {
     fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
         use Primitive::*;

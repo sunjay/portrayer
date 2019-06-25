@@ -30,6 +30,15 @@ pub struct SceneNode {
     children: Vec<SceneNode>,
 }
 
+impl From<Geometry> for SceneNode {
+    fn from(geometry: Geometry) -> Self {
+        Self {
+            geometry: Some(geometry),
+            ..Default::default()
+        }
+    }
+}
+
 impl SceneNode {
     pub fn geometry(&self) -> Option<&Geometry> {
         self.geometry.as_ref()
