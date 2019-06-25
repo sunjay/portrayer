@@ -10,16 +10,16 @@ use crate::material::Material;
 pub struct RayIntersection {
     /// The smallest positive value of t for which the given ray intersects the target. Note that
     /// the smaller the t value, the closer the intersection is to the origin of the ray.
-    ray_parameter: f64,
+    pub ray_parameter: f64,
 
     /// The point of intersection
-    hit_point: Vec3,
+    pub hit_point: Vec3,
 
     /// The normal at the point of intersection.
     /// IMPORTANT: This is NOT guaranteed to be a unit vector for the sake of efficiency and
     /// floating point correctness. (Normalizing too many times accrues too much floating point
     /// error.) Make sure you normalize when it matters.
-    normal: Vec3,
+    pub normal: Vec3,
 }
 
 pub trait RayHit {
@@ -39,6 +39,16 @@ impl Ray {
     pub fn new(origin: Vec3, direction: Vec3) -> Self {
         debug_assert!(direction.is_normalized(), "bug: ray direction must be normalized");
         Self {origin, direction}
+    }
+
+    /// Returns the origin position of this ray
+    pub fn origin(&self) -> Vec3 {
+        self.origin
+    }
+
+    /// Returns the direction of this ray
+    pub fn direction(&self) -> Vec3 {
+        self.direction
     }
 
     /// Computes the position in this ray at the given ray parameter value

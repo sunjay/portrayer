@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 vek = "0.9"
+assert_approx_eq = "1.1"
