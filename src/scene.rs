@@ -1,4 +1,4 @@
-use crate::math::{Mat4, Rgb};
+use crate::math::{Mat4, Vec3, Rgb};
 use crate::primitive::Primitive;
 use crate::material::Material;
 use crate::light::Light;
@@ -14,6 +14,15 @@ pub struct Scene<'a> {
 pub struct Geometry {
     pub prim: Primitive,
     pub mat: Material,
+}
+
+impl Geometry {
+    pub fn new<P: Into<Primitive>>(prim: P, mat: Material) -> Self {
+        Self {
+            prim: prim.into(),
+            mat,
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -34,6 +43,15 @@ impl From<Geometry> for SceneNode {
     fn from(geometry: Geometry) -> Self {
         Self {
             geometry: Some(geometry),
+            ..Default::default()
+        }
+    }
+}
+
+impl From<Vec<SceneNode>> for SceneNode {
+    fn from(children: Vec<SceneNode>) -> Self {
+        Self {
+            children,
             ..Default::default()
         }
     }
@@ -64,5 +82,24 @@ impl SceneNode {
     /// For iterating over the children of this node
     pub fn children(&self) -> &[SceneNode] {
         &*self.children
+    }
+
+    /// Scale the node by the given vector and return the node
+    pub fn scaled<V: Into<Vec3>>(mut self, scale: V) -> Self {
+        self.set_transform(self.trans.scaled_3d(scale));
+        self
+    }
+
+    /// Translate the node by the given vector and return the node
+    pub fn translated<V: Into<Vec3>>(mut self, translation: V) -> Self {
+        self.set_transform(self.trans.translated_3d(translation));
+        self
+    }
+
+    /// Update the transformation matrix to the given value
+    pub fn set_transform(&mut self, transform: Mat4) {
+        self.trans = transform;
+        self.invtrans = transform.inverted();
+        self.normal_trans = self.invtrans.transposed();
     }
 }

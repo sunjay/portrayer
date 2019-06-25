@@ -14,8 +14,15 @@ use image::RgbImage;
 fn main() -> io::Result<()> {
     let mut image = RgbImage::new(256, 256);
 
-    let mat = Material {
-        diffuse: 0.5.into(),
+    let mat1 = Material {
+        diffuse: 0.3.into(),
+        specular: 0.8.into(),
+        shininess: 10.0,
+        reflectivity: 0.0,
+    };
+
+    let mat2 = Material {
+        diffuse: (0.2, 0.5, 0.5).into(),
         specular: 0.8.into(),
         shininess: 10.0,
         reflectivity: 0.0,
@@ -29,10 +36,15 @@ fn main() -> io::Result<()> {
     };
 
     let scene = Scene {
-        root: &SceneNode::from(Geometry {
-            prim: Sphere.into(),
-            mat,
-        }),
+        root: &SceneNode::from(vec![
+            SceneNode::from(Geometry::new(Sphere, mat1))
+                .scaled(2.0)
+                .translated((0.0, 2.0, 0.0)),
+
+            SceneNode::from(Geometry::new(Sphere, mat2))
+                .scaled(1.5)
+                .translated((-1.0, 0.0, 0.0)),
+        ]),
         lights: &[
             Light {
                 position: cam.eye,
