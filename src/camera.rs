@@ -1,4 +1,4 @@
-use crate::math::{Vec3, Mat4, Radians};
+use crate::math::{Vec3, Vec3Ext, Mat4, Radians};
 use crate::render::{Target, TargetInfo};
 use crate::ray::Ray;
 
@@ -16,22 +16,65 @@ pub struct CameraSettings {
 
 #[derive(Debug)]
 pub struct Camera {
+    /// The position of the camera in world space
+    eye: Vec3,
     /// Represents the transformation from the view space to the world space
     view_to_world: Mat4,
-    /// The field-of-view angle along the y-axis of the camera
-    fovy: f64,
+    /// Allows us to scale by the fov to dictate how much of the world is shown in the
+    /// rendered image (similar to zoom).
+    fov_factor: f64,
     /// The ratio width/height for a given target
     aspect_ratio: f64,
+    // The width of the target
+    width: f64,
+    // The height of the target
+    height: f64,
 }
 
 impl Camera {
-    pub fn new<T: Target>(settings: CameraSettings, target: &T) -> Self {
+    pub fn new<T: Target>(cam: CameraSettings, target: &T) -> Self {
         let TargetInfo {width, height, ..} = target.target_info();
-        unimplemented!()
+        let width = width as f64;
+        let height = height as f64;
+
+        Self {
+            eye: cam.eye,
+            view_to_world: Mat4::look_at_rh(cam.eye, cam.center, cam.up),
+            // This assumes that the camera is 1.0 unit away from the image plane
+            fov_factor: (cam.fovy.get()/2.0).tan(),
+            aspect_ratio: width / height,
+            width,
+            height,
+        }
     }
 
-    /// Returns the ray at the given pixel (x, y) position
+    /// Returns the primary ray at the given pixel (x, y) position
     pub fn ray_at(&self, (x, y): (usize, usize)) -> Ray {
-        unimplemented!()
+        // NDC = Normalized Device Coordinates
+
+        // Ray tracing NDC is between 0 and 1 (inclusive)
+        // +0.5 so in the middle of the pixel square
+        let pixel_ndc_y = (y as f64 + 0.5) / self.height;
+        // Map to -1 to 1 (screen space) (& flip axis)
+        let pixel_screen_y = (1.0 - 2.0*pixel_ndc_y) * self.fov_factor;
+
+        // Ray tracing NDC is between 0 and 1 (inclusive)
+        // +0.5 so in the middle of the pixel square
+        let pixel_ndc_x = (x as f64 + 0.5) / self.width;
+        // Map to -1 to 1 (screen space)
+        // Let y remain fixed, but scale x by the aspect ratio to get the right dimensions
+        // (changes the range of x to be bigger than y if the aspect ratio > 1.0
+        // or smaller if aspect ratio < 1.0)
+        let pixel_screen_x = (2.0*pixel_ndc_x - 1.0) * self.aspect_ratio * self.fov_factor;
+
+        // Image plane is 1.0 unit ahead of the camera/eye in camera/view space.
+        // Using -1.0 because right-handed.
+        let pixel_camera = Vec3::new(pixel_screen_x, pixel_screen_y, -1.0);
+        // Transform to world coordinates from camera space
+        let pixel_world = pixel_camera.transformed_point(self.view_to_world);
+        // The ray goes from the eye to the pixel_world coordinate
+        let ray_dir = (pixel_world - self.eye).normalized();
+
+        Ray::new(self.eye, ray_dir)
     }
 }

@@ -34,5 +34,21 @@ impl Vec3Ext for Vec3 {
     }
 }
 
+/// A "newtype" to represent a value with the unit "radians"
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Radians(f64);
+
+impl Radians {
+    pub fn from_degrees(value: f64) -> Self {
+        Radians(value.to_radians())
+    }
+
+    pub fn from_radians(value: f64) -> Self {
+        Radians(value)
+    }
+
+    /// Returns the actual value stored in this struct (in radians)
+    pub fn get(self) -> f64 {
+        self.0
+    }
+}
