@@ -9,8 +9,6 @@ pub struct TargetInfo {
     pub width: usize,
     /// Returns the height of this target in pixels
     pub height: usize,
-    /// The gamma value to use for gamma correction (e.g. 2.2)
-    pub gamma: f64,
 }
 
 /// A target that can be rendered to.
@@ -49,7 +47,11 @@ pub trait Target: Sized {
                 let background_color = background.at(x, y);
                 let color = ray.color(scene, background_color, 0);
 
-                //TODO: gamma correction
+                // Gamma correction to ensure that image colors are closer to what we want them
+                // to be. This gamma value is the same as Blender and is also in the source below:
+                // Source: https://learnopengl.com/Advanced-Lighting/Gamma-Correction
+                let gamma = 2.2;
+                let color = color.map(|c| c.powf(1.0/gamma));
 
                 // Unsafe because we are guaranteeing that the (x, y) value is in the valid range
                 unsafe { self.set_pixel(x, y, color); }
@@ -77,7 +79,6 @@ impl Target for image::RgbImage {
         TargetInfo {
             width: self.width() as usize,
             height: self.height() as usize,
-            gamma: 2.2,
         }
     }
 
