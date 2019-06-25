@@ -118,6 +118,7 @@ mod tests {
     fn solve_quadratic_equations() {
         // discriminant > 0
         test_quadratic!(2.0*x^2 + 8.0*x + 3.0 = 0,
+            // Solutions ordered from smallest to largest
             [-2.0 - (5.0/2.0f64).sqrt(), (5.0/2.0f64).sqrt() - 2.0]);
         // discriminant == 0
         test_quadratic!(4.0*x^2 + -4.0*x + 1.0 = 0,
