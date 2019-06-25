@@ -37,7 +37,7 @@ pub struct Ray {
 
 impl Ray {
     pub fn new(origin: Vec3, direction: Vec3) -> Self {
-        assert!(direction.is_normalized(), "bug: ray direction must be normalized");
+        debug_assert!(direction.is_normalized(), "bug: ray direction must be normalized");
         Self {origin, direction}
     }
 
@@ -68,6 +68,7 @@ impl Ray {
         let local_ray = self.transformed(trans);
         let normal_trans = node.normal_trans();
 
+        // The resulting hit and material (initially None)
         let mut hit_mat = None;
 
         // Check if the ray intersects this node's geometry (if any)
@@ -101,13 +102,14 @@ impl Ray {
 
     /// Compute the color of the nearest object to the casted ray. Returns the given background
     /// color if no object is hit by this ray.
-    pub fn color(&self, scene: &Scene, background: Rgb) -> Rgb {
+    pub fn color(&self, scene: &Scene, background: Rgb, recursion_depth: u32) -> Rgb {
         let mut t_range = Range {start: EPSILON, end: INFINITY};
         let hit = self.cast(&scene.root, &mut t_range);
 
         match hit {
             Some((hit, mat)) => {
-                mat.hit_color(scene, background, self.direction, hit.hit_point, hit.normal)
+                mat.hit_color(scene, background, self.direction, hit.hit_point, hit.normal,
+                    recursion_depth)
             },
             None => background,
         }

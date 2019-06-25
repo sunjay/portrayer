@@ -62,7 +62,7 @@ pub fn render<T: Target, U: Texture>(
             let ray = camera.ray_at((x, y));
 
             let background_color = background.at(x, y);
-            let color = ray.color(scene, background_color);
+            let color = ray.color(scene, background_color, 0);
 
             // Unsafe because we are guaranteeing that the (x, y) value is in the valid range
             unsafe { target.set_pixel(x, y, color); }
