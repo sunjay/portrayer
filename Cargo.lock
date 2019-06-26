@@ -249,6 +249,7 @@ version = "0.1.0"
 dependencies = [
  "assert_approx_eq 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.21.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tobj 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "vek 0.9.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -348,6 +349,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "tobj"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "unicode-xid"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -409,5 +415,6 @@ dependencies = [
 "checksum static_assertions 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)" = "c19be23126415861cb3a23e501d34a708f7f9b2183c5252d690941c2e69199d5"
 "checksum syn 0.15.38 (registry+https://github.com/rust-lang/crates.io-index)" = "37ea458a750f59ab679b47fef9b6722c586c5742f4cfe18a120bbc807e5e01fd"
 "checksum tiff 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1e4834f28a0330cb9f3f2c87d2649dca723cb33802e2bdcf18da32759fbec7ce"
+"checksum tobj 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "81b6e0199032d341b8491817f2da249c9aa150d18534b58865c2ebe787b29db1"
 "checksum unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fc72304796d0818e357ead4e000d19c9c174ab23dc11093ac919054d20a6a7fc"
 "checksum vek 0.9.7 (registry+https://github.com/rust-lang/crates.io-index)" = "41a272c9a959b8d3acd4fdbb83bb20d815976e3ab68b3fa9e0c9519b5dd18478"

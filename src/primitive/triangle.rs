@@ -6,9 +6,9 @@ use crate::math::Vec3;
 /// A triangle with the given 3 vertices
 #[derive(Debug)]
 pub struct Triangle {
-    a: Vec3,
-    b: Vec3,
-    c: Vec3,
+    pub a: Vec3,
+    pub b: Vec3,
+    pub c: Vec3,
 }
 
 impl RayHit for Triangle {
