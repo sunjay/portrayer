@@ -1,4 +1,5 @@
 mod sphere;
+mod triangle;
 
 pub use sphere::*;
 
