@@ -37,11 +37,11 @@ fn main() -> io::Result<()> {
 
     let scene = Scene {
         root: &SceneNode::from(vec![
-            SceneNode::from(Geometry::new(Sphere, mat1))
+            SceneNode::from(Geometry::new(Sphere, &mat1))
                 .scaled(2.0)
                 .translated((0.0, 2.0, 0.0)),
 
-            SceneNode::from(Geometry::new(Sphere, mat2))
+            SceneNode::from(Geometry::new(Sphere, &mat2))
                 .scaled(1.5)
                 .translated((-1.0, 0.0, 2.0)),
         ]),

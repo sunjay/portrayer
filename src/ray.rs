@@ -92,7 +92,7 @@ impl Ray {
                 // than this one
                 t_range.end = hit.ray_parameter;
 
-                hit_mat = Some((hit, mat));
+                hit_mat = Some((hit, *mat));
             }
         }
 

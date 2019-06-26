@@ -5,19 +5,19 @@ use crate::light::Light;
 
 #[derive(Debug)]
 pub struct Scene<'a> {
-    pub root: &'a SceneNode,
+    pub root: &'a SceneNode<'a>,
     pub lights: &'a [Light],
     pub ambient: Rgb,
 }
 
 #[derive(Debug)]
-pub struct Geometry {
+pub struct Geometry<'a> {
     pub prim: Primitive,
-    pub mat: Material,
+    pub mat: &'a Material,
 }
 
-impl Geometry {
-    pub fn new<P: Into<Primitive>>(prim: P, mat: Material) -> Self {
+impl<'a> Geometry<'a> {
+    pub fn new<P: Into<Primitive>>(prim: P, mat: &'a Material) -> Self {
         Self {
             prim: prim.into(),
             mat,
@@ -26,9 +26,9 @@ impl Geometry {
 }
 
 #[derive(Debug, Default)]
-pub struct SceneNode {
+pub struct SceneNode<'a> {
     /// The geometry stored at this node (if any)
-    geometry: Option<Geometry>,
+    geometry: Option<Geometry<'a>>,
     /// The affine transform of this node
     trans: Mat4,
     /// The inverse of the affine transform of this node
@@ -36,11 +36,11 @@ pub struct SceneNode {
     /// The inverse transpose of trans, used for transforming normals
     normal_trans: Mat4,
     /// Any child nodes that are hierarchically "underneath" this node
-    children: Vec<SceneNode>,
+    children: Vec<SceneNode<'a>>,
 }
 
-impl From<Geometry> for SceneNode {
-    fn from(geometry: Geometry) -> Self {
+impl<'a> From<Geometry<'a>> for SceneNode<'a> {
+    fn from(geometry: Geometry<'a>) -> Self {
         Self {
             geometry: Some(geometry),
             ..Default::default()
@@ -48,8 +48,8 @@ impl From<Geometry> for SceneNode {
     }
 }
 
-impl From<Vec<SceneNode>> for SceneNode {
-    fn from(children: Vec<SceneNode>) -> Self {
+impl<'a> From<Vec<SceneNode<'a>>> for SceneNode<'a> {
+    fn from(children: Vec<SceneNode<'a>>) -> Self {
         Self {
             children,
             ..Default::default()
@@ -57,7 +57,7 @@ impl From<Vec<SceneNode>> for SceneNode {
     }
 }
 
-impl SceneNode {
+impl<'a> SceneNode<'a> {
     pub fn geometry(&self) -> Option<&Geometry> {
         self.geometry.as_ref()
     }
