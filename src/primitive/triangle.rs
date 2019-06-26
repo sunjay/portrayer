@@ -19,24 +19,16 @@ impl RayHit for Triangle {
 
         // "A" matrix (LHS)
 
-        let a = self.a.x - self.b.x;
-        let b = self.a.y - self.b.y;
-        let c = self.a.z - self.b.z;
-
-        let d = self.a.x - self.c.x;
-        let e = self.a.y - self.c.y;
-        let f = self.a.z - self.c.z;
-
+        let Vec3 {x: a, y: b, z: c} = self.a - self.b;
+        let Vec3 {x: d, y: e, z: f} = self.a - self.c;
         let Vec3 {x: g, y: h, z: i} = ray.direction();
 
         // "R" matrix (RHS)
 
-        let origin = ray.origin();
-        let j = self.a.x - origin.x;
-        let k = self.a.y - origin.y;
-        let l = self.a.z - origin.z;
+        let Vec3 {x: j, y: k, z: l} = self.a - ray.origin();
 
         // "M" calculation
+
         let ei_hf = e*i - h*f;
         let gf_di = g*f - d*i;
         let dh_eg = d*h - e*g;
