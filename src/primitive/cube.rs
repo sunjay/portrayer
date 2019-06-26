@@ -12,11 +12,6 @@ use super::plane::Plane;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Cube;
 
-/// Returns true if the given point is anywhere within the *volume* of the cube
-fn contains(Vec3 {x, y, z}: Vec3) -> bool {
-    -0.5 <= x && x <= 0.5 && -0.5 <= y && y <= 0.5 && -0.5 <= z && z <= 0.5
-}
-
 impl RayHit for Cube {
     fn ray_hit(&self, ray: &Ray, init_t_range: &Range<f64>) -> Option<RayIntersection> {
         // Define the six faces of a cube
