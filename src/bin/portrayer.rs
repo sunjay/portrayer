@@ -12,7 +12,7 @@ use portrayer::{
 use image::RgbImage;
 
 fn main() -> io::Result<()> {
-    let mut image = RgbImage::new(256, 256);
+    let mut image = RgbImage::new(250, 200);
 
     let mat1 = Material {
         diffuse: 0.3.into(),
@@ -29,7 +29,7 @@ fn main() -> io::Result<()> {
     };
 
     let cam = CameraSettings {
-        eye: (0.0, 0.0, 3.0).into(),
+        eye: (0.0, 0.0, 10.0).into(),
         center: (0.0, 0.0, 0.0).into(),
         up: Vec3::up(),
         fovy: Radians::from_degrees(50.0),
@@ -43,11 +43,11 @@ fn main() -> io::Result<()> {
 
             SceneNode::from(Geometry::new(Sphere, mat2))
                 .scaled(1.5)
-                .translated((-1.0, 0.0, 0.0)),
+                .translated((-1.0, 0.0, 2.0)),
         ]),
         lights: &[
             Light {
-                position: cam.eye,
+                position: Vec3 {x: 10.0, y: 2.0, z: 10.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
                 falloff: Default::default(),
             },
