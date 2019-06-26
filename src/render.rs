@@ -1,3 +1,5 @@
+use vek::ops::Clamp;
+
 use crate::math::Rgb;
 use crate::scene::Scene;
 use crate::camera::{CameraSettings, Camera};
@@ -52,6 +54,9 @@ pub trait Target: Sized {
                 // Source: https://learnopengl.com/Advanced-Lighting/Gamma-Correction
                 let gamma = 2.2;
                 let color = color.map(|c| c.powf(1.0/gamma));
+
+                // Clamp to 0.0 to 1.0 or else we will get invalid pixels in the output PNG
+                let color: Rgb = Clamp::<f64>::clamp01(color);
 
                 // Unsafe because we are guaranteeing that the (x, y) value is in the valid range
                 unsafe { self.set_pixel(x, y, color); }
