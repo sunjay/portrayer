@@ -7,7 +7,7 @@ use crate::math::Quadratic;
 ///
 /// It is expected that this sphere will be used via affine transformations on the node that
 /// contains it.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Sphere;
 
 impl RayHit for Sphere {
