@@ -32,9 +32,13 @@ impl RayHit for Sphere {
         // sphere. If the discriminant is negative, no intersection occurred and we can return
         // early.
 
-        let a = ray.direction().dot(ray.direction());
-        let b = 2.0 * ray.origin().dot(ray.direction());
-        let c = ray.origin().dot(ray.origin()) - 1.0;
+        let origin = ray.origin();
+        let direction = ray.direction();
+        let radius = 1.0;
+
+        let a = direction.dot(direction);
+        let b = 2.0 * origin.dot(direction);
+        let c = origin.dot(origin) - radius * radius;
 
         let equation = Quadratic {a, b, c};
         let t = equation.solve().find(|sol| t_range.contains(sol))?;
