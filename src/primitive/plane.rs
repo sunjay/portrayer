@@ -7,6 +7,8 @@ use crate::math::{EPSILON, Vec3};
 #[derive(Debug)]
 pub struct Plane {
     /// The normal of the plane (MUST be a unit vector)
+    ///
+    /// Assumption: In order to be visible, the normal must point *towards* the view
     pub normal: Vec3,
     /// Any point on the plane
     pub point: Vec3,
@@ -24,13 +26,13 @@ impl RayHit for Plane {
         // 1. n.dot(d) == 0 (plane is perpendicular to the normal / parallel with the plane)
         // 2. (origin - point).dot(n) == 0 (ray is entirely in the plane)
         // 3. t < 0 (intersected in the past)
-        // 4. n.dot(d) < 0 (intersection with the back of the plane face)
+        // 4. n.dot(d) > 0 (intersection with the back of the plane face)
         //
         // 1 and 4 are checked for directly in the next step. 2 and 3 are caught by checking if t
-        // is in t_range since t_range is typically (0, some positive value).
+        // is in t_range since t_range is typically (EPSILON, some positive value).
 
         let dot_dir_normal = ray_dir.dot(self.normal);
-        if dot_dir_normal < EPSILON { // <= 0.0
+        if dot_dir_normal >= -EPSILON { // >= 0.0
             return None;
         }
 
