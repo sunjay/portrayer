@@ -5,7 +5,7 @@ use std::path::Path;
 
 use portrayer::{
     scene::{Scene, SceneNode, Geometry},
-    primitive::{Sphere, Mesh},
+    primitive::{Sphere, Mesh, Cube},
     material::Material,
     light::Light,
     render::Target,
@@ -56,7 +56,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .scaled(1000.0)
                 .translated((0.0, -1200.0, -500.0)),
 
-            //TODO: Cube at {-200, -125, 0} with size 100 and mat4
+            SceneNode::from(Geometry::new(Cube, &mat4))
+                .scaled(100.0)
+                .translated((-200.0, -125.0, 0.0)),
 
             SceneNode::from(Geometry::new(Sphere, &mat3))
                 .scaled(50.0)
