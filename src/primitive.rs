@@ -1,6 +1,7 @@
 mod sphere;
 mod triangle;
 mod mesh;
+mod plane;
 
 pub use sphere::*;
 pub use mesh::*;
