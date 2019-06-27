@@ -1,4 +1,5 @@
 mod sphere;
+#[cfg(not(feature = "render_bounding_volumes"))]
 mod triangle;
 mod mesh;
 mod plane;

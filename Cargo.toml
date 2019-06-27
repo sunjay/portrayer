@@ -15,3 +15,7 @@ assert_approx_eq = "1.1"
 [profile.dev]
 # Needed to make rendering fast even in debug mode
 opt-level = 3
+
+[features]
+# Useful for debugging the Bounding-Volume-Hierarchy optimization for meshes
+render_bounding_volumes = []
