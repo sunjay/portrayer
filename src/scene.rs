@@ -1,34 +1,36 @@
+use std::sync::Arc;
+
 use crate::math::{Mat4, Vec3, Rgb, Radians};
 use crate::primitive::Primitive;
 use crate::material::Material;
 use crate::light::Light;
 
 #[derive(Debug)]
-pub struct Scene<'a> {
-    pub root: &'a SceneNode<'a>,
-    pub lights: &'a [Light],
+pub struct Scene {
+    pub root: Arc<SceneNode>,
+    pub lights: Vec<Light>,
     pub ambient: Rgb,
 }
 
 #[derive(Debug)]
-pub struct Geometry<'a> {
-    pub prim: Primitive,
-    pub mat: &'a Material,
+pub struct Geometry {
+    pub primitive: Primitive,
+    pub material: Arc<Material>,
 }
 
-impl<'a> Geometry<'a> {
-    pub fn new<P: Into<Primitive>>(prim: P, mat: &'a Material) -> Self {
+impl Geometry {
+    pub fn new<P: Into<Primitive>>(primitive: P, material: Arc<Material>) -> Self {
         Self {
-            prim: prim.into(),
-            mat,
+            primitive: primitive.into(),
+            material,
         }
     }
 }
 
 #[derive(Debug, Default)]
-pub struct SceneNode<'a> {
+pub struct SceneNode {
     /// The geometry stored at this node (if any)
-    geometry: Option<Geometry<'a>>,
+    geometry: Option<Geometry>,
     /// The affine transform of this node
     trans: Mat4,
     /// The inverse of the affine transform of this node
@@ -36,11 +38,12 @@ pub struct SceneNode<'a> {
     /// The inverse transpose of trans, used for transforming normals
     normal_trans: Mat4,
     /// Any child nodes that are hierarchically "underneath" this node
-    children: Vec<SceneNode<'a>>,
+    children: Vec<Arc<SceneNode>>,
 }
 
-impl<'a> From<Geometry<'a>> for SceneNode<'a> {
-    fn from(geometry: Geometry<'a>) -> Self {
+// Create a node with the given geometry
+impl From<Geometry> for SceneNode {
+    fn from(geometry: Geometry) -> Self {
         Self {
             geometry: Some(geometry),
             ..Default::default()
@@ -48,8 +51,9 @@ impl<'a> From<Geometry<'a>> for SceneNode<'a> {
     }
 }
 
-impl<'a> From<Vec<SceneNode<'a>>> for SceneNode<'a> {
-    fn from(children: Vec<SceneNode<'a>>) -> Self {
+// Create a node from multiple children
+impl From<Vec<Arc<SceneNode>>> for SceneNode {
+    fn from(children: Vec<Arc<SceneNode>>) -> Self {
         Self {
             children,
             ..Default::default()
@@ -57,7 +61,17 @@ impl<'a> From<Vec<SceneNode<'a>>> for SceneNode<'a> {
     }
 }
 
-impl<'a> SceneNode<'a> {
+// Create a node from a single child
+impl From<Arc<SceneNode>> for SceneNode {
+    fn from(child: Arc<SceneNode>) -> Self {
+        Self {
+            children: vec![child],
+            ..Default::default()
+        }
+    }
+}
+
+impl SceneNode {
     pub fn geometry(&self) -> Option<&Geometry> {
         self.geometry.as_ref()
     }
@@ -80,8 +94,8 @@ impl<'a> SceneNode<'a> {
     }
 
     /// For iterating over the children of this node
-    pub fn children(&self) -> &[SceneNode] {
-        &*self.children
+    pub fn children(&self) -> impl Iterator<Item=&Arc<SceneNode>> {
+        self.children.iter()
     }
 
     /// Scale the node by the given vector and return the node

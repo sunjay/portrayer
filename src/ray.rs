@@ -1,4 +1,5 @@
 use std::ops::Range;
+use std::sync::Arc;
 
 use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat4, Rgb};
 use crate::scene::{Scene, SceneNode, Geometry};
@@ -69,7 +70,7 @@ impl Ray {
         &self,
         node: &'a SceneNode,
         t_range: &mut Range<f64>,
-    ) -> Option<(RayIntersection, &'a Material)> {
+    ) -> Option<(RayIntersection, Arc<Material>)> {
         // Take the ray from its current coordinate system and put it into the local coordinate
         // system of the current node
         let local_ray = self.transformed(node.inverse_trans());
@@ -83,8 +84,8 @@ impl Ray {
         let mut hit_mat = None;
 
         // Check if the ray intersects this node's geometry (if any)
-        if let Some(Geometry {prim, mat}) = node.geometry() {
-            if let Some(mut hit) = prim.ray_hit(&local_ray, t_range) {
+        if let Some(Geometry {primitive, material}) = node.geometry() {
+            if let Some(mut hit) = primitive.ray_hit(&local_ray, t_range) {
                 hit.hit_point = hit.hit_point.transformed_point(trans);
                 hit.normal = hit.normal.transformed_direction(normal_trans);
 
@@ -92,7 +93,7 @@ impl Ray {
                 // than this one
                 t_range.end = hit.ray_parameter;
 
-                hit_mat = Some((hit, *mat));
+                hit_mat = Some((hit, material.clone()));
             }
         }
 

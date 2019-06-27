@@ -1,6 +1,7 @@
 //! A simple scene with five spheres
 
 use std::io;
+use std::sync::Arc;
 
 use portrayer::{
     scene::{Scene, SceneNode, Geometry},
@@ -14,48 +15,53 @@ use portrayer::{
 use image::RgbImage;
 
 fn main() -> io::Result<()> {
-    let mat1 = Material {
+    let mat1 = Arc::new(Material {
         diffuse: Rgb {r: 0.7, g: 1.0, b: 0.7},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
         shininess: 25.0,
         reflectivity: 0.0,
-    };
-    let mat2 = Material {
+    });
+    let mat2 = Arc::new(Material {
         diffuse: Rgb {r: 0.5, g: 0.5, b: 0.5},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
         shininess: 25.0,
         reflectivity: 0.0,
-    };
-    let mat3 = Material {
+    });
+    let mat3 = Arc::new(Material {
         diffuse: Rgb {r: 1.0, g: 0.6, b: 0.1},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
         shininess: 25.0,
         reflectivity: 0.0,
-    };
+    });
 
     let scene = Scene {
-        root: &SceneNode::from(vec![
-            SceneNode::from(Geometry::new(Sphere, &mat1))
+        root: SceneNode::from(vec![
+            SceneNode::from(Geometry::new(Sphere, mat1.clone()))
                 .scaled(100.0)
-                .translated((0.0, 0.0, -400.0)),
+                .translated((0.0, 0.0, -400.0))
+                .into(),
 
-            SceneNode::from(Geometry::new(Sphere, &mat1))
+            SceneNode::from(Geometry::new(Sphere, mat1.clone()))
                 .scaled(150.0)
-                .translated((200.0, 50.0, -100.0)),
+                .translated((200.0, 50.0, -100.0))
+                .into(),
 
-            SceneNode::from(Geometry::new(Sphere, &mat2))
+            SceneNode::from(Geometry::new(Sphere, mat2.clone()))
                 .scaled(1000.0)
-                .translated((0.0, -1200.0, -500.0)),
+                .translated((0.0, -1200.0, -500.0))
+                .into(),
 
-            SceneNode::from(Geometry::new(Sphere, &mat3))
+            SceneNode::from(Geometry::new(Sphere, mat3.clone()))
                 .scaled(50.0)
-                .translated((-100.0, 25.0, -300.0)),
+                .translated((-100.0, 25.0, -300.0))
+                .into(),
 
-            SceneNode::from(Geometry::new(Sphere, &mat1))
+            SceneNode::from(Geometry::new(Sphere, mat1.clone()))
                 .scaled(25.0)
-                .translated((0.0, 100.0, -250.0)),
-        ]),
-        lights: &[
+                .translated((0.0, 100.0, -250.0))
+                .into(),
+        ]).into(),
+        lights: vec![
             // white_light
             Light {
                 position: Vec3 {x: -100.0, y: 150.0, z: 400.0},
