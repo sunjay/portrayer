@@ -96,9 +96,21 @@ impl<'a> SceneNode<'a> {
         self
     }
 
-    /// Translate the node by the given vector and return the node
+    /// Rotate about the x-axis by the given angle
+    pub fn rotated_x(mut self, angle: Radians) -> Self {
+        self.set_transform(self.trans.rotated_x(angle.get()));
+        self
+    }
+
+    /// Rotate about the y-ayis by the given angle
     pub fn rotated_y(mut self, angle: Radians) -> Self {
         self.set_transform(self.trans.rotated_y(angle.get()));
+        self
+    }
+
+    /// Rotate about the z-azis by the given angle
+    pub fn rotated_z(mut self, angle: Radians) -> Self {
+        self.set_transform(self.trans.rotated_z(angle.get()));
         self
     }
 

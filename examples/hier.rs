@@ -41,11 +41,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let arc = SceneNode::from(vec![
         SceneNode::from(Geometry::new(Cube, &gold))
             .scaled((0.8, 4.0, 0.8))
-            .translated((-2.4, 0.0, -0.4)),
+            .translated((-2.4, 2.0, 0.0)),
 
         SceneNode::from(Geometry::new(Cube, &gold))
             .scaled((0.8, 4.0, 0.8))
-            .translated((1.6, 0.0, -0.4)),
+            .translated((1.6, 2.0, 0.0)),
 
         SceneNode::from(Geometry::new(Sphere, &gold))
             .scaled((4.0, 0.6, 0.6))
@@ -61,7 +61,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         .translated((-2.0, 1.618034, 0.0));
 
     let scene = Scene {
-        root: &SceneNode::from(vec![arc, floor, poly]),
+        root: &SceneNode::from(vec![arc, floor, poly])
+            .rotated_x(Radians::from_degrees(23.0))
+            .translated((6.0, -2.0, -15.0)),
         lights: &[
             // l1
             Light {
