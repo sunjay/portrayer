@@ -20,8 +20,6 @@ impl RayHit for Plane {
         // http://graphicscodex.com
         // Can be derived by substituting ray into implicit plane equation.
 
-        let ray_dir = ray.direction();
-
         // Four cases where intersection can fail
         // 1. n.dot(d) == 0 (plane is perpendicular to the normal / parallel with the plane)
         // 2. (origin - point).dot(n) == 0 (ray is entirely in the plane)
@@ -31,7 +29,7 @@ impl RayHit for Plane {
         // 1 and 4 are checked for directly in the next step. 2 and 3 are caught by checking if t
         // is in t_range since t_range is typically (EPSILON, some positive value).
 
-        let dot_dir_normal = ray_dir.dot(self.normal);
+        let dot_dir_normal = ray.direction().dot(self.normal);
         if dot_dir_normal >= -EPSILON { // >= 0.0
             return None;
         }
