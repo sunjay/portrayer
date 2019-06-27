@@ -43,9 +43,11 @@ impl Mesh {
     fn new(positions: Vec<Vec3>, triangles: Vec<(usize, usize, usize)>) -> Self {
         assert!(!positions.is_empty(), "Meshes must have at least one vertex");
 
+        //TODO: Experiment with parallelism via rayon for computing bounds (benchmark)
+
         // Compute bounding cube
         let p0 = positions[0];
-        let (min, max, total) = positions.iter().fold((p0, p0, p0), |(min, max, total), &vert| {
+        let (min, max, total) = positions.iter().skip(1).fold((p0, p0, p0), |(min, max, total), &vert| {
             (Vec3::partial_min(min, vert), Vec3::partial_max(max, vert), total + vert)
         });
 
