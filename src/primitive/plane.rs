@@ -36,7 +36,8 @@ impl RayHit for Plane {
             return None;
         }
 
-        let t = (ray.origin() - self.point).dot(self.normal) / dot_dir_normal;
+        // Note that the formula in the graphics codex misses this negative sign
+        let t = -(ray.origin() - self.point).dot(self.normal) / dot_dir_normal;
         if !t_range.contains(&t) {
             return None;
         }
