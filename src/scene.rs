@@ -1,4 +1,4 @@
-use crate::math::{Mat4, Vec3, Rgb};
+use crate::math::{Mat4, Vec3, Rgb, Radians};
 use crate::primitive::Primitive;
 use crate::material::Material;
 use crate::light::Light;
@@ -93,6 +93,12 @@ impl<'a> SceneNode<'a> {
     /// Translate the node by the given vector and return the node
     pub fn translated<V: Into<Vec3>>(mut self, translation: V) -> Self {
         self.set_transform(self.trans.translated_3d(translation));
+        self
+    }
+
+    /// Translate the node by the given vector and return the node
+    pub fn rotated_y(mut self, angle: Radians) -> Self {
+        self.set_transform(self.trans.rotated_y(angle.get()));
         self
     }
 
