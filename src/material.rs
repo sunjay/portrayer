@@ -51,8 +51,8 @@ impl Material {
         // Start with the ambient color since that is always added
         // Need to multiply by the diffuse color because the ambient light is still affected by the
         // color of the object
-        let mut color = scene.ambient() * self.diffuse;
-        for light in scene.lights() {
+        let mut color = scene.ambient * self.diffuse;
+        for light in scene.lights {
             // Vector from hit point to the light source
             // NOTE: This is **flipped** from the actual direction of light from the light source
             let hit_to_light = light.position - hit_point;
@@ -76,7 +76,7 @@ impl Material {
             let mut shadow_t_range = Range {start: EPSILON, end: INFINITY};
 
             // Only add diffuse if not shadowed by another object
-            if shadow_ray.cast(scene.root(), scene, &mut shadow_t_range).is_none() {
+            if shadow_ray.cast(scene.root, &mut shadow_t_range).is_none() {
                 // Want the max diffuse when the light is directly aligned with the surface normal.
                 // Using normal.dot(light_dir) == cos(angle between normal and light)
                 // we can accomplish this effect.
