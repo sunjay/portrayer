@@ -1,11 +1,9 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{EPSILON, Vec3, Mat4};
-#[cfg(feature = "render_bounding_volumes")]
-use crate::math::Vec3Ext;
+use crate::math::Vec3;
 
-use super::Cube;
+use super::bounding_volume::BoundingVolume;
 #[cfg(not(feature = "render_bounding_volumes"))]
 use super::triangle::Triangle;
 
@@ -16,14 +14,8 @@ pub struct Mesh {
     triangles: Vec<(usize, usize, usize)>,
     /// The position of each vertex
     positions: Vec<Vec3>,
-    /// Transforms the bounding volume (a cube) to wrap around the the mesh
-    #[cfg(feature = "render_bounding_volumes")]
-    bounds_trans: Mat4,
-    /// Transforms the ray into the original coordinate system of cube for hit calculations
-    inv_bounds_trans: Mat4,
-    /// Transforms the normal of the hit point back into the mesh coordinate system
-    #[cfg(feature = "render_bounding_volumes")]
-    bounds_normal_trans: Mat4,
+    /// The bounding volume that forms the dimensions of this mesh
+    bounds: Option<BoundingVolume>,
 }
 
 impl<'a> From<&'a tobj::Mesh> for Mesh {
@@ -41,35 +33,11 @@ impl<'a> From<&'a tobj::Mesh> for Mesh {
 
 impl Mesh {
     fn new(positions: Vec<Vec3>, triangles: Vec<(usize, usize, usize)>) -> Self {
-        assert!(!positions.is_empty(), "Meshes must have at least one vertex");
-
-        // Compute bounding cube
-        let p0 = positions[0];
-        let (min, max, total) = positions.iter().fold((p0, p0, p0), |(min, max, total), &vert| {
-            (Vec3::partial_min(min, vert), Vec3::partial_max(max, vert), total + vert)
-        });
-
-        // The true center of the geometry is the average of all the points
-        let center = total / positions.len() as f64;
-
-        let bounds_size = max - min;
-        // Special-case: planes and other 2D objects
-        // Need a non-zero scale because otherwise the matrix is not invertable (and we'll get NaN)
-        let bounds_size = Vec3::partial_max(bounds_size, EPSILON.into());
-
-        let bounds_trans = Mat4::scaling_3d(bounds_size).translated_3d(center);
-        let inv_bounds_trans = bounds_trans.inverted();
-        #[cfg(feature = "render_bounding_volumes")]
-        let bounds_normal_trans = inv_bounds_trans.transposed();
-
+        let bounds = BoundingVolume::new(&positions);
         Self {
             triangles,
             positions,
-            #[cfg(feature = "render_bounding_volumes")]
-            bounds_trans,
-            inv_bounds_trans,
-            #[cfg(feature = "render_bounding_volumes")]
-            bounds_normal_trans,
+            bounds,
         }
     }
 }
@@ -79,12 +47,10 @@ impl RayHit for Mesh {
     fn ray_hit(&self, ray: &Ray, init_t_range: &Range<f64>) -> Option<RayIntersection> {
         // Test the bounding volume first. If it does not get hit we can save a lot of time that
         // we would have spent traversing vertices.
-
-        // Take the ray from its current coordinate system and put it into the local coordinate
-        // system of the bounding volume
-        let local_ray = ray.transformed(self.inv_bounds_trans);
-        if Cube.ray_hit(&local_ray, init_t_range).is_none() {
-            return None;
+        if let Some(bounds) = self.bounds {
+            if !bounds.check_hit(ray, init_t_range) {
+                return None;
+            }
         }
 
         //TODO: Parallelism via rayon
