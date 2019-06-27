@@ -41,11 +41,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let arc = SceneNode::from(vec![
         SceneNode::from(Geometry::new(Cube, &gold))
             .scaled((0.8, 4.0, 0.8))
-            .translated((-2.4, 2.0, 0.0)),
+            .translated((-2.0, 2.0, 0.0)),
 
         SceneNode::from(Geometry::new(Cube, &gold))
             .scaled((0.8, 4.0, 0.8))
-            .translated((1.6, 2.0, 0.0)),
+            .translated((2.0, 2.0, 0.0)),
 
         SceneNode::from(Geometry::new(Sphere, &gold))
             .scaled((4.0, 0.6, 0.6))

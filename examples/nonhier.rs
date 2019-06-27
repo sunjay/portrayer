@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             SceneNode::from(Geometry::new(Cube, &mat4))
                 .scaled(100.0)
-                .translated((-200.0, -125.0, 0.0)),
+                .translated((-150.0, -75.0, 50.0)),
 
             SceneNode::from(Geometry::new(Sphere, &mat3))
                 .scaled(50.0)
