@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::Vec3;
+use crate::math::{EPSILON, Vec3};
 
 use super::plane::Plane;
 
@@ -14,7 +14,10 @@ pub struct Cube;
 
 /// Returns true if the given point is anywhere within the *volume* of the cube
 fn contains(Vec3 {x, y, z}: Vec3) -> bool {
-    -0.5 <= x && x <= 0.5 && -0.5 <= y && y <= 0.5 && -0.5 <= z && z <= 0.5
+    // Need to add epsilon when doing these checks to account for floating point error. Without
+    // this we get lots of "unfilled" spots ("shadow acne") all over the cube and its shadow.
+    let radius = 0.5 + EPSILON;
+    -radius <= x && x <= radius && -radius <= y && y <= radius && -radius <= z && z <= radius
 }
 
 impl RayHit for Cube {
