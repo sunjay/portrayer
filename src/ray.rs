@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat4, Rgb};
-use crate::scene::{Scene, SceneNode, Geometry};
+use crate::scene::{Scene, SceneNode};
 use crate::material::Material;
 
 /// Represents the result of a ray intersection and stores information about it
@@ -68,6 +68,7 @@ impl Ray {
     pub fn cast<'a>(
         &self,
         node: &'a SceneNode,
+        scene: &'a Scene,
         t_range: &mut Range<f64>,
     ) -> Option<(RayIntersection, &'a Material)> {
         // Take the ray from its current coordinate system and put it into the local coordinate
@@ -83,8 +84,8 @@ impl Ray {
         let mut hit_mat = None;
 
         // Check if the ray intersects this node's geometry (if any)
-        if let Some(Geometry {prim, mat}) = node.geometry() {
-            if let Some(mut hit) = prim.ray_hit(&local_ray, t_range) {
+        if let Some(geo) = node.geometry() {
+            if let Some(mut hit) = geo.primitive().ray_hit(&local_ray, t_range) {
                 hit.hit_point = hit.hit_point.transformed_point(trans);
                 hit.normal = hit.normal.transformed_direction(normal_trans);
 
@@ -92,13 +93,13 @@ impl Ray {
                 // than this one
                 t_range.end = hit.ray_parameter;
 
-                hit_mat = Some((hit, *mat));
+                hit_mat = Some((hit, geo.material(scene)));
             }
         }
 
         // Recurse into children and attempt to find a closer match
-        for child in node.children() {
-            if let Some((mut child_hit, child_mat)) = local_ray.cast(child, t_range) {
+        for child in node.children(scene) {
+            if let Some((mut child_hit, child_mat)) = local_ray.cast(child, scene, t_range) {
                 child_hit.hit_point = child_hit.hit_point.transformed_point(trans);
                 child_hit.normal = child_hit.normal.transformed_direction(normal_trans);
 
@@ -115,7 +116,7 @@ impl Ray {
     /// color if no object is hit by this ray.
     pub fn color(&self, scene: &Scene, background: Rgb, recursion_depth: u32) -> Rgb {
         let mut t_range = Range {start: EPSILON, end: INFINITY};
-        let hit = self.cast(&scene.root, &mut t_range);
+        let hit = self.cast(&scene.root(), scene, &mut t_range);
 
         match hit {
             Some((hit, mat)) => mat.hit_color(scene, background, self.direction, hit.hit_point,
