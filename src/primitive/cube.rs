@@ -5,6 +5,10 @@ use crate::math::{EPSILON, Vec3};
 
 use super::plane::Plane;
 
+/// L = length/width/height of the cube
+const L: f64 = 1.0;
+const L2: f64 = L / 2.0;
+
 /// An axis-aligned unit cube with center (0, 0, 0) and width/height/depth 1.0
 ///
 /// It is expected that this cube will be used via affine transformations on the node that
@@ -16,7 +20,7 @@ pub struct Cube;
 fn contains(Vec3 {x, y, z}: Vec3) -> bool {
     // Need to add epsilon when doing these checks to account for floating point error. Without
     // this we get lots of "unfilled" spots ("shadow acne") all over the cube and its shadow.
-    let radius = 0.5 + EPSILON;
+    let radius = L2 + EPSILON;
     -radius <= x && x <= radius && -radius <= y && y <= radius && -radius <= z && z <= radius
 }
 
@@ -25,17 +29,17 @@ impl RayHit for Cube {
         // Define the six faces of a cube
         static FACES: [Plane; 6] = [
             // Right
-            Plane {point: Vec3 {x: 0.5, y: 0.0, z: 0.0}, normal: Vec3 {x: 1.0, y: 0.0, z: 0.0}},
+            Plane {point: Vec3 {x: L2, y: 0.0, z: 0.0}, normal: Vec3 {x: 1.0, y: 0.0, z: 0.0}},
             // Left
-            Plane {point: Vec3 {x: -0.5, y: 0.0, z: 0.0}, normal: Vec3 {x: -1.0, y: 0.0, z: 0.0}},
+            Plane {point: Vec3 {x: -L2, y: 0.0, z: 0.0}, normal: Vec3 {x: -1.0, y: 0.0, z: 0.0}},
             // Top
-            Plane {point: Vec3 {x: 0.0, y: 0.5, z: 0.0}, normal: Vec3 {x: 0.0, y: 1.0, z: 0.0}},
+            Plane {point: Vec3 {x: 0.0, y: L2, z: 0.0}, normal: Vec3 {x: 0.0, y: 1.0, z: 0.0}},
             // Bottom
-            Plane {point: Vec3 {x: 0.0, y: -0.5, z: 0.0}, normal: Vec3 {x: 0.0, y: -1.0, z: 0.0}},
+            Plane {point: Vec3 {x: 0.0, y: -L2, z: 0.0}, normal: Vec3 {x: 0.0, y: -1.0, z: 0.0}},
             // Near
-            Plane {point: Vec3 {x: 0.0, y: 0.0, z: 0.5}, normal: Vec3 {x: 0.0, y: 0.0, z: 1.0}},
+            Plane {point: Vec3 {x: 0.0, y: 0.0, z: L2}, normal: Vec3 {x: 0.0, y: 0.0, z: 1.0}},
             // Far
-            Plane {point: Vec3 {x: 0.0, y: 0.0, z: -0.5}, normal: Vec3 {x: 0.0, y: 0.0, z: -1.0}},
+            Plane {point: Vec3 {x: 0.0, y: 0.0, z: -L2}, normal: Vec3 {x: 0.0, y: 0.0, z: -1.0}},
         ];
 
         //TODO: Experiment with parallelism via rayon (might not be worth it for 6 checks)
