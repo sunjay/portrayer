@@ -1,5 +1,4 @@
 use crate::math::{Vec3, Vec3Ext, Mat4, Radians};
-use crate::render::{Target, TargetInfo};
 use crate::ray::Ray;
 
 #[derive(Debug, Clone, Copy)]
@@ -32,11 +31,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new<T: Target>(cam: CameraSettings, target: &T) -> Self {
-        let TargetInfo {width, height, ..} = target.target_info();
-        let width = width as f64;
-        let height = height as f64;
-
+    pub fn new(cam: CameraSettings, (width, height): (f64, f64)) -> Self {
         Self {
             eye: cam.eye,
             // Need to invert because look_at returns a world-to-view matrix by default
@@ -50,7 +45,7 @@ impl Camera {
     }
 
     /// Returns the primary ray at the given pixel (x, y) position
-    pub fn ray_at(&self, (x, y): (usize, usize)) -> Ray {
+    pub fn ray_at(&self, (x, y): (f64, f64)) -> Ray {
         // NDC = Normalized Device Coordinates
 
         // This function goes through 4 coordinate systems:
@@ -65,14 +60,12 @@ impl Camera {
         // w = width, h = height, 3rd axis comes out of the screen towards you
 
         // Ray tracing NDC is between 0 and 1 (inclusive)
-        // +0.5 so in the middle of the pixel square
-        let pixel_ndc_y = (y as f64 + 0.5) / self.height;
+        let pixel_ndc_y = y / self.height;
         // Map to -1 to 1 (view space) (& flip axis)
         let pixel_view_y = (1.0 - 2.0*pixel_ndc_y) * self.fov_factor;
 
         // Ray tracing NDC is between 0 and 1 (inclusive)
-        // +0.5 so in the middle of the pixel square
-        let pixel_ndc_x = (x as f64 + 0.5) / self.width;
+        let pixel_ndc_x = x / self.width;
         // Map to -1 to 1 (view space)
         // Let y remain fixed, but scale x by the aspect ratio to get the right dimensions
         // (changes the range of x to be bigger than y if the aspect ratio > 1.0

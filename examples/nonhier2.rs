@@ -13,7 +13,7 @@ use portrayer::{
     primitive::{Sphere, Mesh, Cube},
     material::Material,
     light::Light,
-    render::Target,
+    render::Render,
     camera::CameraSettings,
     math::{Radians, Vec3, Rgb},
 };
@@ -110,7 +110,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut image = RgbImage::new(256, 256);
 
-    image.draw(&scene, cam,
+    image.render(&scene, cam,
         |_, y| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - y) + Rgb::blue() * y);
 
     Ok(image.save("nonhier2.png")?)

@@ -8,7 +8,7 @@ use portrayer::{
     primitive::Sphere,
     material::Material,
     light::Light,
-    render::Target,
+    render::Render,
     camera::CameraSettings,
     math::{Radians, Vec3, Rgb},
 };
@@ -87,7 +87,7 @@ fn main() -> io::Result<()> {
 
     let mut image = RgbImage::new(256, 256);
 
-    image.draw(&scene, cam,
+    image.render(&scene, cam,
         |_, y| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - y) + Rgb::blue() * y);
 
     image.save("simple.png")
