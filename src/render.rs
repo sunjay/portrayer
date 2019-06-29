@@ -6,6 +6,7 @@ use crate::math::Rgb;
 use crate::scene::Scene;
 use crate::camera::{CameraSettings, Camera};
 use crate::texture::Texture;
+use crate::reporter::Reporter;
 
 /// An extension trait for adding a render method to supported render targets
 ///
@@ -14,7 +15,12 @@ use crate::texture::Texture;
 /// go left to right on the x axis and top to bottom on the y axis.
 pub trait Render {
     /// Draw the given scene to this target using the given camera settings and background texture
-    fn render<T: Texture + Send + Sync>(&mut self, scene: &Scene, camera: CameraSettings, background: T);
+    fn render<R: Reporter + Send + Sync, T: Texture + Send + Sync>(
+        &mut self,
+        scene: &Scene,
+        camera: CameraSettings,
+        background: T,
+    );
 }
 
 /// Ray traces a single pixel through the scene
@@ -35,10 +41,17 @@ fn render_single_pixel<T: Texture>((x, y): (f64, f64), scene: &Scene, camera: &C
 }
 
 impl Render for image::RgbImage {
-    fn render<T: Texture + Send + Sync>(&mut self, scene: &Scene, camera: CameraSettings, background: T) {
+    fn render<R: Reporter + Send + Sync, T: Texture + Send + Sync>(
+        &mut self,
+        scene: &Scene,
+        camera: CameraSettings,
+        background: T,
+    ) {
         let width = self.width() as f64;
         let height = self.height() as f64;
         let camera = Camera::new(camera, (width, height));
+
+        let reporter = R::new((self.width() * self.height()) as u64);
 
         self.par_chunks_mut(3)
             .map(image::Rgb::from_slice_mut)
@@ -57,6 +70,8 @@ impl Render for image::RgbImage {
                     (color.g * 255.0) as u8,
                     (color.b * 255.0) as u8,
                 ]);
+
+                reporter.report_finished_pixels(1);
             });
     }
 }

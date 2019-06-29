@@ -7,3 +7,4 @@ pub mod primitive;
 pub mod scene;
 pub mod render;
 pub mod texture;
+pub mod reporter;
