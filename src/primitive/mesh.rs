@@ -56,8 +56,8 @@ impl Mesh {
         // Need a non-zero scale because otherwise the matrix is not invertable (and we'll get NaN)
         let bounds_size = Vec3::partial_max(bounds_size, EPSILON.into());
 
-        // The center of the bounding volume is the bottom corner plus half its size
-        let center = bounds_size / 2.0 + min;
+        // Find the center of the bounding volume
+        let center = (min + max) / 2.0;
 
         let bounds_trans = Mat4::scaling_3d(bounds_size).translated_3d(center);
         let inv_bounds_trans = bounds_trans.inverted();
