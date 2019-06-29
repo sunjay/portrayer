@@ -47,17 +47,17 @@ impl Mesh {
 
         // Compute bounding cube
         let p0 = positions[0];
-        let (min, max, total) = positions.iter().skip(1).fold((p0, p0, p0), |(min, max, total), &vert| {
-            (Vec3::partial_min(min, vert), Vec3::partial_max(max, vert), total + vert)
+        let (min, max) = positions.iter().skip(1).fold((p0, p0), |(min, max), &vert| {
+            (Vec3::partial_min(min, vert), Vec3::partial_max(max, vert))
         });
-
-        // The true center of the geometry is the average of all the points
-        let center = total / positions.len() as f64;
 
         let bounds_size = max - min;
         // Special-case: planes and other 2D objects
         // Need a non-zero scale because otherwise the matrix is not invertable (and we'll get NaN)
         let bounds_size = Vec3::partial_max(bounds_size, EPSILON.into());
+
+        // The center of the bounding volume is the bottom corner plus half its size
+        let center = bounds_size / 2.0 + min;
 
         let bounds_trans = Mat4::scaling_3d(bounds_size).translated_3d(center);
         let inv_bounds_trans = bounds_trans.inverted();
