@@ -1,4 +1,8 @@
 //! A simple scene with some miscellaneous geometry.
+//!
+//! This file is very similar to nonhier.rs, but interposes an additional transformation on the
+//! root node. The translation moves the scene, and the position of the camera and lights have been
+//! modified accordingly.
 
 use std::error::Error;
 use std::path::Path;
@@ -79,17 +83,17 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .scaled(100.0)
                 .translated((-150.0, 200.0, -100.0))
                 .into(),
-        ]).into(),
+        ]).translated((0.0, 0.0, -800.0)).into(),
         lights: vec![
             // white_light
             Light {
-                position: Vec3 {x: -100.0, y: 150.0, z: 400.0},
+                position: Vec3 {x: -100.0, y: 150.0, z: -400.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
                 falloff: Default::default(),
             },
             // magenta_light
             Light {
-                position: Vec3 {x: 400.0, y: 100.0, z: 150.0},
+                position: Vec3 {x: 400.0, y: 100.0, z: -650.0},
                 color: Rgb {r: 0.7, g: 0.0, b: 0.7},
                 falloff: Default::default(),
             },
@@ -98,8 +102,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let cam = CameraSettings {
-        eye: (0.0, 0.0, 800.0).into(),
-        center: (0.0, 0.0, 0.0).into(),
+        eye: (0.0, 0.0, 0.0).into(),
+        center: (0.0, 0.0, -1.0).into(),
         up: Vec3::up(),
         fovy: Radians::from_degrees(50.0),
     };
@@ -109,5 +113,5 @@ fn main() -> Result<(), Box<dyn Error>> {
     image.draw(&scene, cam,
         |_, y| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - y) + Rgb::blue() * y);
 
-    Ok(image.save("nonhier.png")?)
+    Ok(image.save("nonhier2.png")?)
 }
