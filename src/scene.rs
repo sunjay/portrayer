@@ -98,6 +98,12 @@ impl SceneNode {
         self.children.iter()
     }
 
+    /// Add the given children to this node and return the updated node
+    pub fn with_children<I: IntoIterator<Item=Arc<SceneNode>>>(mut self, children: I) -> Self {
+        self.children.extend(children);
+        self
+    }
+
     /// Scale the node by the given vector and return the node
     pub fn scaled<V: Into<Vec3>>(mut self, scale: V) -> Self {
         self.set_transform(self.trans.scaled_3d(scale));
@@ -108,6 +114,14 @@ impl SceneNode {
     pub fn translated<V: Into<Vec3>>(mut self, translation: V) -> Self {
         self.set_transform(self.trans.translated_3d(translation));
         self
+    }
+
+    /// Rotate about the x-axis, then z-axis, then y-axis by the given angles
+    ///
+    /// Useful for converting from Blender XYZ angles to our right-handed coordinate system
+    pub fn rotated_xzy<V: Into<vek::Vec3<Radians>>>(self, angles: V) -> Self {
+        let vek::Vec3 {x, y, z} = angles.into();
+        self.rotated_x(x).rotated_z(z).rotated_y(y)
     }
 
     /// Rotate about the x-axis by the given angle
