@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 
 /// Used to report progress about rendering
 pub trait Reporter {
@@ -29,6 +29,8 @@ impl Reporter for RenderProgress {
         let stop_t = stop.clone();
         let thread_handle = thread::spawn(move || {
             let progress = ProgressBar::new(pixels);
+            progress.set_style(ProgressStyle::default_bar()
+                .template("[{elapsed_precise}] {wide_bar:.cyan/blue} {percent}% (eta: {eta})"));
 
             while !stop_t.load(Ordering::SeqCst) {
                 progress.set_position(pixels_completed_t.load(Ordering::SeqCst));
