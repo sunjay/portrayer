@@ -30,12 +30,20 @@ fn main() -> Result<(), Box<dyn Error>> {
         shininess: 25.0,
         ..Material::default()
     });
-    let texture = Arc::new(Texture::from(ImageTexture::open("assets/earth.jpg")?));
+    let earth = Arc::new(Texture::from(ImageTexture::open("assets/earth.jpg")?));
     let mat_tex = Arc::new(Material {
         diffuse: Rgb {r: 0.506, g: 0.78, b: 0.518},
         specular: Rgb {r: 0.5, g: 0.5, b: 0.5},
         shininess: 25.0,
-        texture: Some(texture),
+        texture: Some(earth),
+        ..Material::default()
+    });
+    let earth_cubemap = Arc::new(Texture::from(ImageTexture::open("assets/earth_cube.png")?));
+    let mat_tex_cube = Arc::new(Material {
+        diffuse: Rgb {r: 0.506, g: 0.78, b: 0.518},
+        specular: Rgb {r: 0.5, g: 0.5, b: 0.5},
+        shininess: 25.0,
+        texture: Some(earth_cubemap),
         ..Material::default()
     });
 
@@ -53,7 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .scaled((8.0, 1.0, 2.0))
         .rotated_x(Radians::from_degrees(90.0))
         .translated((0.0, 2.0, -2.0))
-        .with_child(SceneNode::from(Geometry::new(Cube, mat_wood.clone()))
+        .with_child(SceneNode::from(Geometry::new(Cube, mat_tex_cube.clone()))
             .scaled((1.4/8.0, 1.4/1.0, 1.4/2.0))
             .translated((-2.0/8.0, 2.0, 0.0)))
         .with_child(SceneNode::from(Geometry::new(Sphere, mat_tex.clone()))
