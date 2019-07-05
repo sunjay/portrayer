@@ -1,8 +1,10 @@
 use std::ops::Range;
+use std::sync::Arc;
 
-use crate::math::{EPSILON, INFINITY, Vec3, Rgb};
+use crate::math::{EPSILON, INFINITY, Vec3, Uv, Rgb};
 use crate::scene::Scene;
 use crate::ray::Ray;
+use crate::texture::{Texture, TextureSource};
 
 // Controls the maximum ray recursion depth
 const MAX_RECURSION_DEPTH: u32 = 10;
@@ -22,6 +24,8 @@ pub struct Material {
     pub shininess: f64,
     /// The reflectivity of this material, used to blend in the color from the reflected ray
     pub reflectivity: f64,
+    /// The texture to sample the diffuse color from
+    pub texture: Option<Arc<Texture>>,
 }
 
 impl Material {
@@ -34,6 +38,7 @@ impl Material {
         ray_dir: Vec3,
         hit_point: Vec3,
         normal: Vec3,
+        tex_coord: Option<Uv>,
         recursion_depth: u32,
     ) -> Rgb {
         if recursion_depth > MAX_RECURSION_DEPTH {
@@ -48,10 +53,18 @@ impl Material {
         // Need to normalize because the normal provided is not guaranteed to be a unit vector
         let normal = normal.normalized();
 
+        let diffuse_color = match &self.texture {
+            None => self.diffuse,
+            Some(tex) => match tex_coord {
+                Some(tex_coord) => tex.at(tex_coord),
+                None => panic!("Texturing is not supported for this primitive!"),
+            },
+        };
+
         // Start with the ambient color since that is always added
         // Need to multiply by the diffuse color because the ambient light is still affected by the
         // color of the object
-        let mut color = scene.ambient * self.diffuse;
+        let mut color = scene.ambient * diffuse_color;
         for light in &scene.lights {
             // Vector from hit point to the light source
             // NOTE: This is **flipped** from the actual direction of light from the light source
@@ -82,7 +95,7 @@ impl Material {
                 // we can accomplish this effect.
                 // Need to max with zero so we can ignore backface contributions
                 let normal_light = normal.dot(light_dir).max(0.0);
-                let diffuse = self.diffuse * light.color * normal_light;
+                let diffuse = diffuse_color * light.color * normal_light;
 
                 // Check if there is any specular component of the material. Allows us to avoid
                 // some calculations for non-specular materials.

@@ -123,7 +123,7 @@ impl Ray {
 
         match hit {
             Some((hit, mat)) => mat.hit_color(scene, background, self.direction, hit.hit_point,
-                hit.normal, recursion_depth),
+                hit.normal, hit.tex_coord, recursion_depth),
             None => background,
         }
     }

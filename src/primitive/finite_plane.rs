@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{EPSILON, Vec3};
+use crate::math::{EPSILON, Vec3, Uv};
 
 use super::Plane;
 
@@ -27,7 +27,11 @@ impl RayHit for FinitePlane {
     fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
         Plane {normal: Vec3::up(), point: Vec3::zero()}
             .ray_hit(ray, t_range)
-            .and_then(|hit| if contains(hit.hit_point) {
+            .and_then(|mut hit| if contains(hit.hit_point) {
+                hit.tex_coord = Some(Uv {
+                    u: hit.hit_point.x + L2,
+                    v: hit.hit_point.z + L2,
+                });
                 Some(hit)
             } else {
                 None
