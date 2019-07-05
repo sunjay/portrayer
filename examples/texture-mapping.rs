@@ -56,26 +56,24 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .translated((0.0, 0.27/0.5, 0.0))
         ));
 
-    // Make sure texture mapping works well with hierarchical modelling
-    let textured = Arc::new(SceneNode::from(Geometry::new(FinitePlane, mat_tex.clone()))
-        .scaled((8.0, 1.0, 2.0))
-        .rotated_x(Radians::from_degrees(90.0))
-        .translated((0.0, 2.0, -2.0))
-        .with_child(SceneNode::from(Geometry::new(Cube, mat_tex_cube.clone()))
-            .scaled((1.4/8.0, 1.4/1.0, 1.4/2.0))
-            .translated((-2.0/8.0, 2.0, 0.0)))
-        .with_child(SceneNode::from(Geometry::new(Sphere, mat_tex.clone()))
-            // Undo transformations at the parent so model is correctly rotated
-            .translated((0.0, -2.0, 2.0))
-            .rotated_x(Radians::from_degrees(-90.0))
-            .scaled((1.0/8.0, 1.0/1.0, 1.0/2.0))
-            // Move back to the right position
-            .translated((2.0/8.0, 0.0, -1.0))));
-
     let scene = Scene {
         root: SceneNode::from(vec![
             mirror,
-            textured,
+
+            SceneNode::from(Geometry::new(FinitePlane, mat_tex.clone()))
+                .scaled((8.0, 1.0, 2.0))
+                .rotated_x(Radians::from_degrees(90.0))
+                .translated((0.0, 2.0, -2.0))
+                .into(),
+
+            SceneNode::from(Geometry::new(Cube, mat_tex_cube.clone()))
+                .scaled(1.4)
+                .translated((-2.0, 2.0, 0.0))
+                .into(),
+
+            SceneNode::from(Geometry::new(Sphere, mat_tex.clone()))
+                .translated((2.0, 2.0, 0.0))
+                .into(),
         ]).into(),
 
         lights: vec![
