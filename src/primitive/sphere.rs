@@ -1,7 +1,8 @@
+use std::f64::consts::PI;
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::Quadratic;
+use crate::math::{Quadratic, Uv};
 
 /// A sphere with center (0, 0, 0) and radius 1.0
 ///
@@ -48,9 +49,16 @@ impl RayHit for Sphere {
             ray_parameter: t,
             hit_point,
             // Normal of sphere is the hit point on the sphere - the center (0, 0, 0)
-            // Note that we do not divide by the radius because the radius is 1.0
+            // Note that we do divide by the radius because the radius is 1.0
             normal: hit_point,
-            tex_coord: None,
+            tex_coord: Some(Uv {
+                // Using spherical coordinates.
+                // Formula from Fundamentals of Computer Graphics, 4th ed. Chapter 11.2.1
+                // The addition/subtraction and the division maps the angles to the 0.0 to 1.0 range
+                // Signs of x, y, z adjusted to account for axis convention
+                u: (PI + (-hit_point.z).atan2(hit_point.x)) / (2.0 * PI),
+                v: hit_point.y.acos() / PI,
+            }),
         })
     }
 }

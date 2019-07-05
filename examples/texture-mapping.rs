@@ -56,9 +56,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         .with_child(SceneNode::from(Geometry::new(Cube, mat_wood.clone()))
             .scaled((1.4/8.0, 1.4/1.0, 1.4/2.0))
             .translated((-2.0/8.0, 2.0, 0.0)))
-        .with_child(SceneNode::from(Geometry::new(Sphere, mat_wood.clone()))
+        .with_child(SceneNode::from(Geometry::new(Sphere, mat_tex.clone()))
+            // Undo transformations at the parent so model is correctly rotated
+            .translated((0.0, -2.0, 2.0))
+            .rotated_x(Radians::from_degrees(-90.0))
             .scaled((1.0/8.0, 1.0/1.0, 1.0/2.0))
-            .translated((2.0/8.0, 2.0, 0.0))));
+            // Move back to the right position
+            .translated((2.0/8.0, 0.0, -1.0))));
 
     let scene = Scene {
         root: SceneNode::from(vec![
