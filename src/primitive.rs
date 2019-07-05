@@ -3,12 +3,14 @@ mod triangle;
 mod mesh;
 mod plane;
 mod cube;
+mod finite_plane;
 
 pub use sphere::*;
 pub use triangle::*;
 pub use mesh::*;
 pub use plane::*;
 pub use cube::*;
+pub use finite_plane::*;
 
 use std::ops::Range;
 
@@ -52,6 +54,7 @@ primitive_enum! {
         Triangle(Triangle),
         Mesh(Mesh),
         Plane(Plane),
+        FinitePlane(FinitePlane),
         Cube(Cube),
     }
 }
