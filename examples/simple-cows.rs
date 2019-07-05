@@ -2,12 +2,11 @@
 // "Assume that cows are spheres..."
 
 use std::error::Error;
-use std::path::Path;
 use std::sync::Arc;
 
 use portrayer::{
     scene::{Scene, SceneNode, Geometry},
-    primitive::{Sphere, Mesh, Shading, Cube},
+    primitive::{Sphere, Mesh, MeshData, Shading, Cube},
     material::Material,
     light::Light,
     render::Render,
@@ -37,8 +36,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         reflectivity: 0.0,
     });
 
-    let plane = &tobj::load_obj(Path::new("assets/plane.obj"))?.0[0].mesh;
-    let buckyball = &tobj::load_obj(Path::new("assets/buckyball.obj"))?.0[0].mesh;
+    let plane = Arc::new(MeshData::load_obj("assets/plane.obj")?);
+    let buckyball = Arc::new(MeshData::load_obj("assets/buckyball.obj")?);
 
     // The arch
     let arc = Arc::new(SceneNode::from(vec![

@@ -2,12 +2,11 @@
 //! Author: Sunjay Varma
 
 use std::error::Error;
-use std::path::Path;
 use std::sync::Arc;
 
 use portrayer::{
     scene::{Scene, SceneNode, Geometry},
-    primitive::{Sphere, Mesh, Shading, Cube},
+    primitive::{Sphere, Mesh, MeshData, Shading, Cube},
     material::Material,
     light::Light,
     render::Render,
@@ -63,8 +62,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         reflectivity: 0.0,
     });
 
-    let monkey = &tobj::load_obj(Path::new("assets/monkey.obj"))?.0[0].mesh;
-    let plane = &tobj::load_obj(Path::new("assets/plane.obj"))?.0[0].mesh;
+    let monkey = Arc::new(MeshData::load_obj("assets/monkey.obj")?);
+    let plane = Arc::new(MeshData::load_obj("assets/plane.obj")?);
 
     let mirror = SceneNode::from(vec![
         // mirror frame

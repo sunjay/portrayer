@@ -1,12 +1,11 @@
 //! Test for hierarchical ray-tracers.
 
 use std::error::Error;
-use std::path::Path;
 use std::sync::Arc;
 
 use portrayer::{
     scene::{Scene, SceneNode, Geometry},
-    primitive::{Sphere, Mesh, Shading, Cube},
+    primitive::{Sphere, Mesh, MeshData, Shading, Cube},
     material::Material,
     light::Light,
     render::Render,
@@ -36,8 +35,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         reflectivity: 0.0,
     });
 
-    let plane = &tobj::load_obj(Path::new("assets/plane.obj"))?.0[0].mesh;
-    let dodeca = &tobj::load_obj(Path::new("assets/dodeca.obj"))?.0[0].mesh;
+    let plane = Arc::new(MeshData::load_obj("assets/plane.obj")?);
+    let dodeca = Arc::new(MeshData::load_obj("assets/dodeca.obj")?);
 
     // The arc
     let arc = SceneNode::from(vec![
