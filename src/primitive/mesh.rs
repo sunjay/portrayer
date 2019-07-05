@@ -29,7 +29,6 @@ pub struct MeshData {
     positions: Vec<Vec3>,
     /// Vertex normals. Only used if shading == Smooth
     normals: Vec<Vec3>,
-    /// The type of shading to use when computing the normal
     /// Transforms the bounding volume (a cube) to wrap around the the mesh
     #[cfg(feature = "render_bounding_volumes")]
     bounds_trans: Mat4,
