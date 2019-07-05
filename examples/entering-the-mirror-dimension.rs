@@ -12,7 +12,7 @@ use portrayer::{
     render::Render,
     reporter::RenderProgress,
     camera::CameraSettings,
-    math::{Radians, Vec3, Rgb},
+    math::{Radians, Vec3, Uv, Rgb},
 };
 use image::RgbImage;
 
@@ -184,7 +184,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut image = RgbImage::new(800, 600);
 
     image.render::<RenderProgress, _>(&scene, cam,
-        |_, y| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - y) + Rgb::blue() * y);
+        |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
     Ok(image.save("reflection.png")?)
 }

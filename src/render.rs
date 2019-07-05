@@ -2,10 +2,10 @@ use vek::ops::Clamp;
 use rayon::prelude::*;
 use image::Pixel;
 
-use crate::math::Rgb;
+use crate::math::{Uv, Rgb};
 use crate::scene::Scene;
 use crate::camera::{CameraSettings, Camera};
-use crate::texture::Texture;
+use crate::texture::TextureSource;
 use crate::reporter::Reporter;
 
 /// An extension trait for adding a render method to supported render targets
@@ -15,7 +15,7 @@ use crate::reporter::Reporter;
 /// go left to right on the x axis and top to bottom on the y axis.
 pub trait Render {
     /// Draw the given scene to this target using the given camera settings and background texture
-    fn render<R: Reporter + Send + Sync, T: Texture + Send + Sync>(
+    fn render<R: Reporter + Send + Sync, T: TextureSource + Send + Sync>(
         &mut self,
         scene: &Scene,
         camera: CameraSettings,
@@ -24,10 +24,13 @@ pub trait Render {
 }
 
 /// Ray traces a single pixel through the scene
-fn render_single_pixel<T: Texture>((x, y): (f64, f64), scene: &Scene, camera: &Camera, width: f64, height: f64, background: &T) -> Rgb {
+fn render_single_pixel<T: TextureSource>((x, y): (f64, f64), scene: &Scene, camera: &Camera, width: f64, height: f64, background: &T) -> Rgb {
     let ray = camera.ray_at((x, y));
 
-    let background_color = background.at(x as f64 / width, y as f64 / height);
+    let background_color = background.at(Uv {
+        u: x as f64 / width,
+        v: y as f64 / height,
+    });
     let color = ray.color(scene, background_color, 0);
 
     // Gamma correction to ensure that image colors are closer to what we want them
@@ -41,7 +44,7 @@ fn render_single_pixel<T: Texture>((x, y): (f64, f64), scene: &Scene, camera: &C
 }
 
 impl Render for image::RgbImage {
-    fn render<R: Reporter + Send + Sync, T: Texture + Send + Sync>(
+    fn render<R: Reporter + Send + Sync, T: TextureSource + Send + Sync>(
         &mut self,
         scene: &Scene,
         camera: CameraSettings,
