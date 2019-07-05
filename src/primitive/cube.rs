@@ -26,31 +26,38 @@ fn contains(Vec3 {x, y, z}: Vec3) -> bool {
 
 impl RayHit for Cube {
     fn ray_hit(&self, ray: &Ray, init_t_range: &Range<f64>) -> Option<RayIntersection> {
-        // Define the six faces of a cube and each face's texture coordinate offset
+        // Define the six faces of a cube and the conversion to each face's texture coordinate
+        // system: (plane, axis_direction, texture_offset)
         //
         // Texture coordinate offset comes from the cubemap being a 4x3 grid:
-        // For a reference image: https://learnopengl.com/Advanced-OpenGL/Cubemaps
         // Each offset can be calculated from (col * 1/4, row * 1/3) where col = 0..=2 and row = 0..=3
-        static FACES: [(Plane, Uv); 6] = [
+        // For a reference image: https://learnopengl.com/Advanced-OpenGL/Cubemaps
+        static FACES: [(Plane, Uv, Uv); 6] = [
             // Right
-            (Plane {point: Vec3 {x: L2, y: 0.0, z: 0.0}, normal: Vec3 {x: 1.0, y: 0.0, z: 0.0}}, Uv {u: 1.0/2.0, v: 1.0/3.0}),
+            (Plane {point: Vec3 {x: L2, y: 0.0, z: 0.0}, normal: Vec3 {x: 1.0, y: 0.0, z: 0.0}},
+                Uv {u: -1.0, v: 1.0}, Uv {u: 1.0/2.0, v: 1.0/3.0}),
             // Left
-            (Plane {point: Vec3 {x: -L2, y: 0.0, z: 0.0}, normal: Vec3 {x: -1.0, y: 0.0, z: 0.0}}, Uv {u: 0.0, v: 1.0/3.0}),
+            (Plane {point: Vec3 {x: -L2, y: 0.0, z: 0.0}, normal: Vec3 {x: -1.0, y: 0.0, z: 0.0}},
+                Uv {u: 1.0, v: 1.0}, Uv {u: 0.0, v: 1.0/3.0}),
             // Top
-            (Plane {point: Vec3 {x: 0.0, y: L2, z: 0.0}, normal: Vec3 {x: 0.0, y: 1.0, z: 0.0}}, Uv {u: 1.0/4.0, v: 0.0}),
+            (Plane {point: Vec3 {x: 0.0, y: L2, z: 0.0}, normal: Vec3 {x: 0.0, y: 1.0, z: 0.0}},
+                Uv {u: 1.0, v: -1.0}, Uv {u: 1.0/4.0, v: 0.0}),
             // Bottom
-            (Plane {point: Vec3 {x: 0.0, y: -L2, z: 0.0}, normal: Vec3 {x: 0.0, y: -1.0, z: 0.0}}, Uv {u: 1.0/4.0, v: 2.0/3.0}),
+            (Plane {point: Vec3 {x: 0.0, y: -L2, z: 0.0}, normal: Vec3 {x: 0.0, y: -1.0, z: 0.0}},
+                Uv {u: 1.0, v: 1.0}, Uv {u: 1.0/4.0, v: 2.0/3.0}),
             // Near
-            (Plane {point: Vec3 {x: 0.0, y: 0.0, z: L2}, normal: Vec3 {x: 0.0, y: 0.0, z: 1.0}}, Uv {u: 1.0/4.0, v: 1.0/3.0}),
+            (Plane {point: Vec3 {x: 0.0, y: 0.0, z: L2}, normal: Vec3 {x: 0.0, y: 0.0, z: 1.0}},
+                Uv {u: 1.0, v: 1.0}, Uv {u: 1.0/4.0, v: 1.0/3.0}),
             // Far
-            (Plane {point: Vec3 {x: 0.0, y: 0.0, z: -L2}, normal: Vec3 {x: 0.0, y: 0.0, z: -1.0}}, Uv {u: 3.0/4.0, v: 1.0/3.0}),
+            (Plane {point: Vec3 {x: 0.0, y: 0.0, z: -L2}, normal: Vec3 {x: 0.0, y: 0.0, z: -1.0}},
+                Uv {u: -1.0, v: 1.0}, Uv {u: 3.0/4.0, v: 1.0/3.0}),
         ];
 
         //TODO: Experiment with parallelism via rayon (might not be worth it for 6 checks)
 
         // Find the nearest intersection
         let mut t_range = init_t_range.clone();
-        FACES.iter().fold(None, |hit, (plane, uv_offset)| {
+        FACES.iter().fold(None, |hit, (plane, uv_axis, uv_offset)| {
             match plane.ray_hit(ray, &t_range) {
                 // Need to check if the cube actually contains the hit point since each
                 // plane is infinite
@@ -58,18 +65,19 @@ impl RayHit for Cube {
                     // Compute texture coordinate by finding 2D intersection coordinate on cube face
 
                     // Get the uv coordinate on the face by finding the right set of two points
+                    let hit_p = p_hit.hit_point;
                     let face_uv = match plane.normal {
-                        n if n.x != 0.0 => Uv {u: p_hit.hit_point.z, v: p_hit.hit_point.y},
-                        n if n.y != 0.0 => Uv {u: p_hit.hit_point.x, v: p_hit.hit_point.z},
-                        n if n.z != 0.0 => Uv {u: p_hit.hit_point.x, v: p_hit.hit_point.y},
+                        n if n.x != 0.0 => Uv {u: hit_p.z, v: hit_p.y},
+                        n if n.y != 0.0 => Uv {u: hit_p.x, v: hit_p.z},
+                        n if n.z != 0.0 => Uv {u: hit_p.x, v: hit_p.y},
                         _ => unreachable!(),
                     };
 
                     // Convert face to normalized image coordinate system with +x to the right and
                     // +y down
                     let norm_uv = Uv {
-                        u: face_uv.u + L2,
-                        v: L2 - face_uv.v,
+                        u: face_uv.u * uv_axis.u + L2,
+                        v: L2 - face_uv.v * uv_axis.v,
                     };
 
                     // Convert from the coordinate system of this particular face texture to the
