@@ -44,6 +44,7 @@ impl RayHit for Plane {
             ray_parameter: t,
             hit_point: ray.at(t),
             normal: self.normal,
+            tex_coord: None,
         })
     }
 }

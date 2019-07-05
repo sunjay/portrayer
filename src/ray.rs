@@ -1,7 +1,7 @@
 use std::ops::Range;
 use std::sync::Arc;
 
-use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat4, Rgb};
+use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat4, Rgb, Uv};
 use crate::scene::{Scene, SceneNode, Geometry};
 use crate::material::Material;
 
@@ -20,6 +20,9 @@ pub struct RayIntersection {
     /// floating point correctness. (Normalizing too many times accrues too much floating point
     /// error.) Make sure you normalize when it matters.
     pub normal: Vec3,
+
+    /// The texture coordinate of the hit point (if any)
+    pub tex_coord: Option<Uv>,
 }
 
 pub trait RayHit {

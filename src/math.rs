@@ -21,6 +21,8 @@ pub type Aabb = vek::Aabb<f64>;
 pub type Rgba = vek::Rgba<f64>;
 pub type Rgb = vek::Rgb<f64>;
 
+pub type Uv = vek::Uv<f64>;
+
 /// This is an "extension trait". It allows me to add methods to structs I did not define.
 pub trait Vec3Ext {
     /// Interprets this as a point and applies the given transformation matrix
