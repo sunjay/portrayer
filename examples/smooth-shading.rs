@@ -30,8 +30,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         ..Material::default()
     });
     let mat_monkey = Arc::new(Material {
-        diffuse: Rgb {r: 0.78, g: 0.784, b: 0.933},
-        specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
+        diffuse: Rgb {r: 0.68, g: 0.784, b: 0.633},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
         ..Material::default()
     });
