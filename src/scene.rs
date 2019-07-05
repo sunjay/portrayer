@@ -98,6 +98,12 @@ impl SceneNode {
         self.children.iter()
     }
 
+    /// Add the given child to this node and return the updated node
+    pub fn with_child<C: Into<Arc<SceneNode>>>(mut self, child: C) -> Self {
+        self.children.push(child.into());
+        self
+    }
+
     /// Add the given children to this node and return the updated node
     pub fn with_children<I: IntoIterator<Item=Arc<SceneNode>>>(mut self, children: I) -> Self {
         self.children.extend(children);
