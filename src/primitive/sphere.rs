@@ -48,7 +48,7 @@ impl RayHit for Sphere {
             ray_parameter: t,
             hit_point,
             // Normal of sphere is the hit point on the sphere - the center (0, 0, 0)
-            // Note that we do divide by the radius because the radius is 1.0
+            // Note that we do not divide by the radius because the radius is 1.0
             normal: hit_point,
             tex_coord: None,
         })
