@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{Scene, SceneNode, Geometry},
-    primitive::{Sphere, Mesh, Cube},
+    primitive::{Sphere, Mesh, Shading, Cube},
     material::Material,
     light::Light,
     render::Render,
@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }).collect();
 
     // The floor
-    let floor = SceneNode::from(Geometry::new(Mesh::from(plane), grass.clone()))
+    let floor = SceneNode::from(Geometry::new(Mesh::new(plane, Shading::Flat), grass.clone()))
         .scaled(30.0)
         .into();
     nodes.push(floor);

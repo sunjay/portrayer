@@ -9,6 +9,9 @@ pub struct Triangle {
     pub a: Vec3,
     pub b: Vec3,
     pub c: Vec3,
+    /// The normals for a, b, and c respectively. If not provided, the intersection
+    /// normal will be the same for all points on the triangle.
+    pub normals: Option<(Vec3, Vec3, Vec3)>,
 }
 
 impl RayHit for Triangle {
@@ -55,10 +58,18 @@ impl RayHit for Triangle {
             return None;
         }
 
+        let normal = match self.normals {
+            Some((na, nb, nc)) => {
+                let alpha = 1.0 - beta - gamma;
+                na * alpha + nb * beta + nc * gamma
+            },
+            None => (self.b - self.a).cross(self.c - self.a),
+        };
+
         Some(RayIntersection {
             ray_parameter: t,
             hit_point: ray.at(t),
-            normal: (self.b - self.a).cross(self.c - self.a),
+            normal,
         })
     }
 }

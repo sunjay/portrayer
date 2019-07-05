@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{Scene, SceneNode, Geometry},
-    primitive::{Sphere, Mesh, Cube},
+    primitive::{Sphere, Mesh, Shading, Cube},
     material::Material,
     light::Light,
     render::Render,
@@ -76,7 +76,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .translated((0.0, 100.0, -250.0))
                 .into(),
 
-            SceneNode::from(Geometry::new(Mesh::from(monkey), mat3.clone()))
+            SceneNode::from(Geometry::new(Mesh::new(monkey, Shading::Flat), mat3.clone()))
                 .scaled(100.0)
                 .translated((-150.0, 200.0, -100.0))
                 .into(),

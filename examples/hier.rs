@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{Scene, SceneNode, Geometry},
-    primitive::{Sphere, Mesh, Cube},
+    primitive::{Sphere, Mesh, Shading, Cube},
     material::Material,
     light::Light,
     render::Render,
@@ -58,12 +58,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     ]).translated((0.0, 0.0, -10.0)).rotated_y(Radians::from_degrees(60.0)).into();
 
     // The floor
-    let floor = SceneNode::from(Geometry::new(Mesh::from(plane), grass.clone()))
+    let floor = SceneNode::from(Geometry::new(Mesh::new(plane, Shading::Flat), grass.clone()))
         .scaled(30.0)
         .into();
 
     // Central "sphere"
-    let poly = SceneNode::from(Geometry::new(Mesh::from(dodeca), blue.clone()))
+    let poly = SceneNode::from(Geometry::new(Mesh::new(dodeca, Shading::Flat), blue.clone()))
         .translated((-2.0, 1.618034, 0.0))
         .into();
 

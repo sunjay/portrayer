@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{Scene, SceneNode, Geometry},
-    primitive::{Sphere, Mesh, Cube},
+    primitive::{Sphere, Mesh, Shading, Cube},
     material::Material,
     light::Light,
     render::Render,
@@ -120,7 +120,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // The floor
-    let floor = SceneNode::from(Geometry::new(Mesh::from(plane), grass.clone()))
+    let floor = SceneNode::from(Geometry::new(Mesh::new(plane, Shading::Flat), grass.clone()))
         .scaled(30.0)
         .into();
     nodes.push(floor);
@@ -129,7 +129,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // buckyball at the centre of the real Stonehenge was destroyed
     // in the great fire of 733 AD.
 
-    let altar = SceneNode::from(Geometry::new(Mesh::from(buckyball), stone.clone()))
+    let altar = SceneNode::from(Geometry::new(Mesh::new(buckyball, Shading::Flat), stone.clone()))
         .scaled(1.5)
         .into();
     nodes.push(altar);
