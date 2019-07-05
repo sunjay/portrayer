@@ -1,12 +1,13 @@
 mod sphere;
-#[cfg(not(feature = "render_bounding_volumes"))]
 mod triangle;
 mod mesh;
 mod plane;
 mod cube;
 
 pub use sphere::*;
+pub use triangle::*;
 pub use mesh::*;
+pub use plane::*;
 pub use cube::*;
 
 use std::ops::Range;
@@ -16,7 +17,9 @@ use crate::ray::{Ray, RayHit, RayIntersection};
 #[derive(Debug)]
 pub enum Primitive {
     Sphere(Sphere),
+    Triangle(Triangle),
     Mesh(Mesh),
+    Plane(Plane),
     Cube(Cube),
 }
 
@@ -26,9 +29,21 @@ impl From<Sphere> for Primitive {
     }
 }
 
+impl From<Triangle> for Primitive {
+    fn from(tri: Triangle) -> Self {
+        Primitive::Triangle(tri)
+    }
+}
+
 impl From<Mesh> for Primitive {
     fn from(mesh: Mesh) -> Self {
         Primitive::Mesh(mesh)
+    }
+}
+
+impl From<Plane> for Primitive {
+    fn from(plane: Plane) -> Self {
+        Primitive::Plane(plane)
     }
 }
 
@@ -43,7 +58,9 @@ impl RayHit for Primitive {
         use Primitive::*;
         match self {
             Sphere(sphere) => sphere.ray_hit(ray, t_range),
+            Triangle(tri) => tri.ray_hit(ray, t_range),
             Mesh(mesh) => mesh.ray_hit(ray, t_range),
+            Plane(plane) => plane.ray_hit(ray, t_range),
             Cube(cube) => cube.ray_hit(ray, t_range),
         }
     }

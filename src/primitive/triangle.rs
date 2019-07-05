@@ -14,6 +14,14 @@ pub struct Triangle {
     pub normals: Option<(Vec3, Vec3, Vec3)>,
 }
 
+impl Triangle {
+    /// Creates a new flat shaded triangle. Normals will be computed from the given
+    /// vertices and will be same all across the face.
+    pub fn flat(a: Vec3, b: Vec3, c: Vec3) -> Self {
+        Self {a, b, c, normals: None}
+    }
+}
+
 impl RayHit for Triangle {
     fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
         // Full formulas provided in Peter Shirley's ray tracing chapter (pg 208)
