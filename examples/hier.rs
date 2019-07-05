@@ -20,19 +20,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         diffuse: Rgb {r: 0.9, g: 0.8, b: 0.4},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.4},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let grass = Arc::new(Material {
         diffuse: Rgb {r: 0.1, g: 0.7, b: 0.1},
         specular: Rgb {r: 0.0, g: 0.0, b: 0.0},
         shininess: 0.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let blue = Arc::new(Material {
         diffuse: Rgb {r: 0.7, g: 0.6, b: 1.0},
         specular: Rgb {r: 0.5, g: 0.4, b: 0.8},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
 
     let plane = Arc::new(MeshData::load_obj("assets/plane.obj")?);

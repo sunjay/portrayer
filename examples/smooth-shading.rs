@@ -21,18 +21,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         specular: Rgb {r: 0.6, g: 0.6, b: 0.6},
         shininess: 1000.0,
         reflectivity: 1.0,
+        ..Material::default()
     });
     let mat_wood = Arc::new(Material {
         diffuse: Rgb {r: 0.545, g: 0.353, b: 0.169},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let mat_monkey = Arc::new(Material {
         diffuse: Rgb {r: 0.78, g: 0.784, b: 0.933},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
 
     let monkey = Arc::new(MeshData::load_obj("assets/monkey.obj")?);

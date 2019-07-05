@@ -21,19 +21,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         diffuse: Rgb {r: 0.8, g: 0.7, b: 0.7},
         specular: Rgb {r: 0.0, g: 0.0, b: 0.0},
         shininess: 0.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let grass = Arc::new(Material {
         diffuse: Rgb {r: 0.1, g: 0.7, b: 0.1},
         specular: Rgb {r: 0.0, g: 0.0, b: 0.0},
         shininess: 0.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let cow_hide = Arc::new(Material {
         diffuse: Rgb {r: 0.84, g: 0.6, b: 0.53},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 20.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
 
     let cow_model = Arc::new(MeshData::load_obj("assets/cow.obj")?);

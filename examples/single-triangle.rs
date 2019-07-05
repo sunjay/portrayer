@@ -20,7 +20,7 @@ fn main() -> io::Result<()> {
         diffuse: Rgb {r: 0.541, g: 0.169, b: 0.886},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
 
     let triangle = Triangle::flat(

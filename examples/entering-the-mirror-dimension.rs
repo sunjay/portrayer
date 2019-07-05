@@ -23,43 +23,44 @@ fn main() -> Result<(), Box<dyn Error>> {
         diffuse: Rgb {r: 0.29, g: 0.204, b: 0.145},
         specular: Rgb {r: 0.0, g: 0.0, b: 0.0},
         shininess: 1.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let mat_mirror = Arc::new(Material {
         diffuse: Rgb {r: 0.0, g: 0.0, b: 0.0},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 1000.0,
         reflectivity: 1.0,
+        ..Material::default()
     });
     let mat_floor = Arc::new(Material {
         diffuse: Rgb {r: 0.016, g: 0.384, b: 0.0},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let mat_body = Arc::new(Material {
         diffuse: Rgb {r: 0.906, g: 0.22, b: 0.282},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let mat_head = Arc::new(Material {
         diffuse: Rgb {r: 0.086, g: 0.671, b: 0.906},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 50.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let mat_eyes = Arc::new(Material {
         diffuse: Rgb {r: 0.3, g: 0.3, b: 0.3},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 1000.0,
-        reflectivity: 0.9,
+        ..Material::default()
     });
     let mat_arms = Arc::new(Material {
         diffuse: Rgb {r: 0.345, g: 0.588, b: 0.906},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 1.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
 
     let monkey = Arc::new(MeshData::load_obj("assets/monkey.obj")?);

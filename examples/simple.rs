@@ -20,19 +20,19 @@ fn main() -> io::Result<()> {
         diffuse: Rgb {r: 0.7, g: 1.0, b: 0.7},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let mat2 = Arc::new(Material {
         diffuse: Rgb {r: 0.5, g: 0.5, b: 0.5},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
     let mat3 = Arc::new(Material {
         diffuse: Rgb {r: 1.0, g: 0.6, b: 0.1},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
         shininess: 25.0,
-        reflectivity: 0.0,
+        ..Material::default()
     });
 
     let scene = Scene {
