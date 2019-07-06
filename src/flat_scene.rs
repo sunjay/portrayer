@@ -59,7 +59,6 @@ pub struct FlatSceneNode {
     normal_trans: Mat4,
 }
 
-/// For casting a ray through a hierarchical scene
 impl RayCast for Vec<FlatSceneNode> {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
         // The resulting hit and material (initially None)
