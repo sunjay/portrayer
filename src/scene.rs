@@ -106,15 +106,13 @@ impl RayCast for Arc<SceneNode> {
         }
 
         // Recurse into children and attempt to find a closer match
-        for child in self.children() {
-            if let Some((mut child_hit, child_mat)) = child.ray_cast(&local_ray, t_range) {
-                child_hit.hit_point = child_hit.hit_point.transformed_point(trans);
-                child_hit.normal = child_hit.normal.transformed_direction(normal_trans);
+        if let Some((mut child_hit, child_mat)) = self.children().ray_cast(&local_ray, t_range) {
+            child_hit.hit_point = child_hit.hit_point.transformed_point(trans);
+            child_hit.normal = child_hit.normal.transformed_direction(normal_trans);
 
-                // No need to set t_range.end since it is set in the recursive base case of cast()
+            // No need to set t_range.end since it is set in the recursive base case of this method
 
-                hit_mat = Some((child_hit, child_mat));
-            }
+            hit_mat = Some((child_hit, child_mat));
         }
 
         hit_mat
@@ -145,8 +143,8 @@ impl SceneNode {
     }
 
     /// For iterating over the children of this node
-    pub fn children(&self) -> impl Iterator<Item=&Arc<SceneNode>> {
-        self.children.iter()
+    pub fn children(&self) -> &[Arc<SceneNode>] {
+        &self.children
     }
 
     /// Add the given child to this node and return the updated node

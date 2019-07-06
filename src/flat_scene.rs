@@ -68,24 +68,21 @@ impl Bounds for FlatSceneNode {
     }
 }
 
-impl RayCast for Vec<FlatSceneNode> {
+impl RayCast for FlatSceneNode {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
-        // The resulting hit and material (initially None)
-        let mut hit_mat = None;
+        // Take the ray from its current coordinate system and put it into the local coordinate
+        // system of the node
+        let local_ray = ray.transformed(self.inverse_trans());
 
-        for node in self {
-            // Take the ray from its current coordinate system and put it into the local coordinate
-            // system of the current node
-            let local_ray = ray.transformed(node.inverse_trans());
+        // These will be used to transform the hit point and normal back into the
+        // previous coordinate system
+        let trans = self.trans();
+        let normal_trans = self.normal_trans();
 
-            // These will be used to transform the hit point and normal back into the
-            // previous coordinate system
-            let trans = node.trans();
-            let normal_trans = node.normal_trans();
-
-            // Check if the ray intersects this node's geometry
-            let Geometry {primitive, material} = &node.geometry;
-            if let Some(mut hit) = primitive.ray_hit(&local_ray, t_range) {
+        // Check if the ray intersects this node's geometry
+        let Geometry {primitive, material} = &self.geometry;
+        match primitive.ray_hit(&local_ray, t_range) {
+            Some(mut hit) => {
                 // Bring the found hit point back into the right coordinate system
                 hit.hit_point = hit.hit_point.transformed_point(trans);
                 hit.normal = hit.normal.transformed_direction(normal_trans);
@@ -94,11 +91,10 @@ impl RayCast for Vec<FlatSceneNode> {
                 // than this one
                 t_range.end = hit.ray_parameter;
 
-                hit_mat = Some((hit, material.clone()));
-            }
+                Some((hit, material.clone()))
+            },
+            None => None,
         }
-
-        hit_mat
     }
 }
 

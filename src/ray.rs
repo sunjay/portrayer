@@ -39,6 +39,27 @@ pub trait RayCast {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)>;
 }
 
+impl<T: RayCast> RayCast for Vec<T> {
+    fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
+        (&*self as &[T]).ray_cast(ray, t_range)
+    }
+}
+
+impl<T: RayCast> RayCast for &[T] {
+    fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
+        // The resulting hit and material (initially None)
+        let mut hit_mat = None;
+
+        for item in *self {
+            if let Some(child_hit_mat) = item.ray_cast(ray, t_range) {
+                hit_mat = Some(child_hit_mat);
+            }
+        }
+
+        hit_mat
+    }
+}
+
 #[derive(Debug)]
 pub struct Ray {
     /// The initial point of this ray (ray parameter t = 0.0)

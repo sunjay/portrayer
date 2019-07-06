@@ -11,6 +11,9 @@ pub use mesh::*;
 pub use cube::*;
 pub use finite_plane::*;
 
+// Internal-use only
+pub(crate) use plane::*;
+
 use std::ops::Range;
 
 use crate::bounding_box::{BoundingBox, Bounds};
