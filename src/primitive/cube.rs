@@ -16,12 +16,14 @@ const L2: f64 = L / 2.0;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Cube;
 
-/// Returns true if the given point is anywhere within the *volume* of the cube
-fn contains(Vec3 {x, y, z}: Vec3) -> bool {
-    // Need to add epsilon when doing these checks to account for floating point error. Without
-    // this we get lots of "unfilled" spots ("shadow acne") all over the cube and its shadow.
-    let radius = L2 + EPSILON;
-    -radius <= x && x <= radius && -radius <= y && y <= radius && -radius <= z && z <= radius
+impl Cube {
+    /// Returns true if the given point is anywhere within the *volume* of the cube
+    pub fn contains(self, Vec3 {x, y, z}: Vec3) -> bool {
+        // Need to add epsilon when doing these checks to account for floating point error. Without
+        // this we get lots of "unfilled" spots ("shadow acne") all over the cube and its shadow.
+        let radius = L2 + EPSILON;
+        -radius <= x && x <= radius && -radius <= y && y <= radius && -radius <= z && z <= radius
+    }
 }
 
 impl RayHit for Cube {
@@ -61,7 +63,7 @@ impl RayHit for Cube {
             match plane.ray_hit(ray, &t_range) {
                 // Need to check if the cube actually contains the hit point since each
                 // plane is infinite
-                Some(mut p_hit) => if contains(p_hit.hit_point) {
+                Some(mut p_hit) => if self.contains(p_hit.hit_point) {
                     // Compute texture coordinate by finding 2D intersection coordinate on cube face
 
                     // Get the uv coordinate on the face by finding the right set of two points

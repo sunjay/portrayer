@@ -132,7 +132,10 @@ impl RayHit for Mesh {
         // Take the ray from its current coordinate system and put it into the local coordinate
         // system of the bounding volume
         let local_ray = ray.transformed(data.inv_bounds_trans);
-        if Cube.ray_hit(&local_ray, init_t_range).is_none() {
+        // If the ray begins inside the cube, we cannot make any decisions about whether it
+        // intersects the mesh or not since the cube does not tightly wrap around the mesh.
+        if !Cube.contains(local_ray.origin()) && Cube.ray_hit(&local_ray, init_t_range).is_none() {
+            // We are **sure** that the ray does not intersect with this mesh
             return None;
         }
 
