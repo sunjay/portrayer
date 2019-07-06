@@ -112,7 +112,13 @@ impl Mul<BoundingBox> for Mat4 {
     type Output = BoundingBox;
 
     fn mul(self, rhs: BoundingBox) -> Self::Output {
-        BoundingBox::new(rhs.min.transformed_point(self), rhs.max.transformed_point(self))
+        let min = rhs.min.transformed_point(self);
+        let max = rhs.max.transformed_point(self);
+        // Certain transformations (e.g. rotation, negative scale) can min > max for some
+        // components of either min or max. Need to correct that before creating the bounding box.
+        let min = Vec3::partial_min(min, max);
+        let max = Vec3::partial_max(min, max);
+        BoundingBox::new(min, max)
     }
 }
 
