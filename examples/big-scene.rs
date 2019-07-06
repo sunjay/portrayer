@@ -108,8 +108,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(50.0),
     };
 
-    // let mut image = RgbImage::new(1980, 1020);
-    let mut image = RgbImage::new(640, 480);
+    let mut image = RgbImage::new(1980, 1020);
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
