@@ -16,8 +16,6 @@ pub type Mat2 = vek::Mat2<f64>;
 pub type Mat3 = vek::Mat3<f64>;
 pub type Mat4 = vek::Mat4<f64>;
 
-pub type Aabb = vek::Aabb<f64>;
-
 pub type Rgba = vek::Rgba<f64>;
 pub type Rgb = vek::Rgb<f64>;
 

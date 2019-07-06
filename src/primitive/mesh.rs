@@ -2,12 +2,10 @@ use std::ops::Range;
 use std::sync::Arc;
 use std::path::Path;
 
+use crate::math::Vec3;
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{EPSILON, Vec3, Mat4};
-#[cfg(feature = "render_bounding_volumes")]
-use crate::math::Vec3Ext;
+use crate::bounding_box::BoundingBox;
 
-use super::Cube;
 #[cfg(not(feature = "render_bounding_volumes"))]
 use super::triangle::Triangle;
 
@@ -29,14 +27,9 @@ pub struct MeshData {
     positions: Vec<Vec3>,
     /// Vertex normals. Only used if shading == Smooth
     normals: Vec<Vec3>,
-    /// Transforms the bounding volume (a cube) to wrap around the the mesh
-    #[cfg(feature = "render_bounding_volumes")]
-    bounds_trans: Mat4,
-    /// Transforms the ray into the original coordinate system of cube for hit calculations
-    inv_bounds_trans: Mat4,
-    /// Transforms the normal of the hit point back into the mesh coordinate system
-    #[cfg(feature = "render_bounding_volumes")]
-    bounds_normal_trans: Mat4,
+    /// A bounding box that encompases all vertices of this mesh. Used to avoid having to test all
+    /// triangles if we can already trivially know that there is no intersection.
+    bounds: BoundingBox,
 }
 
 impl<'a> From<&'a tobj::Mesh> for MeshData {
@@ -72,28 +65,11 @@ impl MeshData {
             (Vec3::partial_min(min, vert), Vec3::partial_max(max, vert))
         });
 
-        let bounds_size = max - min;
-        // Special-case: planes and other 2D objects
-        // Need a non-zero scale because otherwise the matrix is not invertable (and we'll get NaN)
-        let bounds_size = Vec3::partial_max(bounds_size, EPSILON.into());
-
-        // Find the center of the bounding volume
-        let center = (min + max) / 2.0;
-
-        let bounds_trans = Mat4::scaling_3d(bounds_size).translated_3d(center);
-        let inv_bounds_trans = bounds_trans.inverted();
-        #[cfg(feature = "render_bounding_volumes")]
-        let bounds_normal_trans = inv_bounds_trans.transposed();
-
         Self {
             triangles,
             positions,
             normals,
-            #[cfg(feature = "render_bounding_volumes")]
-            bounds_trans,
-            inv_bounds_trans,
-            #[cfg(feature = "render_bounding_volumes")]
-            bounds_normal_trans,
+            bounds: BoundingBox::new(min, max),
         }
     }
 }
@@ -127,21 +103,13 @@ impl RayHit for Mesh {
         let data = &self.data;
 
         // Test the bounding volume first. If it does not get hit we can save a lot of time that
-        // we would have spent traversing vertices.
-
-        // Take the ray from its current coordinate system and put it into the local coordinate
-        // system of the bounding volume
-        let local_ray = ray.transformed(data.inv_bounds_trans);
-        // If the ray begins inside the cube, we cannot make any decisions about whether it
-        // intersects the mesh or not since the cube does not tightly wrap around the mesh.
-        if !Cube.contains(local_ray.origin()) && Cube.ray_hit(&local_ray, init_t_range).is_none() {
-            // We are **sure** that the ray does not intersect with this mesh
+        // we would have spent traversing the mesh triangles.
+        if data.bounds.test_hit(ray, init_t_range).is_none() {
             return None;
         }
 
-        //TODO: Parallelism via rayon
-
         let mut t_range = init_t_range.clone();
+        //TODO: Parallelism via rayon
         data.triangles.iter().fold(None, |hit, &(a, b, c)| {
             use Shading::*;
             let tri = Triangle {
@@ -167,19 +135,8 @@ impl RayHit for Mesh {
 
 #[cfg(feature = "render_bounding_volumes")]
 impl RayHit for Mesh {
-    fn ray_hit(&self, ray: &Ray, init_t_range: &Range<f64>) -> Option<RayIntersection> {
-        let data = &self.data;
-
+    fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
         // Pretend that this mesh is the bounding volume and test that instead
-
-        // Take the ray from its current coordinate system and put it into the local coordinate
-        // system of the bounding volume
-        let local_ray = ray.transformed(data.inv_bounds_trans);
-        Cube.ray_hit(&local_ray, init_t_range).map(|mut hit| {
-            // Need to transform hit_point and normal back so they render properly
-            hit.hit_point = hit.hit_point.transformed_point(data.bounds_trans);
-            hit.normal = hit.normal.transformed_direction(data.bounds_normal_trans);
-            hit
-        })
+        self.data.bounds.ray_hit(ray, t_range)
     }
 }
