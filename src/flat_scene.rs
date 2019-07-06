@@ -45,6 +45,7 @@ impl<'a> From<&'a HierScene> for FlatScene {
 }
 
 /// A scene node with no hierarchical structure
+#[derive(Debug)]
 pub struct FlatSceneNode {
     /// The geometry stored at this node
     ///
