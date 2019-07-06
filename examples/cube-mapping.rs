@@ -4,7 +4,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use portrayer::{
-    scene::{Scene, SceneNode, Geometry},
+    scene::{HierScene, SceneNode, Geometry},
     primitive::{Cube, FinitePlane},
     material::Material,
     texture::{Texture, ImageTexture},
@@ -56,7 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .translated((0.0, 0.27/0.5, 0.0))
         ));
 
-    let scene = Scene {
+    let scene = HierScene {
         root: SceneNode::from(vec![
             mirror,
 
@@ -120,7 +120,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut image = RgbImage::new(910, 512);
 
-    image.render::<RenderProgress, _>(&scene, cam,
+    image.render::<RenderProgress, _, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
     Ok(image.save("cube-mapping.png")?)

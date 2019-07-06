@@ -2,7 +2,7 @@ use std::ops::Range;
 use std::sync::Arc;
 
 use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat4, Rgb, Uv};
-use crate::scene::{Scene, SceneNode, Geometry};
+use crate::scene::Scene;
 use crate::material::Material;
 
 /// Represents the result of a ray intersection and stores information about it
@@ -25,9 +25,18 @@ pub struct RayIntersection {
     pub tex_coord: Option<Uv>,
 }
 
+/// Abstracts the ray hitting a single primitive
 pub trait RayHit {
     /// Returns a value if the given ray has hit this object and the parameter is in the given range
     fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection>;
+}
+
+/// Abstracts the ray casting through the entire hierarchical structure of a scene
+pub trait RayCast {
+    /// Cast the ray and find the nearest geometry that it intersects.
+    ///
+    /// Returned value contains information about what was hit and its material.
+    fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)>;
 }
 
 #[derive(Debug)]
@@ -66,60 +75,11 @@ impl Ray {
         }
     }
 
-    /// Cast the ray in its configured direction and return the nearest geometry that it intersects
-    ///
-    /// Returned value contains information about what was hit and its material.
-    pub fn cast<'a>(
-        &self,
-        node: &'a SceneNode,
-        t_range: &mut Range<f64>,
-    ) -> Option<(RayIntersection, Arc<Material>)> {
-        // Take the ray from its current coordinate system and put it into the local coordinate
-        // system of the current node
-        let local_ray = self.transformed(node.inverse_trans());
-
-        // These will be used to transform the hit point and normal back into the
-        // previous coordinate system
-        let trans = node.trans();
-        let normal_trans = node.normal_trans();
-
-        // The resulting hit and material (initially None)
-        let mut hit_mat = None;
-
-        // Check if the ray intersects this node's geometry (if any)
-        if let Some(Geometry {primitive, material}) = node.geometry() {
-            if let Some(mut hit) = primitive.ray_hit(&local_ray, t_range) {
-                hit.hit_point = hit.hit_point.transformed_point(trans);
-                hit.normal = hit.normal.transformed_direction(normal_trans);
-
-                // Only allow further intersections if they are closer to the ray origin
-                // than this one
-                t_range.end = hit.ray_parameter;
-
-                hit_mat = Some((hit, material.clone()));
-            }
-        }
-
-        // Recurse into children and attempt to find a closer match
-        for child in node.children() {
-            if let Some((mut child_hit, child_mat)) = local_ray.cast(child, t_range) {
-                child_hit.hit_point = child_hit.hit_point.transformed_point(trans);
-                child_hit.normal = child_hit.normal.transformed_direction(normal_trans);
-
-                // No need to set t_range.end since it is set in the recursive base case of cast()
-
-                hit_mat = Some((child_hit, child_mat));
-            }
-        }
-
-        hit_mat
-    }
-
     /// Compute the color of the nearest object to the casted ray. Returns the given background
     /// color if no object is hit by this ray.
-    pub fn color(&self, scene: &Scene, background: Rgb, recursion_depth: u32) -> Rgb {
+    pub fn color<R: RayCast>(&self, scene: &Scene<R>, background: Rgb, recursion_depth: u32) -> Rgb {
         let mut t_range = Range {start: EPSILON, end: INFINITY};
-        let hit = self.cast(&scene.root, &mut t_range);
+        let hit = scene.root.ray_cast(self, &mut t_range);
 
         match hit {
             Some((hit, mat)) => mat.hit_color(scene, background, self.direction, hit.hit_point,

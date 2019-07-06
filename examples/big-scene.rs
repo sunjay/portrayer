@@ -4,7 +4,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use portrayer::{
-    scene::{Scene, SceneNode, Geometry},
+    scene::{HierScene, SceneNode, Geometry},
     primitive::{Primitive, Sphere, Mesh, MeshData, Shading, Cube},
     material::Material,
     light::Light,
@@ -77,7 +77,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let scene = Scene {
+    let scene = HierScene {
         root: SceneNode::from(nodes).into(),
         lights: vec![
             // white_light
@@ -110,7 +110,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut image = RgbImage::new(1980, 1020);
 
-    image.render::<RenderProgress, _>(&scene, cam,
+    image.render::<RenderProgress, _, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
     Ok(image.save("big-scene.png")?)

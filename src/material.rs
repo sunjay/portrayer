@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::math::{EPSILON, INFINITY, Vec3, Uv, Rgb};
 use crate::scene::Scene;
-use crate::ray::Ray;
+use crate::ray::{Ray, RayCast};
 use crate::texture::{Texture, TextureSource};
 
 // Controls the maximum ray recursion depth
@@ -31,9 +31,9 @@ pub struct Material {
 impl Material {
     /// Compute the color of a ray intersection using the lighting model of this material, possibly
     /// casting further rays to simulate things like reflection/refraction/etc.
-    pub fn hit_color(
+    pub fn hit_color<R: RayCast>(
         &self,
-        scene: &Scene,
+        scene: &Scene<R>,
         background: Rgb,
         ray_dir: Vec3,
         hit_point: Vec3,
@@ -89,7 +89,7 @@ impl Material {
             let mut shadow_t_range = Range {start: EPSILON, end: INFINITY};
 
             // Only add diffuse if not shadowed by another object
-            if shadow_ray.cast(&*scene.root, &mut shadow_t_range).is_none() {
+            if scene.root.ray_cast(&shadow_ray, &mut shadow_t_range).is_none() {
                 // Want the max diffuse when the light is directly aligned with the surface normal.
                 // Using normal.dot(light_dir) == cos(angle between normal and light)
                 // we can accomplish this effect.

@@ -4,7 +4,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use portrayer::{
-    scene::{Scene, SceneNode, Geometry},
+    scene::{HierScene, SceneNode, Geometry},
     primitive::{Sphere, Mesh, MeshData, Shading, Cube},
     material::Material,
     light::Light,
@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let monkey = Arc::new(MeshData::load_obj("assets/monkey.obj")?);
 
-    let scene = Scene {
+    let scene = HierScene {
         root: SceneNode::from(vec![
             SceneNode::from(Geometry::new(Sphere, mat1.clone()))
                 .scaled(100.0)
@@ -106,7 +106,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut image = RgbImage::new(256, 256);
 
-    image.render::<RenderProgress, _>(&scene, cam,
+    image.render::<RenderProgress, _, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
     Ok(image.save("nonhier.png")?)

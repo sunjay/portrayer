@@ -5,7 +5,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use portrayer::{
-    scene::{Scene, SceneNode, Geometry},
+    scene::{HierScene, SceneNode, Geometry},
     primitive::{Sphere, Mesh, MeshData, Shading, Cube},
     material::Material,
     light::Light,
@@ -149,7 +149,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .scaled(20.0)
         .into();
 
-    let scene = Scene {
+    let scene = HierScene {
         root: SceneNode::from(vec![mirror, floor, monkey_character]).into(),
         lights: vec![
             // face_light
@@ -183,7 +183,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut image = RgbImage::new(800, 600);
 
-    image.render::<RenderProgress, _>(&scene, cam,
+    image.render::<RenderProgress, _, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
     Ok(image.save("reflection.png")?)

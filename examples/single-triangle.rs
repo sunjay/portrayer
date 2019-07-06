@@ -4,7 +4,7 @@ use std::io;
 use std::sync::Arc;
 
 use portrayer::{
-    scene::{Scene, SceneNode, Geometry},
+    scene::{HierScene, SceneNode, Geometry},
     primitive::Triangle,
     material::Material,
     light::Light,
@@ -29,7 +29,7 @@ fn main() -> io::Result<()> {
         Vec3 {x: 0.0, y: 1.5, z: 0.0},
     );
 
-    let scene = Scene {
+    let scene = HierScene {
         root: SceneNode::from(vec![
             SceneNode::from(Geometry::new(triangle, mat1.clone()))
                 .into(),
@@ -54,7 +54,7 @@ fn main() -> io::Result<()> {
 
     let mut image = RgbImage::new(640, 480);
 
-    image.render::<RenderProgress, _>(&scene, cam,
+    image.render::<RenderProgress, _, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
     image.save("single-triangle.png")

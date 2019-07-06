@@ -4,7 +4,7 @@ use std::io;
 use std::sync::Arc;
 
 use portrayer::{
-    scene::{Scene, SceneNode, Geometry},
+    scene::{HierScene, SceneNode, Geometry},
     primitive::Sphere,
     material::Material,
     light::Light,
@@ -35,7 +35,7 @@ fn main() -> io::Result<()> {
         ..Material::default()
     });
 
-    let scene = Scene {
+    let scene = HierScene {
         root: SceneNode::from(vec![
             SceneNode::from(Geometry::new(Sphere, mat1.clone()))
                 .scaled(100.0)
@@ -88,7 +88,7 @@ fn main() -> io::Result<()> {
 
     let mut image = RgbImage::new(256, 256);
 
-    image.render::<RenderProgress, _>(&scene, cam,
+    image.render::<RenderProgress, _, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
     image.save("simple.png")

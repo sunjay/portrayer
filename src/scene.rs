@@ -1,18 +1,23 @@
 use std::sync::Arc;
+use std::ops::Range;
 
-use crate::math::{Mat4, Vec3, Rgb, Radians};
+use crate::math::{Mat4, Vec3, Vec3Ext, Rgb, Radians};
+use crate::ray::{RayCast, Ray, RayIntersection, RayHit};
 use crate::primitive::Primitive;
 use crate::material::Material;
 use crate::light::Light;
 
+/// A hierarchical scene
+pub type HierScene = Scene<Arc<SceneNode>>;
+
 #[derive(Debug)]
-pub struct Scene {
-    pub root: Arc<SceneNode>,
+pub struct Scene<R> {
+    pub root: R,
     pub lights: Vec<Light>,
     pub ambient: Rgb,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Geometry {
     pub primitive: Primitive,
     pub material: Arc<Material>,
@@ -31,7 +36,7 @@ impl Geometry {
 pub struct SceneNode {
     /// The geometry stored at this node (if any)
     geometry: Option<Geometry>,
-    /// The affine transform of this node
+    /// The affine transform of this node (model space to world space)
     trans: Mat4,
     /// The inverse of the affine transform of this node
     invtrans: Mat4,
@@ -68,6 +73,51 @@ impl From<Arc<SceneNode>> for SceneNode {
             children: vec![child],
             ..Default::default()
         }
+    }
+}
+
+/// For casting a ray through a hierarchical scene
+impl RayCast for Arc<SceneNode> {
+    fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
+        // Take the ray from its current coordinate system and put it into the local coordinate
+        // system of the current node
+        let local_ray = ray.transformed(self.inverse_trans());
+
+        // These will be used to transform the hit point and normal back into the
+        // previous coordinate system
+        let trans = self.trans();
+        let normal_trans = self.normal_trans();
+
+        // The resulting hit and material (initially None)
+        let mut hit_mat = None;
+
+        // Check if the ray intersects this node's geometry (if any)
+        if let Some(Geometry {primitive, material}) = self.geometry() {
+            if let Some(mut hit) = primitive.ray_hit(&local_ray, t_range) {
+                hit.hit_point = hit.hit_point.transformed_point(trans);
+                hit.normal = hit.normal.transformed_direction(normal_trans);
+
+                // Only allow further intersections if they are closer to the ray origin
+                // than this one
+                t_range.end = hit.ray_parameter;
+
+                hit_mat = Some((hit, material.clone()));
+            }
+        }
+
+        // Recurse into children and attempt to find a closer match
+        for child in self.children() {
+            if let Some((mut child_hit, child_mat)) = child.ray_cast(&local_ray, t_range) {
+                child_hit.hit_point = child_hit.hit_point.transformed_point(trans);
+                child_hit.normal = child_hit.normal.transformed_direction(normal_trans);
+
+                // No need to set t_range.end since it is set in the recursive base case of cast()
+
+                hit_mat = Some((child_hit, child_mat));
+            }
+        }
+
+        hit_mat
     }
 }
 
