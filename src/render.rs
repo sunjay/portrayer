@@ -3,7 +3,8 @@ use rayon::prelude::*;
 use image::Pixel;
 
 use crate::math::{Uv, Rgb};
-use crate::scene::Scene;
+use crate::scene::{Scene, HierScene};
+use crate::flat_scene::FlatScene;
 use crate::ray::RayCast;
 use crate::camera::{CameraSettings, Camera};
 use crate::texture::TextureSource;
@@ -16,13 +17,9 @@ use crate::reporter::Reporter;
 /// go left to right on the x axis and top to bottom on the y axis.
 pub trait Render {
     /// Draw the given scene to this target using the given camera settings and background texture
-    fn render<
-        RPT: Reporter + Send + Sync,
-        R: RayCast + Send + Sync,
-        T: TextureSource + Send + Sync,
-    >(
+    fn render<R: Reporter + Send + Sync, T: TextureSource + Send + Sync>(
         &mut self,
-        scene: &Scene<R>,
+        scene: &HierScene,
         camera: CameraSettings,
         background: T,
     );
@@ -56,13 +53,9 @@ fn render_single_pixel<R: RayCast, T: TextureSource>(
 }
 
 impl Render for image::RgbImage {
-    fn render<
-        RPT: Reporter + Send + Sync,
-        R: RayCast + Send + Sync,
-        T: TextureSource + Send + Sync,
-    >(
+    fn render<R: Reporter + Send + Sync, T: TextureSource + Send + Sync>(
         &mut self,
-        scene: &Scene<R>,
+        scene: &HierScene,
         camera: CameraSettings,
         background: T,
     ) {
@@ -70,8 +63,9 @@ impl Render for image::RgbImage {
         let height = self.height() as f64;
         let camera = Camera::new(camera, (width, height));
 
-        let reporter = RPT::new((self.width() * self.height()) as u64);
+        let reporter = R::new((self.width() * self.height()) as u64);
 
+        let scene = &FlatScene::from(scene);
         self.par_chunks_mut(3)
             .map(image::Rgb::from_slice_mut)
             .enumerate()

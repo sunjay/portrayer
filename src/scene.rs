@@ -122,6 +122,7 @@ impl RayCast for Arc<SceneNode> {
 }
 
 impl SceneNode {
+    /// Return the geometry stored at this node (if any)
     pub fn geometry(&self) -> Option<&Geometry> {
         self.geometry.as_ref()
     }

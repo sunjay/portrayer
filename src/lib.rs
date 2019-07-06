@@ -8,3 +8,5 @@ pub mod scene;
 pub mod render;
 pub mod texture;
 pub mod reporter;
+
+mod flat_scene;

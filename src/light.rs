@@ -6,7 +6,7 @@ use crate::math::{Vec3, Rgb};
 ///     where r = distance to light from the hit point
 ///
 /// This allows light to become darker as the distance to the light increases
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Falloff {
     pub c0: f64,
     pub c1: f64,
@@ -31,7 +31,7 @@ impl Falloff {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Light {
     pub position: Vec3,
     pub color: Rgb,

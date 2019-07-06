@@ -88,7 +88,7 @@ fn main() -> io::Result<()> {
 
     let mut image = RgbImage::new(256, 256);
 
-    image.render::<RenderProgress, _, _>(&scene, cam,
+    image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
     image.save("simple.png")
