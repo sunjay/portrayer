@@ -48,7 +48,7 @@ macro_rules! primitive_enum {
 
 // All of the impls will be generated just based on this declaration
 primitive_enum! {
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub enum Primitive {
         Sphere(Sphere),
         Triangle(Triangle),

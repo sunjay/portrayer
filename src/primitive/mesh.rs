@@ -99,7 +99,7 @@ impl MeshData {
 }
 
 /// A 3D mesh made of triangles.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Mesh {
     data: Arc<MeshData>,
     /// The mode to use when computing the normal of each face

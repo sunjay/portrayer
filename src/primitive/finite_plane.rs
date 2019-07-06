@@ -12,7 +12,7 @@ const L2: f64 = L / 2.0;
 /// A flat, finite plane with length = 1.0, width = 1.0, and height = 0.0
 ///
 /// The plane's normal faces "up", i.e. {x: 0.0, y: 1.0, z: 0.0}
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FinitePlane;
 
 /// Returns true if the given point is within the boundary of the plane

@@ -4,7 +4,7 @@ use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::{EPSILON, Vec3};
 
 /// A flat, infinite plane
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Plane {
     /// The normal of the plane (MUST be a unit vector)
     ///

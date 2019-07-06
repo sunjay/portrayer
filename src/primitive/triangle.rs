@@ -4,7 +4,7 @@ use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::Vec3;
 
 /// A triangle with the given 3 vertices
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Triangle {
     pub a: Vec3,
     pub b: Vec3,
