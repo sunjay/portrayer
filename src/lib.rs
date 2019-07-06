@@ -11,3 +11,4 @@ pub mod reporter;
 
 mod flat_scene;
 mod bounding_box;
+mod kdtree;

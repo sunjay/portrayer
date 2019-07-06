@@ -1,6 +1,6 @@
-use std::ops::Range;
+use std::ops::{Mul, Range};
 
-use crate::math::{EPSILON, Vec3, Mat4};
+use crate::math::{EPSILON, Vec3, Vec3Ext, Mat4};
 use crate::ray::{Ray, RayHit};
 use crate::primitive::Cube;
 
@@ -9,8 +9,34 @@ use crate::math::Vec3Ext;
 #[cfg(feature = "render_bounding_volumes")]
 use crate::ray::RayIntersection;
 
-#[derive(Debug)]
+pub trait Bounds {
+    /// Returns a bounding box that fully encapsulates this object
+    fn bounds(&self) -> BoundingBox;
+}
+
+/// Finds the maximum bounding box around a list of objects
+impl<T: Bounds> Bounds for Vec<T> {
+    fn bounds(&self) -> BoundingBox {
+        if self.is_empty() {
+            return BoundingBox::new(Vec3::zero(), Vec3::zero());
+        }
+
+        let first = self[0].bounds();
+        let (min, max) = self.iter().skip(1).fold((first.min(), first.max()), |(min, max), item| {
+            let item_bounds = item.bounds();
+            (Vec3::partial_min(min, item_bounds.min()), Vec3::partial_max(max, item_bounds.max()))
+        });
+
+        BoundingBox::new(min, max)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct BoundingBox {
+    /// The corner of the bounding box with all the lowest x,y,z values
+    min: Vec3,
+    /// The corner of the bounding box with all the highest x,y,z values
+    max: Vec3,
     /// Transforms the unit cube to full dimensions of the bounding box
     #[cfg(feature = "render_bounding_volumes")]
     trans: Mat4,
@@ -40,12 +66,24 @@ impl BoundingBox {
         let normal_trans = invtrans.transposed();
 
         Self {
+            min,
+            max,
             #[cfg(feature = "render_bounding_volumes")]
             trans,
             invtrans,
             #[cfg(feature = "render_bounding_volumes")]
             normal_trans,
         }
+    }
+
+    /// Returns the corner of the bounding box with the minimum x,y,z values
+    pub fn min(&self) -> Vec3 {
+        self.min
+    }
+
+    /// Returns the corner of the bounding box with the maximum x,y,z values
+    pub fn max(&self) -> Vec3 {
+        self.max
     }
 
     /// Returns the ray parameter value for which this bounding box will be hit by the given ray
@@ -63,6 +101,18 @@ impl BoundingBox {
         }
 
         Cube.ray_hit(&local_ray, t_range).map(|hit| hit.ray_parameter)
+    }
+}
+
+/// Allows a bounding box to be transformed by a transformation matrix
+///
+/// Syntax: transform * bounding_box
+///     This is similar to the syntax: transform * point
+impl Mul<BoundingBox> for Mat4 {
+    type Output = BoundingBox;
+
+    fn mul(self, rhs: BoundingBox) -> Self::Output {
+        BoundingBox::new(rhs.min.transformed_point(self), rhs.max.transformed_point(self))
     }
 }
 

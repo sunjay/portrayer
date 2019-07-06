@@ -6,6 +6,7 @@ use crate::math::{Mat4, Vec3Ext};
 use crate::material::Material;
 use crate::scene::{Scene, HierScene, Geometry};
 use crate::ray::{RayCast, RayHit, Ray, RayIntersection};
+use crate::bounding_box::{BoundingBox, Bounds};
 
 /// A completely non-hierarchical representation of the scene. Note that this potentially uses
 /// more memory since all structures that were previously benefiting from instancing will get
@@ -57,6 +58,14 @@ pub struct FlatSceneNode {
     invtrans: Mat4,
     /// The inverse transpose of trans, used for transforming normals
     normal_trans: Mat4,
+}
+
+impl Bounds for FlatSceneNode {
+    fn bounds(&self) -> BoundingBox {
+        let prim_bounds = self.geometry.primitive.bounds();
+
+        self.trans * prim_bounds
+    }
 }
 
 impl RayCast for Vec<FlatSceneNode> {

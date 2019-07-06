@@ -4,7 +4,7 @@ use std::path::Path;
 
 use crate::math::Vec3;
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::bounding_box::BoundingBox;
+use crate::bounding_box::{BoundingBox, Bounds};
 
 #[cfg(not(feature = "render_bounding_volumes"))]
 use super::triangle::Triangle;
@@ -80,6 +80,12 @@ pub struct Mesh {
     data: Arc<MeshData>,
     /// The mode to use when computing the normal of each face
     shading: Shading,
+}
+
+impl Bounds for Mesh {
+    fn bounds(&self) -> BoundingBox {
+        self.data.bounds.clone()
+    }
 }
 
 impl Mesh {

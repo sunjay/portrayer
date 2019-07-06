@@ -2,6 +2,7 @@ use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::Vec3;
+use crate::bounding_box::{BoundingBox, Bounds};
 
 /// A triangle with the given 3 vertices
 #[derive(Debug, Clone)]
@@ -19,6 +20,15 @@ impl Triangle {
     /// vertices and will be same all across the face.
     pub fn flat(a: Vec3, b: Vec3, c: Vec3) -> Self {
         Self {a, b, c, normals: None}
+    }
+}
+
+impl Bounds for Triangle {
+    fn bounds(&self) -> BoundingBox {
+        let Triangle {a, b, c, ..} = *self;
+        let min = Vec3::partial_min(a, Vec3::partial_min(b, c));
+        let max = Vec3::partial_max(a, Vec3::partial_max(b, c));
+        BoundingBox::new(min, max)
     }
 }
 

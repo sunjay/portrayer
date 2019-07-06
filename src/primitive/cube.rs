@@ -2,6 +2,7 @@ use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::{EPSILON, Vec3, Uv};
+use crate::bounding_box::{BoundingBox, Bounds};
 
 use super::plane::Plane;
 
@@ -9,7 +10,7 @@ use super::plane::Plane;
 const L: f64 = 1.0;
 const L2: f64 = L / 2.0;
 
-/// An axis-aligned unit cube with center (0, 0, 0) and width/height/depth 1.0
+/// An axis-aligned unit cube with center (0, 0, 0) and width/length/height 1.0
 ///
 /// It is expected that this cube will be used via affine transformations on the node that
 /// contains it.
@@ -23,6 +24,14 @@ impl Cube {
         // this we get lots of "unfilled" spots ("shadow acne") all over the cube and its shadow.
         let radius = L2 + EPSILON;
         -radius <= x && x <= radius && -radius <= y && y <= radius && -radius <= z && z <= radius
+    }
+}
+
+impl Bounds for Cube {
+    fn bounds(&self) -> BoundingBox {
+        let min = Vec3::from(-L2);
+        let max = Vec3::from(L2);
+        BoundingBox::new(min, max)
     }
 }
 

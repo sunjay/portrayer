@@ -2,7 +2,11 @@ use std::f64::consts::PI;
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{Quadratic, Uv};
+use crate::math::{Vec3, Quadratic, Uv};
+use crate::bounding_box::{BoundingBox, Bounds};
+
+/// The radius of the sphere
+const RADIUS: f64 = 1.0;
 
 /// A sphere with center (0, 0, 0) and radius 1.0
 ///
@@ -10,6 +14,14 @@ use crate::math::{Quadratic, Uv};
 /// contains it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Sphere;
+
+impl Bounds for Sphere {
+    fn bounds(&self) -> BoundingBox {
+        let min = Vec3::from(-RADIUS);
+        let max = Vec3::from(RADIUS);
+        BoundingBox::new(min, max)
+    }
+}
 
 impl RayHit for Sphere {
     fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
@@ -35,11 +47,10 @@ impl RayHit for Sphere {
 
         let origin = ray.origin();
         let direction = ray.direction();
-        let radius = 1.0;
 
         let a = direction.dot(direction);
         let b = 2.0 * origin.dot(direction);
-        let c = origin.dot(origin) - radius * radius;
+        let c = origin.dot(origin) - RADIUS * RADIUS;
 
         let equation = Quadratic {a, b, c};
         let t = equation.solve().find(|sol| t_range.contains(sol))?;

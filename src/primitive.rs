@@ -8,12 +8,12 @@ mod finite_plane;
 pub use sphere::*;
 pub use triangle::*;
 pub use mesh::*;
-pub use plane::*;
 pub use cube::*;
 pub use finite_plane::*;
 
 use std::ops::Range;
 
+use crate::bounding_box::{BoundingBox, Bounds};
 use crate::ray::{Ray, RayHit, RayIntersection};
 
 // This macro generates boilerplate code for the primitives and makes it easier to
@@ -35,6 +35,15 @@ macro_rules! primitive_enum {
             }
         )*
 
+        impl Bounds for $name {
+            fn bounds(&self) -> BoundingBox {
+                use $name::*;
+                match self {
+                    $($variant(prim) => prim.bounds()),*
+                }
+            }
+        }
+
         impl RayHit for $name {
             fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
                 use $name::*;
@@ -53,7 +62,8 @@ primitive_enum! {
         Sphere(Sphere),
         Triangle(Triangle),
         Mesh(Mesh),
-        Plane(Plane),
+        // Plane cannot be part of this enum because it is infinite and that means that there is
+        // no logical implementation of the Bounds trait for Plane
         FinitePlane(FinitePlane),
         Cube(Cube),
     }

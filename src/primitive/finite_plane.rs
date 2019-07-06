@@ -2,18 +2,27 @@ use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::{EPSILON, Vec3, Uv};
+use crate::bounding_box::{BoundingBox, Bounds};
 
-use super::Plane;
+use super::plane::Plane;
 
 /// L = length/width of the plane (the height is 0.0)
 const L: f64 = 1.0;
 const L2: f64 = L / 2.0;
 
-/// A flat, finite plane with length = 1.0, width = 1.0, and height = 0.0
+/// A flat, finite plane with center (0, 0, 0), length = 1.0, width = 1.0, and height = 0.0
 ///
 /// The plane's normal faces "up", i.e. {x: 0.0, y: 1.0, z: 0.0}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FinitePlane;
+
+impl Bounds for FinitePlane {
+    fn bounds(&self) -> BoundingBox {
+        let min = Vec3 {x: -L2, y: 0.0, z: -L2};
+        let max = Vec3 {x: L2, y: 0.0, z: L2};
+        BoundingBox::new(min, max)
+    }
+}
 
 /// Returns true if the given point is within the boundary of the plane
 ///
