@@ -20,7 +20,12 @@ impl From<FlatScene> for KDTreeScene {
         let nodes: Vec<_> = flat_nodes.into_iter()
             .map(|node| NodeBounds::from(node).into())
             .collect();
-        let root = KDTreeNode::Leaf {bounds: nodes.bounds(), nodes};
+
+        let leaf = KDLeaf {bounds: nodes.bounds(), nodes};
+        // Arbitrary target number of leaves in each leaf. A leaf may end up with more or less than
+        // this depending on how things go during partitioning.
+        const MAX_NODES_IN_LEAF: usize = 3;
+        let root = leaf.partitioned(MAX_NODES_IN_LEAF);
 
         Self {root, lights, ambient}
     }
@@ -60,6 +65,27 @@ impl RayCast for Arc<NodeBounds> {
 }
 
 #[derive(Debug)]
+pub struct KDLeaf {
+    /// A bounding box that encompases all of the scene nodes in this leaf node
+    bounds: BoundingBox,
+    /// The scene nodes to be tested for intersection
+    ///
+    /// Need to store in Arc because scene nodes can be shared between multiple tree nodes if
+    /// the scene node could not be evenly split by the separating plane
+    nodes: Vec<Arc<NodeBounds>>,
+}
+
+impl KDLeaf {
+    /// Partition the nodes in this leaf until the number of nodes is less than the given
+    /// threshold or until the leaf cannot be partitioned anymore. There is no guarantee that the
+    /// resulting tree will have fewer nodes in its leaves than the given threshold, but we will
+    /// try our best.
+    fn partitioned(self, max_nodes: usize) -> KDTreeNode {
+        KDTreeNode::Leaf(self)
+    }
+}
+
+#[derive(Debug)]
 pub enum KDTreeNode {
     Split {
         /// The separating plane that divides the children
@@ -71,22 +97,14 @@ pub enum KDTreeNode {
         /// The nodes behind the separating plane (in the direction opposite to the plane normal)
         back_nodes: Box<KDTreeNode>,
     },
-    Leaf {
-        /// A bounding box that encompases all of the scene nodes in this leaf node
-        bounds: BoundingBox,
-        /// The scene nodes to be tested for intersection
-        ///
-        /// Need to store in Arc because scene nodes can be shared between multiple tree nodes if
-        /// the scene node could not be evenly split by the separating plane
-        nodes: Vec<Arc<NodeBounds>>,
-    },
+    Leaf(KDLeaf),
 }
 
 impl RayCast for KDTreeNode {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
         use KDTreeNode::*;
         match self {
-            Leaf {nodes, ..} => nodes.ray_cast(ray, t_range),
+            Leaf(KDLeaf {nodes, ..}) => nodes.ray_cast(ray, t_range),
             Split {sep_plane, bounds, front_nodes, back_nodes} => {
                 // A value of t large enough that the point on the ray for this t would be well
                 // beyond the extent of the scene
@@ -236,17 +254,17 @@ mod tests {
         let root = KDTreeNode::Split {
             sep_plane: Plane {normal: Vec3::unit_z(), point: Vec3::zero()},
             bounds: vec![b_node_bounds.clone(), c_node_bounds.clone()].bounds(),
-            front_nodes: Box::new(KDTreeNode::Leaf {
+            front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 // leaf bounds do not matter currently
                 bounds: BoundingBox::new(Vec3::zero(), Vec3::zero()),
                 nodes: vec![c_node_bounds.clone()],
-            }),
-            back_nodes: Box::new(KDTreeNode::Leaf {
+            })),
+            back_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 // leaf bounds do not matter currently
                 bounds: BoundingBox::new(Vec3::zero(), Vec3::zero()),
                 // Force tree to check C again by putting it first
                 nodes: vec![c_node_bounds.clone(), b_node_bounds.clone()],
-            }),
+            })),
         };
 
         let ray = Ray::new(Vec3 {x: 0.0, y: 0.5, z: 0.9}, Vec3::forward_rh());
@@ -294,17 +312,17 @@ mod tests {
         let root = KDTreeNode::Split {
             sep_plane: Plane {normal: Vec3::unit_z(), point: Vec3::zero()},
             bounds: vec![b_node_bounds.clone(), c_node_bounds.clone()].bounds(),
-            front_nodes: Box::new(KDTreeNode::Leaf {
+            front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 // leaf bounds do not matter currently
                 bounds: BoundingBox::new(Vec3::zero(), Vec3::zero()),
                 nodes: vec![c_node_bounds.clone(), b_node_bounds.clone()],
-            }),
-            back_nodes: Box::new(KDTreeNode::Leaf {
+            })),
+            back_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 // leaf bounds do not matter currently
                 bounds: BoundingBox::new(Vec3::zero(), Vec3::zero()),
                 // Force tree to check C again by putting it first
                 nodes: vec![c_node_bounds.clone()],
-            }),
+            })),
         };
 
         let ray = Ray::new(Vec3 {x: 0.0, y: 0.5, z: -0.9}, Vec3::back_rh());
