@@ -86,6 +86,11 @@ impl BoundingBox {
         self.max
     }
 
+    /// Returns the maximum distance between any two points within the bounding box
+    pub fn extent(&self) -> f64 {
+        (self.max - self.min).magnitude()
+    }
+
     /// Returns the ray parameter value for which this bounding box will be hit by the given ray
     ///
     /// If the ray at t_range.start is inside the bounding box, t_range.start will be returned.

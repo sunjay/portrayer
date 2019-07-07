@@ -3,6 +3,14 @@ use std::ops::Range;
 use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::{EPSILON, Vec3};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlaneSide {
+    /// In front of the plane (or on its face)
+    Front,
+    /// Behind the plane
+    Back,
+}
+
 /// A flat, infinite plane
 #[derive(Debug, Clone)]
 pub struct Plane {
@@ -12,6 +20,25 @@ pub struct Plane {
     pub normal: Vec3,
     /// Any point on the plane
     pub point: Vec3,
+}
+
+impl Plane {
+    /// Returns which side of this place the given point is on.
+    pub fn which_side(&self, other_point: Vec3) -> PlaneSide {
+        if (other_point - self.point).dot(self.normal) >= 0.0 {
+            PlaneSide::Front
+        } else {
+            PlaneSide::Back
+        }
+    }
+
+    /// Returns a plane with the normal flipped
+    pub fn flipped(&self) -> Self {
+        Self {
+            normal: -self.normal,
+            point: self.point,
+        }
+    }
 }
 
 impl RayHit for Plane {
