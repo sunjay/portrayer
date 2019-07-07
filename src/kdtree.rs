@@ -255,4 +255,62 @@ mod tests {
         let (_, mat) = root.ray_cast(&ray, &mut t_range).unwrap();
         assert_eq!(mat, mat_b);
     }
+
+    #[test]
+    fn ray_cast_edge_case_flipped() {
+        // This is the exact same case as above but with all the z values flipped except for the
+        // separating plane. This causes the ray to go from the back to the front of the separating
+        // plane.
+
+        let mat_b = Arc::new(Material {
+            diffuse: Rgb::red(),
+            ..Material::default()
+        });
+
+        let trans_b = Mat4::scaling_3d(2.0)
+            .rotated_x(-90f64.to_radians())
+            .translated_3d((0.0, 1.2, 0.4));
+        let node_b = FlatSceneNode::new(Geometry::new(FinitePlane, mat_b.clone()), trans_b);
+        let b_node_bounds = Arc::new(NodeBounds {
+            bounds: node_b.bounds(),
+            node: node_b,
+        });
+
+        let mat_c = Arc::new(Material {
+            diffuse: Rgb::blue(),
+            ..Material::default()
+        });
+        assert_ne!(mat_b, mat_c);
+
+        let trans_c = Mat4::scaling_3d(2.0)
+            .rotated_x(-50f64.to_radians())
+            .translated_3d((0.0, 0.0, 0.3));
+        let node_c = FlatSceneNode::new(Geometry::new(FinitePlane, mat_c.clone()), trans_c);
+        let c_node_bounds = Arc::new(NodeBounds {
+            bounds: node_c.bounds(),
+            node: node_c,
+        });
+
+        let root = KDTreeNode::Split {
+            sep_plane: Plane {normal: Vec3::unit_z(), point: Vec3::zero()},
+            bounds: vec![b_node_bounds.clone(), c_node_bounds.clone()].bounds(),
+            front_nodes: Box::new(KDTreeNode::Leaf {
+                // leaf bounds do not matter currently
+                bounds: BoundingBox::new(Vec3::zero(), Vec3::zero()),
+                nodes: vec![c_node_bounds.clone(), b_node_bounds.clone()],
+            }),
+            back_nodes: Box::new(KDTreeNode::Leaf {
+                // leaf bounds do not matter currently
+                bounds: BoundingBox::new(Vec3::zero(), Vec3::zero()),
+                // Force tree to check C again by putting it first
+                nodes: vec![c_node_bounds.clone()],
+            }),
+        };
+
+        let ray = Ray::new(Vec3 {x: 0.0, y: 0.5, z: -0.9}, Vec3::back_rh());
+        let mut t_range = Range {start: EPSILON, end: INFINITY};
+
+        let (_, mat) = root.ray_cast(&ray, &mut t_range).unwrap();
+        assert_eq!(mat, mat_b);
+    }
 }
