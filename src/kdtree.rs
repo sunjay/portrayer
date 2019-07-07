@@ -40,7 +40,7 @@ impl From<FlatScene> for KDTreeScene {
 /// A node and its bounding box
 ///
 /// Cached to avoid computing the bounding box from the node over and over again.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct NodeBounds {
     bounds: BoundingBox,
     node: FlatSceneNode,
@@ -70,7 +70,7 @@ impl RayCast for Arc<NodeBounds> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct KDLeaf {
     /// A bounding box that encompases all of the scene nodes in this leaf node
     bounds: BoundingBox,
@@ -241,7 +241,7 @@ impl KDLeaf {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum KDTreeNode {
     Split {
         /// The separating plane that divides the children
@@ -349,10 +349,62 @@ impl RayCast for KDTreeNode {
 mod tests {
     use super::*;
 
+    use pretty_assertions::{assert_eq, assert_ne};
+
     use crate::math::{EPSILON, INFINITY, Rgb, Mat4, Vec3};
     use crate::material::Material;
     use crate::scene::Geometry;
-    use crate::primitive::FinitePlane;
+    use crate::primitive::{Sphere, FinitePlane};
+
+    #[test]
+    fn single_axis_center_partition() {
+        // 5 objects:  A   B    S   C  D  E
+        //        x = -8  -5    0   3  5  8
+        //               back       front
+        //
+        // With max_nodes = 3, we should get two leaf nodes separated by the plane S
+        let max_nodes = 3;
+
+        let mat = Arc::new(Material::default());
+
+        let make_node_bounds = |x| {
+            let node = FlatSceneNode::new(Geometry::new(Sphere, mat.clone()),
+                Mat4::translation_3d((x, 0.0, 0.0)));
+            Arc::new(NodeBounds {bounds: node.bounds(), node})
+        };
+
+        let node_a = make_node_bounds(-8.0);
+        let node_b = make_node_bounds(-5.0);
+        let node_c = make_node_bounds(3.0);
+        let node_d = make_node_bounds(5.0);
+        let node_e = make_node_bounds(8.0);
+
+        let nodes = vec![node_a.clone(), node_b.clone(), node_c.clone(), node_d.clone(), node_e.clone()];
+        let nodes_bounds = nodes.bounds();
+        let leaf = KDLeaf {
+            bounds: nodes_bounds.clone(),
+            nodes,
+        };
+
+        let root = leaf.partitioned(Vec3::unit_x(), max_nodes);
+
+        let back_nodes = vec![node_a, node_b];
+        let front_nodes = vec![node_c, node_d, node_e];
+        let expected_root = KDTreeNode::Split {
+            sep_plane: Plane {normal: Vec3::unit_x(), point: Vec3::zero()},
+            bounds: nodes_bounds,
+            front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
+                bounds: front_nodes.bounds(),
+                nodes: front_nodes,
+            })),
+            back_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
+                bounds: back_nodes.bounds(),
+                nodes: back_nodes,
+            })),
+        };
+
+        assert_eq!(expected_root, root);
+    }
 
     #[test]
     fn ray_cast_edge_case() {

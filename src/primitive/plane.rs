@@ -12,7 +12,7 @@ pub enum PlaneSide {
 }
 
 /// A flat, infinite plane
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Plane {
     /// The normal of the plane (MUST be a unit vector)
     ///

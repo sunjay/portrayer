@@ -17,7 +17,7 @@ pub struct Scene<R> {
     pub ambient: Rgb,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Geometry {
     pub primitive: Primitive,
     pub material: Arc<Material>,

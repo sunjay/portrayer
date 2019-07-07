@@ -31,7 +31,7 @@ impl<T: Bounds> Bounds for Vec<T> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BoundingBox {
     /// The corner of the bounding box with all the lowest x,y,z values
     min: Vec3,

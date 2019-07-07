@@ -5,7 +5,7 @@ use crate::math::Vec3;
 use crate::bounding_box::{BoundingBox, Bounds};
 
 /// A triangle with the given 3 vertices
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Triangle {
     pub a: Vec3,
     pub b: Vec3,

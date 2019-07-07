@@ -19,7 +19,7 @@ pub enum Shading {
 }
 
 /// The 3D data of a mesh, can be shared between multiple Meshes
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct MeshData {
     /// Each item is a group of three vertices (their indexes) representing a triangle
     triangles: Vec<(usize, usize, usize)>,
@@ -75,7 +75,7 @@ impl MeshData {
 }
 
 /// A 3D mesh made of triangles.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Mesh {
     data: Arc<MeshData>,
     /// The mode to use when computing the normal of each face

@@ -14,6 +14,7 @@ rand = "0.7"
 
 [dev-dependencies]
 assert_approx_eq = "1.1"
+pretty_assertions = "0.6"
 
 [profile.dev]
 # Needed to make rendering fast even in debug mode
