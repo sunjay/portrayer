@@ -135,6 +135,7 @@ impl RayCast for KDTreeNode {
                             },
                         }
                     },
+
                     // Ray segment goes through the back nodes, then the front nodes
                     (Back, Front) => {
                         // Must ensure that any found intersection is actually on the checked side
@@ -167,5 +168,91 @@ impl RayCast for KDTreeNode {
                 }
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::math::{EPSILON, INFINITY, Rgb, Mat4, Vec3};
+    use crate::material::Material;
+    use crate::scene::Geometry;
+    use crate::primitive::FinitePlane;
+
+    #[test]
+    fn ray_cast_edge_case() {
+        // Suppose you have the following case:
+        //            S B   C
+        //            ! |  /
+        // R o--------!-|-/----------->
+        //            !  /
+        //      N <---! /
+        //            !/
+        //   front    /      back
+        //           /!
+        //          / !
+        //         /  !
+        // Here, the ray R is going straight towards the -z direction.
+        // S is the separating plane with normal N. B and C are both polygons.
+        // C is on both sides of the separating plane. B is only behind the separating plane.
+        //
+        // Since the ray origin is in front of the separating plane, we will traverse that side
+        // first. Upon checking C, we will find an intersection. If we return that intersection,
+        // the result is incorrect since B is actually in front of C. We have to check that the t
+        // value returned actually indicates that the intersection is in front of S.
+        //
+        // If all goes well, we should return B, not C.
+
+        let mat_b = Arc::new(Material {
+            diffuse: Rgb::red(),
+            ..Material::default()
+        });
+
+        let trans_b = Mat4::scaling_3d(2.0)
+            .rotated_x(90f64.to_radians())
+            .translated_3d((0.0, 1.2, -0.4));
+        let node_b = FlatSceneNode::new(Geometry::new(FinitePlane, mat_b.clone()), trans_b);
+        let b_node_bounds = Arc::new(NodeBounds {
+            bounds: node_b.bounds(),
+            node: node_b,
+        });
+
+        let mat_c = Arc::new(Material {
+            diffuse: Rgb::blue(),
+            ..Material::default()
+        });
+        assert_ne!(mat_b, mat_c);
+
+        let trans_c = Mat4::scaling_3d(2.0)
+            .rotated_x(50f64.to_radians())
+            .translated_3d((0.0, 0.0, -0.3));
+        let node_c = FlatSceneNode::new(Geometry::new(FinitePlane, mat_c.clone()), trans_c);
+        let c_node_bounds = Arc::new(NodeBounds {
+            bounds: node_c.bounds(),
+            node: node_c,
+        });
+
+        let root = KDTreeNode::Split {
+            sep_plane: Plane {normal: Vec3::unit_z(), point: Vec3::zero()},
+            bounds: vec![b_node_bounds.clone(), c_node_bounds.clone()].bounds(),
+            front_nodes: Box::new(KDTreeNode::Leaf {
+                // leaf bounds do not matter currently
+                bounds: BoundingBox::new(Vec3::zero(), Vec3::zero()),
+                nodes: vec![c_node_bounds.clone()],
+            }),
+            back_nodes: Box::new(KDTreeNode::Leaf {
+                // leaf bounds do not matter currently
+                bounds: BoundingBox::new(Vec3::zero(), Vec3::zero()),
+                // Force tree to check C again by putting it first
+                nodes: vec![c_node_bounds.clone(), b_node_bounds.clone()],
+            }),
+        };
+
+        let ray = Ray::new(Vec3 {x: 0.0, y: 0.5, z: 0.9}, Vec3::forward_rh());
+        let mut t_range = Range {start: EPSILON, end: INFINITY};
+
+        let (_, mat) = root.ray_cast(&ray, &mut t_range).unwrap();
+        assert_eq!(mat, mat_b);
     }
 }

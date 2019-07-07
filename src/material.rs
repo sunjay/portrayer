@@ -9,7 +9,7 @@ use crate::texture::{Texture, TextureSource};
 // Controls the maximum ray recursion depth
 const MAX_RECURSION_DEPTH: u32 = 10;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Material {
     /// The diffuse reflection constant
     pub diffuse: Rgb,

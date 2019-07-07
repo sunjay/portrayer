@@ -62,6 +62,18 @@ pub enum Texture {
     Image(ImageTexture),
 }
 
+impl PartialEq for Texture {
+    fn eq(&self, other: &Self) -> bool {
+        use Texture::*;
+        match (self, other) {
+            //TODO: Not actually used in tests so I will implement this when it is needed
+            (FnTex(_), FnTex(_)) => unimplemented!(),
+            (Image(img), Image(img2)) => img.buffer.eq(&*img2.buffer),
+            _ => false,
+        }
+    }
+}
+
 impl<T> From<T> for Texture where T: Fn(Uv) -> Rgb + Send + Sync + 'static {
     fn from(f: T) -> Self {
         Texture::FnTex(Box::new(f))
