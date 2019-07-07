@@ -20,9 +20,14 @@ impl<T> TextureSource for T where T: Fn(Uv) -> Rgb {
     }
 }
 
-#[derive(Debug)]
 pub struct ImageTexture {
     buffer: image::RgbImage,
+}
+
+impl fmt::Debug for ImageTexture {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_tuple("ImageTexture").field(&format_args!("..")).finish()
+    }
 }
 
 impl From<image::RgbImage> for ImageTexture {
