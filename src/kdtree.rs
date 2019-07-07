@@ -274,8 +274,9 @@ impl RayCast for KDTreeNode {
             Leaf(KDLeaf {nodes, ..}) => nodes.ray_cast(ray, t_range),
             Split {sep_plane, bounds, front_nodes, back_nodes} => {
                 // A value of t large enough that the point on the ray for this t would be well
-                // beyond the extent of the scene
-                let t_max = bounds.extent();
+                // beyond the extent of the scene. Need to add to t_range.start because otherwise
+                // the bounds extent may not be enough.
+                let t_max = t_range.start + bounds.extent();
                 // Must still be a value in the valid range
                 let t_max = if t_range.contains(&t_max) { t_max } else { t_range.end };
                 // The two "end points" of the ray make a "ray segment"
