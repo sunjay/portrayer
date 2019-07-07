@@ -30,8 +30,12 @@ impl From<FlatScene> for KDTreeScene {
         let leaf = KDLeaf {bounds: nodes.bounds(), nodes};
         // Arbitrary target number of leaves in each leaf. A leaf may end up with more or less than
         // this depending on how things go during partitioning.
-        const MAX_NODES_IN_LEAF: usize = 3;
-        let root = leaf.partitioned(Vec3::unit_x(), MAX_NODES_IN_LEAF);
+        let part_conf = PartitionConfig {
+            target_max_nodes: 3,
+            target_max_merit: 3,
+            max_tries: 10,
+        };
+        let root = leaf.partitioned(Vec3::unit_x(), part_conf);
 
         Self {root, lights, ambient}
     }
@@ -81,6 +85,21 @@ pub struct KDLeaf {
     nodes: Vec<Arc<NodeBounds>>,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct PartitionConfig {
+    /// The target maximum number of nodes allowed in a leaf node. A leaf may have more or less
+    /// nodes than this depending on how partitioning goes.
+    target_max_nodes: usize,
+    /// The target maximum difference between the number of items in front or behind the separating
+    /// plane. Note that this includes items shared by both partitions.
+    /// merit = (front - back).abs() + shared
+    target_max_merit: isize,
+
+    /// The maximum number of attempts to find a good separating plane. After this, we will
+    /// just take whatever we get.
+    max_tries: usize,
+}
+
 impl KDLeaf {
     /// Partition the nodes in this leaf until the number of nodes is less than the given
     /// threshold or until the leaf cannot be partitioned anymore. There is no guarantee that the
@@ -88,8 +107,9 @@ impl KDLeaf {
     /// try our best.
     ///
     /// The provided axis vector must be a positive unit vector: (1,0,0), (0,1,0), or (0,0,1)
-    fn partitioned(self, axis: Vec3, max_nodes: usize) -> KDTreeNode {
-        if self.nodes.len() <= max_nodes {
+    fn partitioned(self, axis: Vec3, part_conf: PartitionConfig) -> KDTreeNode {
+        let PartitionConfig {target_max_nodes, target_max_merit, max_tries} = part_conf;
+        if self.nodes.len() <= target_max_nodes {
             return KDTreeNode::Leaf(self);
         }
 
@@ -148,22 +168,13 @@ impl KDLeaf {
         // becomes either the area in front of the plane or the area behind.
         let mut plane_range = (min_axis, max_axis);
 
-        /// The target difference between the number of items in front or behind the separating
-        /// plane. Note that this includes items shared by both partitions.
-        /// merit = (front - back).abs() + shared
-        const TARGET_PARTITION: isize = 3;
-
-        /// The maximum number of attempts to find a good separating plane. After this, we will
-        /// just take whatever we get.
-        //TODO: Consider tracking the "best" separating plane based on the "merit" metric and then
-        // returning that instead if we hit MAX_TRIES
-        const MAX_TRIES: usize = 10;
-
         //TODO: This is a simpler (and less efficient) algorithm than the one in the paper. We
         // partition the same list of nodes over and over again with different plane choices. They
         // only partition the nodes on the side of the plane that need to be repartitioned. We can
         // experiment with the more complex (but potentially faster) method later on.
-        for _ in 0..MAX_TRIES {
+        //TODO: Consider tracking the "best" separating plane based on the "merit" merit and then
+        // returning that instead if we hit MAX_TRIES
+        for _ in 0..max_tries {
             // Time-space/allocation trade-off: not going to partition the nodes until we've
             // actually decided on a good partition. This avoids allocating over and over again
             // for partitions we aren't even going to keep.
@@ -184,7 +195,7 @@ impl KDLeaf {
 
             // Determine how good the partition is
             let merit = (front - back).abs() + shared;
-            if merit <= TARGET_PARTITION {
+            if merit <= target_max_merit {
                 break;
             }
 
@@ -232,11 +243,11 @@ impl KDLeaf {
             front_nodes: Box::new(KDLeaf {
                 bounds: front_nodes.bounds(),
                 nodes: front_nodes,
-            }.partitioned(next, max_nodes)),
+            }.partitioned(next, part_conf)),
             back_nodes: Box::new(KDLeaf {
                 bounds: back_nodes.bounds(),
                 nodes: back_nodes,
-            }.partitioned(next, max_nodes)),
+            }.partitioned(next, part_conf)),
         }
     }
 }
@@ -354,7 +365,7 @@ mod tests {
     use crate::math::{EPSILON, INFINITY, Rgb, Mat4, Vec3};
     use crate::material::Material;
     use crate::scene::Geometry;
-    use crate::primitive::{Sphere, FinitePlane};
+    use crate::primitive::{FinitePlane};
 
     #[test]
     fn single_axis_center_partition() {
@@ -362,14 +373,18 @@ mod tests {
         //        x = -8  -5    0   3  5  8
         //               back       front
         //
-        // With max_nodes = 3, we should get two leaf nodes separated by the plane S
-        let max_nodes = 3;
+        // With target_max_nodes = 3, we should get two leaf nodes separated by the plane S
+        let part_conf = PartitionConfig {
+            target_max_nodes: 3,
+            target_max_merit: 3,
+            max_tries: 10,
+        };
 
         let mat = Arc::new(Material::default());
 
         let make_node_bounds = |x| {
-            let node = FlatSceneNode::new(Geometry::new(Sphere, mat.clone()),
-                Mat4::translation_3d((x, 0.0, 0.0)));
+            let node = FlatSceneNode::new(Geometry::new(FinitePlane, mat.clone()),
+                Mat4::rotation_z(90.0f64.to_radians()).translated_3d((x, 0.0, 0.0)));
             Arc::new(NodeBounds {bounds: node.bounds(), node})
         };
 
@@ -386,12 +401,72 @@ mod tests {
             nodes,
         };
 
-        let root = leaf.partitioned(Vec3::unit_x(), max_nodes);
+        let root = leaf.partitioned(Vec3::unit_x(), part_conf);
 
         let back_nodes = vec![node_a, node_b];
         let front_nodes = vec![node_c, node_d, node_e];
         let expected_root = KDTreeNode::Split {
             sep_plane: Plane {normal: Vec3::unit_x(), point: Vec3::zero()},
+            bounds: nodes_bounds,
+            front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
+                bounds: front_nodes.bounds(),
+                nodes: front_nodes,
+            })),
+            back_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
+                bounds: back_nodes.bounds(),
+                nodes: back_nodes,
+            })),
+        };
+
+        assert_eq!(expected_root, root);
+    }
+
+    #[test]
+    fn single_axis_uneven_partition() {
+        // 5 objects:  A        B   C  D  E
+        //        x = -8        0   3  5  8
+        //               back       front
+        //                           ^------ expected separating plane, x = 4.0
+        //
+        // With target_max_nodes = 3, we should get one split followed by two leaf nodes.
+        // Note that the separating plane is not the center anymore. It will take more than one
+        // iteration to find it.
+        let part_conf = PartitionConfig {
+            target_max_nodes: 3,
+            target_max_merit: 2,
+            max_tries: 10,
+        };
+
+        let mat = Arc::new(Material::default());
+
+        let make_node_bounds = |x| {
+            let node = FlatSceneNode::new(Geometry::new(FinitePlane, mat.clone()),
+                Mat4::rotation_z(90.0f64.to_radians()).translated_3d((x, 0.0, 0.0)));
+            Arc::new(NodeBounds {bounds: node.bounds(), node})
+        };
+
+        let node_a = make_node_bounds(-8.0);
+        let node_b = make_node_bounds(0.0);
+        let node_c = make_node_bounds(3.0);
+        let node_d = make_node_bounds(5.0);
+        let node_e = make_node_bounds(8.0);
+
+        let nodes = vec![node_a.clone(), node_b.clone(), node_c.clone(), node_d.clone(), node_e.clone()];
+        let nodes_bounds = nodes.bounds();
+        let leaf = KDLeaf {
+            bounds: nodes_bounds.clone(),
+            nodes,
+        };
+
+        let root = leaf.partitioned(Vec3::unit_x(), part_conf);
+
+        let back_nodes = vec![node_a, node_b, node_c];
+        let front_nodes = vec![node_d, node_e];
+        let expected_root = KDTreeNode::Split {
+            sep_plane: Plane {
+                normal: Vec3::unit_x(),
+                point: Vec3 {x: 4.0, y: 0.0, z: 0.0},
+            },
             bounds: nodes_bounds,
             front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 bounds: front_nodes.bounds(),
