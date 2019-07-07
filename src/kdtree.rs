@@ -1,6 +1,12 @@
+//! This implementation is based on this technical report:
+//!
+//!     Donald S. Fussell and K. R. Subramanian. Fast Ray Tracing Using K-d Trees. Tech. rep.
+//!     Austin, TX, USA: University of Texas at Austin, 1988.
+
 use std::sync::Arc;
 use std::ops::Range;
 
+use crate::math::Vec3;
 use crate::scene::Scene;
 use crate::material::Material;
 use crate::flat_scene::{FlatScene, FlatSceneNode};
@@ -25,7 +31,7 @@ impl From<FlatScene> for KDTreeScene {
         // Arbitrary target number of leaves in each leaf. A leaf may end up with more or less than
         // this depending on how things go during partitioning.
         const MAX_NODES_IN_LEAF: usize = 3;
-        let root = leaf.partitioned(MAX_NODES_IN_LEAF);
+        let root = leaf.partitioned(Vec3::unit_x(), MAX_NODES_IN_LEAF);
 
         Self {root, lights, ambient}
     }
@@ -80,8 +86,158 @@ impl KDLeaf {
     /// threshold or until the leaf cannot be partitioned anymore. There is no guarantee that the
     /// resulting tree will have fewer nodes in its leaves than the given threshold, but we will
     /// try our best.
-    fn partitioned(self, max_nodes: usize) -> KDTreeNode {
-        KDTreeNode::Leaf(self)
+    ///
+    /// The provided axis vector must be a positive unit vector: (1,0,0), (0,1,0), or (0,0,1)
+    fn partitioned(self, axis: Vec3, max_nodes: usize) -> KDTreeNode {
+        if self.nodes.len() <= max_nodes {
+            return KDTreeNode::Leaf(self);
+        }
+
+        /// Produces the next axis to partition by "rotating"/"shifting" all elements down:
+        /// (1,0,0) -> (0,1,0) -> (0,0,1)
+        fn next_axis(mut axis: Vec3) -> Vec3 {
+            let temp = axis.z;
+            axis.z = axis.y;
+            axis.y = axis.x;
+            axis.x = temp;
+            axis
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        enum Partition {
+            Front,
+            Back,
+            Shared,
+        }
+
+        /// Tests which side of the separating plane a given node is on. The node may be on both
+        /// sides. Returns (front, back) where each is true if the node is on that side.
+        fn partition_node(
+            node: &Arc<NodeBounds>,
+            sep_plane: &Plane,
+        ) -> Partition {
+            use PlaneSide::*;
+
+            let node_min = node.bounds.min();
+            let node_max = node.bounds.max();
+
+            match (sep_plane.which_side(node_min), sep_plane.which_side(node_max)) {
+                // Node is entirely in front of the separating plane
+                (Front, Front) => Partition::Front,
+                // Node is entirely behind the separating plane
+                (Back, Back) => Partition::Back,
+                // Node is both in front and behind
+                (Front, Back) | (Back, Front) => Partition::Shared,
+            }
+        }
+
+        let KDLeaf {bounds, nodes} = self;
+
+        // Find the center of the bounding box along the given axis
+        let min_axis = axis * bounds.min();
+        let max_axis = axis * bounds.max();
+        // The plane is infinite, so it doesn't actually matter where this point is
+        // (e.g. it does not need to depend on the previous split if any)
+        let mut sep_plane = Plane {
+            normal: axis,
+            point: min_axis + (max_axis - min_axis) / 2.0,
+        };
+
+        // This variable represents the valid range that the partitioning plane can exist in
+        // Once we find that we need to move the plane forwards or backwards, the valid range
+        // becomes either the area in front of the plane or the area behind.
+        let mut plane_range = (min_axis, max_axis);
+
+        /// The target difference between the number of items in front or behind the separating
+        /// plane. Note that this includes items shared by both partitions.
+        /// merit = (front - back).abs() + shared
+        const TARGET_PARTITION: isize = 3;
+
+        /// The maximum number of attempts to find a good separating plane. After this, we will
+        /// just take whatever we get.
+        //TODO: Consider tracking the "best" separating plane based on the "merit" metric and then
+        // returning that instead if we hit MAX_TRIES
+        const MAX_TRIES: usize = 10;
+
+        //TODO: This is a simpler (and less efficient) algorithm than the one in the paper. We
+        // partition the same list of nodes over and over again with different plane choices. They
+        // only partition the nodes on the side of the plane that need to be repartitioned. We can
+        // experiment with the more complex (but potentially faster) method later on.
+        for _ in 0..MAX_TRIES {
+            // Time-space/allocation trade-off: not going to partition the nodes until we've
+            // actually decided on a good partition. This avoids allocating over and over again
+            // for partitions we aren't even going to keep.
+
+            // The number of nodes in front of the separating plane
+            let mut front = 0isize;
+            // The number of nodes behind the separating plane
+            let mut back = 0isize;
+            // The number of nodes that are partially in front and partially behind the plane
+            let mut shared = 0isize;
+            for node in &nodes {
+                match partition_node(node, &sep_plane) {
+                    Partition::Front => front += 1,
+                    Partition::Back => back += 1,
+                    Partition::Shared => shared += 1,
+                }
+            }
+
+            // Determine how good the partition is
+            let merit = (front - back).abs() + shared;
+            if merit <= TARGET_PARTITION {
+                break;
+            }
+
+            // Pick a new separating plane (similar to a simple binary search)
+
+            // Note that this code assumes that `axis` is a positive single-axis unit vector. Thus:
+            // * Every node behind the plane is between min_axis and sep_plane.point.
+            // * Every node in front of the plane is between sep_plane.point and max_axis.
+
+            // The separating plane is currently in this range:
+            let (plane_min, plane_max) = plane_range;
+            if front > back {
+                // Plane must be in the forward half of its range
+                plane_range = (sep_plane.point, plane_max);
+                // Move plane forward
+                sep_plane.point = sep_plane.point + (plane_max - sep_plane.point) / 2.0;
+
+            } else {
+                // Plane must be in the back half of its range
+                plane_range = (plane_min, sep_plane.point);
+                // Move plane backward
+                sep_plane.point = plane_min + (sep_plane.point - plane_min) / 2.0;
+            }
+        }
+
+        // Create the actual partition based on the chosen plane
+        let mut front_nodes = Vec::new();
+        let mut back_nodes = Vec::new();
+        for node in nodes {
+            match partition_node(&node, &sep_plane) {
+                Partition::Front => front_nodes.push(node),
+                Partition::Back => back_nodes.push(node),
+                Partition::Shared => {
+                    front_nodes.push(node.clone());
+                    back_nodes.push(node);
+                },
+            }
+        }
+
+        let next = next_axis(axis);
+        KDTreeNode::Split {
+            sep_plane,
+            // Copy the bounds from the original leaf since it already encompases all the nodes
+            bounds,
+            front_nodes: Box::new(KDLeaf {
+                bounds: front_nodes.bounds(),
+                nodes: front_nodes,
+            }.partitioned(next, max_nodes)),
+            back_nodes: Box::new(KDLeaf {
+                bounds: back_nodes.bounds(),
+                nodes: back_nodes,
+            }.partitioned(next, max_nodes)),
+        }
     }
 }
 
