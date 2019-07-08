@@ -269,58 +269,35 @@ pub enum KDTreeNode {
 
 impl RayCast for KDTreeNode {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
-        /// A more expensive check for intersection where we create a new ray by moving the ray end
-        /// points away from the plane (thus ensuring that they will intersect the plane). We then
-        /// adjust the t value for this new ray so that it works with the old ray. All of this is
-        /// necessary for when numerical error prevents us from intersecting when the end points are
-        /// too close to the plane.
-        ///
-        /// Note that the separating plane should passed in such that the ray will intersect with
-        /// it. (Make sure the plane normal is facing towards the ray origin.)
-        fn plane_intersect_numerical_correction(
-            sep_plane: &Plane,
-            ray: &Ray,
-            ray_start: Vec3,
-            ray_end: Vec3,
-            t_range: &Range<f64>,
-        ) -> Option<RayIntersection> {
-            // We know that ray_start and ray_end are respectively in front of the plane and behind
-            // the plane (relative to its normal direction). That means that if we didn't get an
-            // intersection before, it may be because of numerical instability issues--that is, the
-            // ray end points might be too close to the plane. If we move the ray end points
-            // farther from the plane using the plane's normal, we can find another intersection
-            // point on the plane and try to relate that to the original ray.
+        // To find the t value of the plane intersection, we exploit the fact that the plane is
+        // axis-aligned and thus we already know one of the components of the hit_point that would
+        // be returned from any other call to ray_hit.
+        //
+        // The ray_hit implementation of Plane suffers from some numerical issues when the ray is
+        // right on the plane itself. This isn't typical for most scenes, but it can easily happen
+        // in the k-d tree when the separating plane cross the eye point.
+        //
+        // This function takes advantage of the fact that the ray is defined as r(t) = p + t*d and
+        // that this equation can produce the same value of t regardless of which of the following
+        // alternatives we use: r_x = p_x + t*d_x   or   r_y = p_y + t*d_y   or   r_z = p_z + t*d_z
+        // We can thus use the fact that (r_x, r_y, r_z) = sep_plane.point to find a value for t
+        // without going through the full hit calculation. We only use the component of the plane
+        // that corresponds to the non-zero component of the normal since we know that the
+        // intersection point we would get from the full ray_hit must have that value for that
+        // component in the hit_point it would have returned.
+        fn ray_hit_axis_aligned_plane(sep_plane: &Plane, ray: &Ray, t_range: &Range<f64>) -> Option<f64> {
+            // Multiplying by the normal will set two components to zero and sum() will
+            // let us fish out the non-zero value.
+            let plane_value = (sep_plane.normal * sep_plane.point).sum();
+            let ray_origin = (sep_plane.normal * ray.origin()).sum();
+            let ray_direction = (sep_plane.normal * ray.direction()).sum();
 
-            // Move the ray start and end away from the plane, but still
-            // surrounding the same intersection point (proof by similar triangles)
-            let shift = sep_plane.normal * 0.01;
-            let ray_start = ray_start + shift;
-            let ray_end = ray_end - shift;
-            let new_ray = Ray::new(ray_start, (ray_end - ray_start).normalized());
-            // Can't use the same t_range since that was defined in terms of
-            // the old ray
-            let new_t_range = Range {start: EPSILON, end: INFINITY};
-            // If this ray doesn't hit, just return (we tried)
-            let new_plane_hit = sep_plane.ray_hit(&new_ray, &new_t_range)?;
-            let hit_point = new_plane_hit.hit_point;
-            // Compute the t value along the original ray
-            let t = (hit_point - ray.origin()) / ray.direction();
-            //TODO: This doesn't actually work. We get different values for each component of t.
-
-            // Retrieve the value of t for the normal axis by multiplying by the normal and adding
-            // up the vector components. This works because multiplying will set two components to
-            // zero and leave just a single value.
-            let t = (t * sep_plane.normal.map(|x| x.abs())).sum();
-
-            // Have to ensure the integrity of t_range
-            if !t_range.contains(&t) {
-                return None;
+            let t = (plane_value - ray_origin) / ray_direction;
+            if t_range.contains(&t) {
+                Some(t)
+            } else {
+                None
             }
-
-            Some(RayIntersection {
-                ray_parameter: t,
-                ..new_plane_hit
-            })
         }
 
         use KDTreeNode::*;
@@ -352,20 +329,12 @@ impl RayCast for KDTreeNode {
                     // Ray segment goes through the front nodes, then the back nodes
                     (Front, Back) => {
                         // Must ensure that any found intersection is actually on the checked side
-                        // of the plane or else we can get incorrect results
-                        let plane_hit = sep_plane.ray_hit(ray, t_range)
-                            .or_else(|| {
-                                // Try a more expensive check in case we didn't find anything due
-                                // to numerical errors (i.e. ray end points being too close to
-                                // the plane)
-                                //TODO: There is probably a way to tell if we need to do this more
-                                // expensive check by testing how close the ray_start and ray_end
-                                // points really are relative to the axis of sep_plane.normal
-                                plane_intersect_numerical_correction(sep_plane, ray, ray_start,
-                                    ray_end, t_range)
-                            })
+                        // of the plane or else we can get incorrect results. We can do this by
+                        // limiting the t_range based on the value of t for which the ray
+                        // intersects the plane.
+
+                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray, t_range)
                             .expect("bug: ray should definitely hit infinite plane");
-                        let plane_t = plane_hit.ray_parameter;
 
                         // Only going to continue with this range if it hits
                         let mut front_t_range = Range {start: t_range.start, end: plane_t};
@@ -390,23 +359,13 @@ impl RayCast for KDTreeNode {
 
                     // Ray segment goes through the back nodes, then the front nodes
                     (Back, Front) => {
-                        // Need to flip the plane since the ray is facing the back of the plane
-                        let sep_plane = sep_plane.flipped();
                         // Must ensure that any found intersection is actually on the checked side
-                        // of the plane or else we can get incorrect results
-                        let plane_hit = sep_plane.ray_hit(ray, t_range)
-                            .or_else(|| {
-                                // Try a more expensive check in case we didn't find anything due
-                                // to numerical errors (i.e. ray end points being too close to
-                                // the plane)
-                                //TODO: There is probably a way to tell if we need to do this more
-                                // expensive check by testing how close the ray_start and ray_end
-                                // points really are relative to the axis of sep_plane.normal
-                                plane_intersect_numerical_correction(&sep_plane, ray, ray_start,
-                                    ray_end, t_range)
-                            })
+                        // of the plane or else we can get incorrect results. We can do this by
+                        // limiting the t_range based on the value of t for which the ray
+                        // intersects the plane.
+
+                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray, t_range)
                             .expect("bug: ray should definitely hit infinite plane");
-                        let plane_t = plane_hit.ray_parameter;
 
                         // Only going to continue with this range if it hits
                         let mut back_t_range = Range {start: t_range.start, end: plane_t};
