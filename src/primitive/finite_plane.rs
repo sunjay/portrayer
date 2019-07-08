@@ -47,3 +47,24 @@ impl RayHit for FinitePlane {
             })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::math::Mat4;
+
+    #[test]
+    fn rotated_plane_bounds() {
+        let plane = FinitePlane;
+
+        let bounds = plane.bounds();
+        assert_eq!(bounds.min(), Vec3 {x: -0.5, y: 0.0, z: -0.5});
+        assert_eq!(bounds.max(), Vec3 {x: 0.5, y: 0.0, z: 0.5});
+
+        let trans = Mat4::rotation_x(90.0f64.to_radians());
+        let rotated_bounds = trans * bounds;
+        assert_eq!(rotated_bounds.min().map(|x| (x * 10.0).round() / 10.0), Vec3 {x: -0.5, y: -0.5, z: 0.0});
+        assert_eq!(rotated_bounds.max().map(|x| (x * 10.0).round() / 10.0), Vec3 {x: 0.5, y: 0.5, z: 0.0});
+    }
+}
