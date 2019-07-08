@@ -6,12 +6,12 @@
 use std::sync::Arc;
 use std::ops::Range;
 
-use crate::math::{EPSILON, INFINITY, Vec3};
+use crate::math::{EPSILON, Vec3};
 use crate::scene::Scene;
 use crate::material::Material;
 use crate::flat_scene::{FlatScene, FlatSceneNode};
 use crate::bounding_box::{BoundingBox, Bounds};
-use crate::ray::{RayCast, RayHit, Ray, RayIntersection};
+use crate::ray::{RayCast, Ray, RayIntersection};
 use crate::primitive::{Plane, PlaneSide};
 
 /// A scene organized as a KDTree for fast intersections
@@ -285,14 +285,23 @@ impl RayCast for KDTreeNode {
         // that corresponds to the non-zero component of the normal since we know that the
         // intersection point we would get from the full ray_hit must have that value for that
         // component in the hit_point it would have returned.
-        fn ray_hit_axis_aligned_plane(sep_plane: &Plane, ray: &Ray, t_range: &Range<f64>) -> Option<f64> {
+        fn ray_hit_axis_aligned_plane(
+            sep_plane: &Plane,
+            ray_start: Vec3,
+            ray_end: Vec3,
+            t_min: f64,
+            t_range: &Range<f64>,
+        ) -> Option<f64> {
             // Multiplying by the normal will set two components to zero and sum() will
             // let us fish out the non-zero value.
             let plane_value = (sep_plane.normal * sep_plane.point).sum();
-            let ray_origin = (sep_plane.normal * ray.origin()).sum();
-            let ray_direction = (sep_plane.normal * ray.direction()).sum();
+            let ray_origin = (sep_plane.normal * ray_start).sum();
+            let ray_direction = (sep_plane.normal * (ray_end - ray_start).normalized()).sum();
 
-            let t = (plane_value - ray_origin) / ray_direction;
+            // Need to add t_min because we used ray_start as the ray origin above
+            let t = t_min + (plane_value - ray_origin) / ray_direction;
+
+            // Must always ensure that we respect t_range or things can go *very* wrong
             if t_range.contains(&t) {
                 Some(t)
             } else {
@@ -313,7 +322,8 @@ impl RayCast for KDTreeNode {
                 let t_max = if t_range.contains(&t_max) { t_max } else { t_range.end - EPSILON };
                 // The two "end points" of the ray make a "ray segment"
                 // Need to add EPSILON because range is exclusive
-                let ray_start = ray.at(t_range.start + EPSILON);
+                let t_min = t_range.start + EPSILON;
+                let ray_start = ray.at(t_min);
                 let ray_end = ray.at(t_max);
 
                 // Search through child nodes, filtering and ordering by which side(s) of the
@@ -333,7 +343,7 @@ impl RayCast for KDTreeNode {
                         // limiting the t_range based on the value of t for which the ray
                         // intersects the plane.
 
-                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray, t_range)
+                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray_start, ray_end, t_min, t_range)
                             .expect("bug: ray should definitely hit infinite plane");
 
                         // Only going to continue with this range if it hits
@@ -364,7 +374,7 @@ impl RayCast for KDTreeNode {
                         // limiting the t_range based on the value of t for which the ray
                         // intersects the plane.
 
-                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray, t_range)
+                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray_start, ray_end, t_min, t_range)
                             .expect("bug: ray should definitely hit infinite plane");
 
                         // Only going to continue with this range if it hits
