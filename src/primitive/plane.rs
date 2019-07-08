@@ -25,7 +25,7 @@ pub struct Plane {
 impl Plane {
     /// Returns which side of this place the given point is on.
     pub fn which_side(&self, other_point: Vec3) -> PlaneSide {
-        if (other_point - self.point).dot(self.normal) >= 0.0 {
+        if (other_point - self.point).dot(self.normal) >= -EPSILON {
             PlaneSide::Front
         } else {
             PlaneSide::Back

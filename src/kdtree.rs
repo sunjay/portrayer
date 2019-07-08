@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::ops::Range;
 
-use crate::math::Vec3;
+use crate::math::{EPSILON, INFINITY, Vec3};
 use crate::scene::Scene;
 use crate::material::Material;
 use crate::flat_scene::{FlatScene, FlatSceneNode};
@@ -269,6 +269,60 @@ pub enum KDTreeNode {
 
 impl RayCast for KDTreeNode {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
+        /// A more expensive check for intersection where we create a new ray by moving the ray end
+        /// points away from the plane (thus ensuring that they will intersect the plane). We then
+        /// adjust the t value for this new ray so that it works with the old ray. All of this is
+        /// necessary for when numerical error prevents us from intersecting when the end points are
+        /// too close to the plane.
+        ///
+        /// Note that the separating plane should passed in such that the ray will intersect with
+        /// it. (Make sure the plane normal is facing towards the ray origin.)
+        fn plane_intersect_numerical_correction(
+            sep_plane: &Plane,
+            ray: &Ray,
+            ray_start: Vec3,
+            ray_end: Vec3,
+            t_range: &Range<f64>,
+        ) -> Option<RayIntersection> {
+            // We know that ray_start and ray_end are respectively in front of the plane and behind
+            // the plane (relative to its normal direction). That means that if we didn't get an
+            // intersection before, it may be because of numerical instability issues--that is, the
+            // ray end points might be too close to the plane. If we move the ray end points
+            // farther from the plane using the plane's normal, we can find another intersection
+            // point on the plane and try to relate that to the original ray.
+
+            // Move the ray start and end away from the plane, but still
+            // surrounding the same intersection point (proof by similar triangles)
+            let shift = sep_plane.normal * 0.01;
+            let ray_start = ray_start + shift;
+            let ray_end = ray_end - shift;
+            let new_ray = Ray::new(ray_start, (ray_end - ray_start).normalized());
+            // Can't use the same t_range since that was defined in terms of
+            // the old ray
+            let new_t_range = Range {start: EPSILON, end: INFINITY};
+            // If this ray doesn't hit, just return (we tried)
+            let new_plane_hit = sep_plane.ray_hit(&new_ray, &new_t_range)?;
+            let hit_point = new_plane_hit.hit_point;
+            // Compute the t value along the original ray
+            let t = (hit_point - ray.origin()) / ray.direction();
+            //TODO: This doesn't actually work. We get different values for each component of t.
+
+            // Retrieve the value of t for the normal axis by multiplying by the normal and adding
+            // up the vector components. This works because multiplying will set two components to
+            // zero and leave just a single value.
+            let t = (t * sep_plane.normal.map(|x| x.abs())).sum();
+
+            // Have to ensure the integrity of t_range
+            if !t_range.contains(&t) {
+                return None;
+            }
+
+            Some(RayIntersection {
+                ray_parameter: t,
+                ..new_plane_hit
+            })
+        }
+
         use KDTreeNode::*;
         match self {
             Leaf(KDLeaf {nodes, ..}) => nodes.ray_cast(ray, t_range),
@@ -278,9 +332,11 @@ impl RayCast for KDTreeNode {
                 // the bounds extent may not be enough.
                 let t_max = t_range.start + bounds.extent();
                 // Must still be a value in the valid range
-                let t_max = if t_range.contains(&t_max) { t_max } else { t_range.end };
+                // Need to subtract EPSILON since range is exclusive
+                let t_max = if t_range.contains(&t_max) { t_max } else { t_range.end - EPSILON };
                 // The two "end points" of the ray make a "ray segment"
-                let ray_start = ray.at(t_range.start);
+                // Need to add EPSILON because range is exclusive
+                let ray_start = ray.at(t_range.start + EPSILON);
                 let ray_end = ray.at(t_max);
 
                 // Search through child nodes, filtering and ordering by which side(s) of the
@@ -298,6 +354,16 @@ impl RayCast for KDTreeNode {
                         // Must ensure that any found intersection is actually on the checked side
                         // of the plane or else we can get incorrect results
                         let plane_hit = sep_plane.ray_hit(ray, t_range)
+                            .or_else(|| {
+                                // Try a more expensive check in case we didn't find anything due
+                                // to numerical errors (i.e. ray end points being too close to
+                                // the plane)
+                                //TODO: There is probably a way to tell if we need to do this more
+                                // expensive check by testing how close the ray_start and ray_end
+                                // points really are relative to the axis of sep_plane.normal
+                                plane_intersect_numerical_correction(sep_plane, ray, ray_start,
+                                    ray_end, t_range)
+                            })
                             .expect("bug: ray should definitely hit infinite plane");
                         let plane_t = plane_hit.ray_parameter;
 
@@ -324,10 +390,21 @@ impl RayCast for KDTreeNode {
 
                     // Ray segment goes through the back nodes, then the front nodes
                     (Back, Front) => {
+                        // Need to flip the plane since the ray is facing the back of the plane
+                        let sep_plane = sep_plane.flipped();
                         // Must ensure that any found intersection is actually on the checked side
                         // of the plane or else we can get incorrect results
-                        // Need to flip the plane since the ray is facing the back of the plane
-                        let plane_hit = sep_plane.flipped().ray_hit(ray, t_range)
+                        let plane_hit = sep_plane.ray_hit(ray, t_range)
+                            .or_else(|| {
+                                // Try a more expensive check in case we didn't find anything due
+                                // to numerical errors (i.e. ray end points being too close to
+                                // the plane)
+                                //TODO: There is probably a way to tell if we need to do this more
+                                // expensive check by testing how close the ray_start and ray_end
+                                // points really are relative to the axis of sep_plane.normal
+                                plane_intersect_numerical_correction(&sep_plane, ray, ray_start,
+                                    ray_end, t_range)
+                            })
                             .expect("bug: ray should definitely hit infinite plane");
                         let plane_t = plane_hit.ray_parameter;
 
