@@ -1,7 +1,7 @@
 //! This implementation is based on this technical report:
 //!
-//!     Donald S. Fussell and K. R. Subramanian. Fast Ray Tracing Using K-d Trees. Tech. rep.
-//!     Austin, TX, USA: University of Texas at Austin, 1988.
+//! > Donald S. Fussell and K. R. Subramanian. Fast Ray Tracing Using K-d Trees. Tech. rep.
+//! > Austin, TX, USA: University of Texas at Austin, 1988.
 
 use std::sync::Arc;
 use std::ops::Range;
