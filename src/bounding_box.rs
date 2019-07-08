@@ -1,6 +1,6 @@
 use std::ops::{Mul, Range};
 
-use crate::math::{EPSILON, Vec3, Vec3Ext, Mat4};
+use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat4};
 use crate::ray::{Ray, RayHit};
 use crate::primitive::Cube;
 
@@ -117,13 +117,26 @@ impl Mul<BoundingBox> for Mat4 {
     type Output = BoundingBox;
 
     fn mul(self, rhs: BoundingBox) -> Self::Output {
-        let min = rhs.min.transformed_point(self);
-        let max = rhs.max.transformed_point(self);
-        // Certain transformations (e.g. rotation, negative scale) can min > max for some
-        // components of either min or max. Need to correct that before creating the bounding box.
-        let bounds_min = Vec3::partial_min(min, max);
-        let bounds_max = Vec3::partial_max(min, max);
-        BoundingBox::new(bounds_min, bounds_max)
+        // Turns out that transforming an Axis-Aligned Bounding Box and then generating a new AABB
+        // is non-trivial. You can't just transform the min/max points because when the other
+        // corners of the box rotate too they may end up being the new min/max. That's why we need
+        // to actually simulate all 8 points of the AABB being transformed.
+
+        let mut min = Vec3::from(INFINITY);
+        let mut max = Vec3::from(-INFINITY);
+
+        // Generate all points of the cube, transform them and find the min/max
+        for &x in &[rhs.min.x, rhs.max.x] {
+            for &y in &[rhs.min.y, rhs.max.y] {
+                for &z in &[rhs.min.z, rhs.max.z] {
+                    let cube_vert = Vec3 {x, y, z}.transformed_point(self);
+                    min = Vec3::partial_min(min, cube_vert);
+                    max = Vec3::partial_max(max, cube_vert);
+                }
+            }
+        }
+
+        BoundingBox::new(min, max)
     }
 }
 
@@ -139,5 +152,38 @@ impl RayHit for BoundingBox {
             hit.normal = hit.normal.transformed_direction(self.normal_trans);
             hit
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::math::Mat4;
+
+    #[test]
+    fn rotated_plane_bounds_90() {
+        let bounds = BoundingBox::new(
+            Vec3 {x: -0.5, y: 0.0, z: -0.5},
+            Vec3 {x: 0.5, y: 0.0, z: 0.5},
+        );
+
+        let trans = Mat4::rotation_x(90.0f64.to_radians());
+        let rotated_bounds = trans * bounds;
+        assert_eq!(rotated_bounds.min().map(|x| (x * 10.0).round() / 10.0), Vec3 {x: -0.5, y: -0.5, z: 0.0});
+        assert_eq!(rotated_bounds.max().map(|x| (x * 10.0).round() / 10.0), Vec3 {x: 0.5, y: 0.5, z: 0.0});
+    }
+
+    #[test]
+    fn rotated_cube_bounds_60() {
+        let bounds = BoundingBox::new(
+            Vec3 {x: -0.5, y: -0.5, z: -0.5},
+            Vec3 {x: 0.5, y: 0.5, z: 0.5},
+        );
+
+        let trans = Mat4::scaling_3d((8.0, 0.25, 5.0)).rotated_x(60.0f64.to_radians());
+        let rotated_bounds = trans * bounds;
+        assert_eq!(rotated_bounds.min().map(|x| (x * 1000.0).round() / 1000.0), Vec3 {x: -4.0, y: -2.228, z: -1.358});
+        assert_eq!(rotated_bounds.max().map(|x| (x * 1000.0).round() / 1000.0), Vec3 {x: 4.0, y: 2.228, z: 1.358});
     }
 }
