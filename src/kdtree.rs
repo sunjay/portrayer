@@ -269,6 +269,20 @@ pub enum KDTreeNode {
 
 impl RayCast for KDTreeNode {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
+        self.ray_cast_impl(ray, t_range, self.extent())
+    }
+}
+
+impl KDTreeNode {
+    fn extent(&self) -> f64 {
+        use KDTreeNode::*;
+        match self {
+            Split {bounds, ..} => bounds.extent(),
+            Leaf(KDLeaf {bounds, ..}) => bounds.extent(),
+        }
+    }
+
+    fn ray_cast_impl(&self, ray: &Ray, t_range: &mut Range<f64>, extent: f64) -> Option<(RayIntersection, Arc<Material>)> {
         // To find the t value of the plane intersection, we exploit the fact that the plane is
         // axis-aligned and thus we already know one of the components of the hit_point that would
         // be returned from any other call to ray_hit.
@@ -312,11 +326,11 @@ impl RayCast for KDTreeNode {
         use KDTreeNode::*;
         match self {
             Leaf(KDLeaf {nodes, ..}) => nodes.ray_cast(ray, t_range),
-            Split {sep_plane, bounds, front_nodes, back_nodes} => {
+            Split {sep_plane, front_nodes, back_nodes, ..} => {
                 // A value of t large enough that the point on the ray for this t would be well
                 // beyond the extent of the scene. Need to add to t_range.start because otherwise
                 // the bounds extent may not be enough.
-                let t_max = t_range.start + bounds.extent();
+                let t_max = t_range.start + extent;
                 // Must still be a value in the valid range
                 // Need to subtract EPSILON since range is exclusive
                 let t_max = if t_range.contains(&t_max) { t_max } else { t_range.end - EPSILON };
