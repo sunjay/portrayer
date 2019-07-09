@@ -35,7 +35,8 @@ impl From<FlatScene> for KDTreeScene {
             target_max_merit: 3,
             max_tries: 10,
         };
-        let root = leaf.partitioned(Vec3::unit_x(), part_conf);
+        const MAX_TREE_DEPTH: usize = 10;
+        let root = leaf.partitioned(Vec3::unit_x(), MAX_TREE_DEPTH, part_conf);
 
         Self {root, lights, ambient}
     }
@@ -107,9 +108,11 @@ impl KDLeaf {
     /// try our best.
     ///
     /// The provided axis vector must be a positive unit vector: (1,0,0), (0,1,0), or (0,0,1)
-    fn partitioned(self, axis: Vec3, part_conf: PartitionConfig) -> KDTreeNode {
+    ///
+    /// When max_depth == 0, the remaining nodes will be returned in a single leaf node
+    fn partitioned(self, axis: Vec3, max_depth: usize, part_conf: PartitionConfig) -> KDTreeNode {
         let PartitionConfig {target_max_nodes, target_max_merit, max_tries} = part_conf;
-        if self.nodes.len() <= target_max_nodes {
+        if max_depth == 0 || self.nodes.len() <= target_max_nodes {
             return KDTreeNode::Leaf(self);
         }
 
@@ -243,11 +246,11 @@ impl KDLeaf {
             front_nodes: Box::new(KDLeaf {
                 bounds: front_nodes.bounds(),
                 nodes: front_nodes,
-            }.partitioned(next, part_conf)),
+            }.partitioned(next, max_depth - 1, part_conf)),
             back_nodes: Box::new(KDLeaf {
                 bounds: back_nodes.bounds(),
                 nodes: back_nodes,
-            }.partitioned(next, part_conf)),
+            }.partitioned(next, max_depth - 1, part_conf)),
         }
     }
 }
@@ -462,7 +465,7 @@ mod tests {
             nodes,
         };
 
-        let root = leaf.partitioned(Vec3::unit_x(), part_conf);
+        let root = leaf.partitioned(Vec3::unit_x(), 5, part_conf);
 
         let back_nodes = vec![node_a, node_b];
         let front_nodes = vec![node_c, node_d, node_e];
@@ -519,7 +522,7 @@ mod tests {
             nodes,
         };
 
-        let root = leaf.partitioned(Vec3::unit_x(), part_conf);
+        let root = leaf.partitioned(Vec3::unit_x(), 5, part_conf);
 
         let back_nodes = vec![node_a, node_b, node_c];
         let front_nodes = vec![node_d, node_e];
