@@ -186,5 +186,5 @@ fn main() -> Result<(), Box<dyn Error>> {
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
-    Ok(image.save("reflection.png")?)
+    Ok(image.save("entering-the-mirror-dimension.png")?)
 }
