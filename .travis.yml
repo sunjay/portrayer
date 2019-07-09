@@ -1,0 +1,15 @@
+language: rust
+rust:
+  - stable
+cache: cargo
+script:
+  - cargo build --verbose --release --all --examples
+  - cargo test --verbose --release --all
+  - cargo build --verbose --release --all --examples --features render_bounding_volumes
+  - cargo build --verbose --release --all --examples --features flat_scene
+  - cargo build --verbose --release --all --examples --features kdtree
+  - ./run-all-examples.sh
+  - ./run-all-examples.sh --features render_bounding_volumes
+  - ./run-all-examples.sh --features flat_scene
+  #TODO: Re-enable when k-d trees work better
+  #- ./run-all-examples.sh --features kdtree
