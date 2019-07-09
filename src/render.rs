@@ -4,7 +4,7 @@ use image::Pixel;
 
 use crate::math::{Uv, Rgb};
 use crate::scene::{Scene, HierScene};
-#[cfg(feature = "kdtree")]
+#[cfg(any(feature = "kdtree", feature = "flat_scene"))]
 use crate::flat_scene::FlatScene;
 #[cfg(feature = "kdtree")]
 use crate::kdtree::KDTreeScene;
@@ -68,7 +68,8 @@ impl Render for image::RgbImage {
 
         let reporter = R::new((self.width() * self.height()) as u64);
 
-        // let scene = &crate::flat_scene::FlatScene::from(scene);
+        #[cfg(feature = "flat_scene")]
+        let scene = &FlatScene::from(scene);
         #[cfg(feature = "kdtree")]
         let flat_scene = FlatScene::from(scene);
         #[cfg(feature = "kdtree")]

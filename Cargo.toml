@@ -26,5 +26,7 @@ debug = true
 [features]
 # Useful for debugging the Bounding-Volume-Hierarchy optimization for meshes
 render_bounding_volumes = []
+# Flattens the scene hierarchy before rendering
+flat_scene = []
 # Acceleration structure for scenes with many objects
 kdtree = []
