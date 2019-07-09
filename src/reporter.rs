@@ -1,3 +1,4 @@
+use std::env;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
@@ -28,9 +29,16 @@ impl Reporter for RenderProgress {
         let pixels_completed_t = pixels_completed.clone();
         let stop_t = stop.clone();
         let thread_handle = thread::spawn(move || {
-            let progress = ProgressBar::new(pixels);
-            progress.set_style(ProgressStyle::default_bar()
-                .template("[{elapsed_precise}] {wide_bar:.cyan/blue} {percent}% (eta: {eta})"));
+            // Disable progress bar for CI
+            let progress = match env::var("CI") {
+                Ok(ref val) if val == "true" => ProgressBar::hidden(),
+                _ => {
+                    let progress = ProgressBar::new(pixels);
+                    progress.set_style(ProgressStyle::default_bar()
+                        .template("[{elapsed_precise}] {wide_bar:.cyan/blue} {percent}% (eta: {eta})"));
+                    progress
+                },
+            };
 
             while !stop_t.load(Ordering::SeqCst) {
                 progress.set_position(pixels_completed_t.load(Ordering::SeqCst));
