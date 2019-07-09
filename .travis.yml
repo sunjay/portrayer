@@ -11,5 +11,4 @@ script:
   - source ./run-all-examples.sh
   - source ./run-all-examples.sh --features render_bounding_volumes
   - source ./run-all-examples.sh --features flat_scene
-  #TODO: Re-enable when k-d trees work better
-  #- ./run-all-examples.sh --features kdtree
+  - ./run-all-examples.sh --features kdtree
