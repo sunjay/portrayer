@@ -29,24 +29,34 @@ impl Reporter for RenderProgress {
         let pixels_completed_t = pixels_completed.clone();
         let stop_t = stop.clone();
         let thread_handle = thread::spawn(move || {
-            // Disable progress bar for CI
-            let progress = match env::var("CI") {
-                Ok(ref val) if val == "true" => ProgressBar::hidden(),
+            // Disable progress bar on CI but still output every once in a while to report progress
+            // and keep the build going
+            match env::var("CI") {
+                Ok(ref val) if val == "true" => {
+                    while !stop_t.load(Ordering::SeqCst) {
+                        let pos = pixels_completed_t.load(Ordering::SeqCst);
+                        let progress = (pos as f64 / pixels as f64 * 100.0) as u64;
+                        println!("{}%", progress);
+
+                        thread::sleep(Duration::from_millis(30*1000));
+                    }
+
+                    println!("Done!");
+                },
                 _ => {
                     let progress = ProgressBar::new(pixels);
                     progress.set_style(ProgressStyle::default_bar()
-                        .template("[{elapsed_precise}] {wide_bar:.cyan/blue} {percent}% (eta: {eta})"));
-                    progress
+                    .template("[{elapsed_precise}] {wide_bar:.cyan/blue} {percent}% (eta: {eta})"));
+
+                    while !stop_t.load(Ordering::SeqCst) {
+                        progress.set_position(pixels_completed_t.load(Ordering::SeqCst));
+
+                        thread::sleep(Duration::from_millis(100));
+                    }
+
+                    progress.finish_and_clear();
                 },
-            };
-
-            while !stop_t.load(Ordering::SeqCst) {
-                progress.set_position(pixels_completed_t.load(Ordering::SeqCst));
-
-                thread::sleep(Duration::from_millis(100));
             }
-
-            progress.finish_and_clear();
         });
 
         Self {
