@@ -54,6 +54,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         diffuse: Rgb {r: 0.3, g: 0.3, b: 0.3},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 1000.0,
+        reflectivity: 0.9,
         ..Material::default()
     });
     let mat_arms = Arc::new(Material {
