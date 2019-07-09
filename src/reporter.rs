@@ -2,7 +2,7 @@ use std::env;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Instant, Duration};
 
 use indicatif::{ProgressBar, ProgressStyle};
 
@@ -34,11 +34,15 @@ impl Reporter for RenderProgress {
             match env::var("CI") {
                 Ok(ref val) if val == "true" => {
                     while !stop_t.load(Ordering::SeqCst) {
+                        // Stop sooner than 30 seconds but still report every 30 seconds
+                        let now = Instant::now();
+                        while !stop_t.load(Ordering::SeqCst) && now.elapsed().as_secs() < 30 {
+                            thread::sleep(Duration::from_millis(1000));
+                        }
+
                         let pos = pixels_completed_t.load(Ordering::SeqCst);
                         let progress = (pos as f64 / pixels as f64 * 100.0) as u64;
                         println!("{}%", progress);
-
-                        thread::sleep(Duration::from_millis(30*1000));
                     }
 
                     println!("Done!");
