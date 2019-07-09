@@ -5,8 +5,6 @@ use crate::ray::{Ray, RayHit};
 use crate::primitive::Cube;
 
 #[cfg(feature = "render_bounding_volumes")]
-use crate::math::Vec3Ext;
-#[cfg(feature = "render_bounding_volumes")]
 use crate::ray::RayIntersection;
 
 pub trait Bounds {
