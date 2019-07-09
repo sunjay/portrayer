@@ -4,7 +4,9 @@ use image::Pixel;
 
 use crate::math::{Uv, Rgb};
 use crate::scene::{Scene, HierScene};
+#[cfg(feature = "kdtree")]
 use crate::flat_scene::FlatScene;
+#[cfg(feature = "kdtree")]
 use crate::kdtree::KDTreeScene;
 use crate::ray::RayCast;
 use crate::camera::{CameraSettings, Camera};
@@ -66,8 +68,10 @@ impl Render for image::RgbImage {
 
         let reporter = R::new((self.width() * self.height()) as u64);
 
-        // let scene = &FlatScene::from(scene);
+        // let scene = &crate::flat_scene::FlatScene::from(scene);
+        #[cfg(feature = "kdtree")]
         let flat_scene = FlatScene::from(scene);
+        #[cfg(feature = "kdtree")]
         let scene = &KDTreeScene::from(flat_scene);
         self.par_chunks_mut(3)
             .map(image::Rgb::from_slice_mut)
