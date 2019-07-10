@@ -4,12 +4,14 @@ mod mesh;
 mod plane;
 mod cube;
 mod finite_plane;
+mod cylinder;
 
 pub use sphere::*;
 pub use triangle::*;
 pub use mesh::*;
 pub use cube::*;
 pub use finite_plane::*;
+pub use cylinder::*;
 
 // Internal-use only
 pub(crate) use plane::*;
@@ -69,5 +71,6 @@ primitive_enum! {
         // no logical implementation of the Bounds trait for Plane
         FinitePlane(FinitePlane),
         Cube(Cube),
+        Cylinder(Cylinder),
     }
 }
