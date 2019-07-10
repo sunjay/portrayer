@@ -52,12 +52,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             mirror,
 
             SceneNode::from(Geometry::new(Cylinder, mat_cylinder.clone()))
-                .translated((0.0, 2.0, 0.0))
+                .rotated_z(Radians::from_degrees(50.0))
+                .rotated_y(Radians::from_degrees(-65.0))
+                .translated((-2.5, 1.5, -1.0))
                 .into(),
 
             SceneNode::from(Geometry::new(Cylinder, mat_cylinder.clone()))
                 .rotated_x(Radians::from_degrees(60.0))
-                .translated((-3.0, 2.0, 0.0))
+                .translated((-3.0, 1.0, 1.0))
                 .into(),
         ]).into(),
 
