@@ -5,6 +5,7 @@ mod plane;
 mod cube;
 mod finite_plane;
 mod cylinder;
+mod cone;
 
 pub use sphere::*;
 pub use triangle::*;
@@ -12,6 +13,7 @@ pub use mesh::*;
 pub use cube::*;
 pub use finite_plane::*;
 pub use cylinder::*;
+pub use cone::*;
 
 // Internal-use only
 pub(crate) use plane::*;
@@ -72,5 +74,6 @@ primitive_enum! {
         FinitePlane(FinitePlane),
         Cube(Cube),
         Cylinder(Cylinder),
+        Cone(Cone),
     }
 }

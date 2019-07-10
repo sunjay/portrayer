@@ -59,7 +59,7 @@ impl Radians {
     }
 }
 
-/// A quadratic equation solver: a*x^2 + b*x + c
+/// A quadratic equation solver for: a*x^2 + b*x + c = 0
 #[derive(Debug, Clone, Copy)]
 pub struct Quadratic {
     pub a: f64,

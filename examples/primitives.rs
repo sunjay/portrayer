@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Cylinder},
+    primitive::{Cube, Cylinder, Cone},
     material::Material,
     light::Light,
     render::Render,
@@ -37,6 +37,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         reflectivity: 0.1,
         ..Material::default()
     });
+    let mat_cone = Arc::new(Material {
+        diffuse: Rgb {r: 0.7, g: 0.9, b: 0.9},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 1000.0,
+        reflectivity: 0.1,
+        ..Material::default()
+    });
 
     let mirror = Arc::new(SceneNode::from(Geometry::new(Cube, mat_wood.clone()))
         .scaled((9.0, 0.5, 6.0))
@@ -60,6 +67,17 @@ fn main() -> Result<(), Box<dyn Error>> {
             SceneNode::from(Geometry::new(Cylinder, mat_cylinder.clone()))
                 .rotated_x(Radians::from_degrees(60.0))
                 .translated((-3.0, 1.0, 1.0))
+                .into(),
+
+            SceneNode::from(Geometry::new(Cone, mat_cone.clone()))
+                .rotated_z(Radians::from_degrees(50.0))
+                .rotated_y(Radians::from_degrees(-65.0))
+                .translated((2.5, 1.5, -1.0))
+                .into(),
+
+            SceneNode::from(Geometry::new(Cone, mat_cone.clone()))
+                .rotated_x(Radians::from_degrees(60.0))
+                .translated((3.0, 1.0, 1.0))
                 .into(),
         ]).into(),
 

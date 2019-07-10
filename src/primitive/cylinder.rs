@@ -46,10 +46,9 @@ fn ray_hit_body(ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
     let c = origin.x*origin.x + origin.z*origin.z - RADIUS*RADIUS;
 
     let equation = Quadratic {a, b, c};
-    // Solve the equation and filter out any solutions not in the accepted range. This saves
-    // us from having to do the check over and over again later.
+    // Find the smallest t for which this equation is satisfied
     let t = equation.solve().find(|sol| t_range.contains(sol))?;
-    // Stop any operations as early as possible if we're not in the valid range
+    // Stop processing as early as possible if we're not in the valid range
     if !t_range.contains(&t) {
         return None;
     }
@@ -87,9 +86,6 @@ fn ray_hit_cap(height: f64, ray: &Ray, t_range: &Range<f64>) -> Option<RayInters
     // Note that this solution is robust against every case:
     // 1. Ray hits cap at angle (will intersect with the edge of the cylinder)
     // 2. Ray hits cap straight on (will not intersect any edge)
-    //
-    // Some solutions online do not account for the second case and try to (incorrectly) derive
-    // this intersection from the t values of the cylinder body ray hits.
 
     let origin = ray.origin();
     let direction = ray.direction();
@@ -147,8 +143,7 @@ impl RayHit for Cylinder {
             found_hit = Some(hit);
         }
         if let Some(hit) = ray_hit_cap(-HALF_HEIGHT, ray, &t_range) {
-            // Must find a closer hit next time to be accepted
-            t_range.end = hit.ray_parameter;
+            // Just accept the hit if we find it, no point in updating t_range
             found_hit = Some(hit);
         }
 
