@@ -17,14 +17,14 @@ use image::RgbImage;
 
 fn main() -> io::Result<()> {
     let non_glossy_ball = Arc::new(Material {
-        diffuse: Rgb {r: 0.362595, g: 0.8, b: 0.424713},
+        diffuse: Rgb {r: 0.146505, g: 0.314666, b: 0.170564},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 100.0,
         reflectivity: 0.4,
         ..Material::default()
     });
     let glossy_ball = Arc::new(Material {
-        glossy_side_length: 2.0,
+        glossy_side_length: 1.0,
         ..(*non_glossy_ball).clone()
     });
     let center_ball = Arc::new(Material {
@@ -43,10 +43,10 @@ fn main() -> io::Result<()> {
     let scene = HierScene {
         root: SceneNode::from(vec![
             SceneNode::from(Geometry::new(Sphere, non_glossy_ball.clone()))
-                .translated((-1.0, 1.3, 0.0))
+                .translated((-1.1, 1.3, 0.0))
                 .into(),
             SceneNode::from(Geometry::new(Sphere, glossy_ball.clone()))
-                .translated((1.0, 1.3, 0.0))
+                .translated((1.1, 1.3, 0.0))
                 .into(),
 
             SceneNode::from(Geometry::new(Sphere, center_ball.clone()))
@@ -67,7 +67,7 @@ fn main() -> io::Result<()> {
 
             Light {
                 position: Vec3 {x: 0.0, y: 1.0, z: 12.0},
-                color: Rgb {r: 0.9, g: 0.9, b: 0.9},
+                color: Rgb {r: 0.7, g: 0.7, b: 0.7},
                 falloff: Default::default(),
             },
         ],
