@@ -1,6 +1,8 @@
 use std::ops::Range;
 use std::sync::Arc;
 
+use rand::{Rng, thread_rng};
+
 use crate::math::{EPSILON, INFINITY, Vec3, Uv, Rgb};
 use crate::scene::Scene;
 use crate::ray::{Ray, RayCast};
@@ -24,6 +26,8 @@ pub struct Material {
     pub shininess: f64,
     /// The reflectivity of this material, used to blend in the color from the reflected ray
     pub reflectivity: f64,
+    /// The side length of the glossy reflection rectangle
+    pub glossy_side_length: f64,
     /// The texture to sample the diffuse color from
     pub texture: Option<Arc<Texture>>,
 }
@@ -128,7 +132,20 @@ impl Material {
         // Allows us to avoid some recursion for non-reflective materials.
         if self.reflectivity > 0.0 {
             // r = v - 2N(v dot N) where v = ray direction, N = normal
-            let reflect_dir = ray_dir - normal * 2.0 * ray_dir.dot(normal);
+            let mut reflect_dir = ray_dir - normal * 2.0 * ray_dir.dot(normal);
+            if self.glossy_side_length > 0.0 {
+                // Create a basis u, v from the ideal reflection ray
+                // This is a technique for creating a basis from a single vector:
+                let u_basis = reflect_dir.cross(reflect_dir + Vec3 {x: 0.0, y: 0.0, z: 0.1});
+                let v_basis = reflect_dir.cross(u_basis);
+
+                // Generate a random coordinate on the rectangle
+                let mut rng = thread_rng();
+                let u_coord = -self.glossy_side_length / 2.0 + rng.gen::<f64>() * self.glossy_side_length;
+                let v_coord = -self.glossy_side_length / 2.0 + rng.gen::<f64>() * self.glossy_side_length;
+
+                reflect_dir += u_coord*u_basis + v_coord*v_basis;
+            }
 
             // Add reflection via recursive ray tracing
             let reflected_ray = Ray::new(hit_point, reflect_dir);
