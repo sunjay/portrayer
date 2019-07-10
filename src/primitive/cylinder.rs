@@ -5,13 +5,13 @@ use crate::math::{Vec3, Quadratic};
 use crate::bounding_box::{BoundingBox, Bounds};
 
 /// The radius of the cylinder
-const RADIUS: f64 = 1.0;
+const RADIUS: f64 = 0.5;
 const HEIGHT: f64 = 1.0;
 const HALF_HEIGHT: f64 = HEIGHT / 2.0;
 
-/// A sphere with center (0, 0, 0), radius = 1.0, and height = 1.0
+/// A cylinder with center (0, 0, 0), diameter = 1.0, and height = 1.0
 ///
-/// It is expected that this sphere will be used via affine transformations on the node that
+/// It is expected that this cylinder will be used via affine transformations on the node that
 /// contains it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Cylinder;
@@ -63,6 +63,11 @@ impl RayHit for Cylinder {
         };
 
         let hit_point = ray.at(t);
+
+        if hit_point.y > HALF_HEIGHT || hit_point.y < -HALF_HEIGHT {
+            return None;
+        }
+
         // Normal is just the hit point - the center at the same height (y value) as the hit point
         // Since the center is (0,0,0), this is the same as just setting the y value to zero.
         let normal = Vec3 {y: 0.0, ..hit_point};

@@ -57,7 +57,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             SceneNode::from(Geometry::new(Cylinder, mat_cylinder.clone()))
                 .rotated_x(Radians::from_degrees(60.0))
-                .translated((-4.0, 2.0, 0.0))
+                .translated((-3.0, 2.0, 0.0))
                 .into(),
         ]).into(),
 
