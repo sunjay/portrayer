@@ -1,3 +1,5 @@
+use std::env;
+
 use vek::ops::Clamp;
 use rayon::prelude::*;
 use image::Pixel;
@@ -36,6 +38,7 @@ fn render_single_pixel<R: RayCast + Send + Sync, T: TextureSource>(
     camera: &Camera,
     width: f64,
     height: f64,
+    samples: usize,
     background: &T,
 ) -> Rgb {
     let background_color = background.at(Uv {
@@ -43,8 +46,7 @@ fn render_single_pixel<R: RayCast + Send + Sync, T: TextureSource>(
         v: y as f64 / height,
     });
 
-    const SAMPLES: usize = 100;
-    let total_color: Rgb = (0..SAMPLES).into_par_iter().map(|_| {
+    let total_color: Rgb = (0..samples).into_par_iter().map(|_| {
         // Choose a random point in the pixel square
         let mut rng = thread_rng();
         let (x, y) = (x as f64 + rng.gen::<f64>(), y as f64 + rng.gen::<f64>());
@@ -53,7 +55,7 @@ fn render_single_pixel<R: RayCast + Send + Sync, T: TextureSource>(
         ray.color(scene, background_color, 0)
     }).reduce(|| Rgb::black(), |x, y| x + y);
 
-    let color = total_color / SAMPLES as f64;
+    let color = total_color / samples as f64;
 
     // Gamma correction to ensure that image colors are closer to what we want them
     // to be. This gamma value is the same as Blender and is also in the source below:
@@ -78,6 +80,16 @@ impl Render for image::RgbImage {
 
         let reporter = R::new((self.width() * self.height()) as u64);
 
+        // Attempt to get the number of samples from an environment variable, and ignore the value
+        // otherwise
+        let samples = env::var("SAMPLES").ok()
+            // Must be a valid number
+            .and_then(|val| val.parse::<usize>().ok())
+            // Must be positive (greater than zero)
+            .and_then(|val| if val > 0 { Some(val) } else { None })
+            // Default value if not all conditions are met
+            .unwrap_or(100);
+
         #[cfg(feature = "flat_scene")]
         let scene = &FlatScene::from(scene);
         #[cfg(feature = "kdtree")]
@@ -91,7 +103,7 @@ impl Render for image::RgbImage {
                 let x = i % width as usize;
                 let y = i / width as usize;
 
-                let color = render_single_pixel((x, y), scene, &camera, width, height, &background);
+                let color = render_single_pixel((x, y), scene, &camera, width, height, samples, &background);
 
                 // Convert into the type supported by the image library and write the pixel
                 *pixel = image::Rgb([
