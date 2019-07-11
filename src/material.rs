@@ -76,7 +76,7 @@ impl Material {
                 light.position
             } else {
                 // Check if we are behind this light
-                if light.area.normal().dot(normal) >= 0.0 {
+                if light.area.normal().dot(normal) > 0.0 {
                     // Behind the light, do not count its contribution
                     continue;
                 }

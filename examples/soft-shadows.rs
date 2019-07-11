@@ -108,7 +108,7 @@ fn main() -> io::Result<()> {
         eye: (15.829148, 10.746838, 14.910006).into(),
         center: (-6.323831, -4.39239, -5.971786).into(),
         up: Vec3::up(),
-        fovy: Radians::from_degrees(30.0),
+        fovy: Radians::from_degrees(25.0),
     };
 
     let mut image = RgbImage::new(910, 512);
