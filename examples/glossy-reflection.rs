@@ -62,13 +62,13 @@ fn main() -> io::Result<()> {
             Light {
                 position: Vec3 {x: 0.0, y: 6.0, z: 3.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
-                falloff: Default::default(),
+                ..Light::default()
             },
 
             Light {
                 position: Vec3 {x: 0.0, y: 1.0, z: 12.0},
                 color: Rgb {r: 0.7, g: 0.7, b: 0.7},
-                falloff: Default::default(),
+                ..Light::default()
             },
         ],
         ambient: Rgb {r: 0.3, g: 0.3, b: 0.3},

@@ -76,7 +76,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             Light {
                 position: Vec3 {x: 200.0, y: 202.0, z: 430.0},
                 color: Rgb {r: 0.8, g: 0.8, b: 0.8},
-                falloff: Default::default(),
+                ..Light::default()
             },
         ],
         ambient: Rgb {r: 0.4, g: 0.4, b: 0.4},

@@ -49,6 +49,8 @@ impl Material {
             return background;
         }
 
+        let mut rng = thread_rng();
+
         // Vector from hit point to the eye (ray origin)
         // Note that this is the same as -ray.direction() since the ray intersects with the
         // hit point
@@ -70,9 +72,20 @@ impl Material {
         // color of the object
         let mut color = scene.ambient * diffuse_color;
         for light in &scene.lights {
+            let light_pos = if light.area.is_empty() {
+                light.position
+            } else {
+                // Check if we are behind this light
+                if light.area.normal().dot(normal) >= 0.0 {
+                    // Behind the light, do not count its contribution
+                    continue;
+                }
+                light.sample_position(&mut rng)
+            };
+
             // Vector from hit point to the light source
             // NOTE: This is **flipped** from the actual direction of light from the light source
-            let hit_to_light = light.position - hit_point;
+            let hit_to_light = light_pos - hit_point;
 
             // The distance r between the light source and the hit point. Used to
             // attenuate the light.
@@ -140,7 +153,6 @@ impl Material {
                 let v_basis = reflect_dir.cross(u_basis);
 
                 // Generate a random coordinate on the rectangle
-                let mut rng = thread_rng();
                 let u_coord = -self.glossy_side_length / 2.0 + rng.gen::<f64>() * self.glossy_side_length;
                 let v_coord = -self.glossy_side_length / 2.0 + rng.gen::<f64>() * self.glossy_side_length;
 

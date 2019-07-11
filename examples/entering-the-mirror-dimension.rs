@@ -157,19 +157,19 @@ fn main() -> Result<(), Box<dyn Error>> {
             Light {
                 position: Vec3 {x: 2.5, y: 3.5, z: -1.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
-                falloff: Default::default(),
+                ..Light::default()
             },
             // white_light
             Light {
                 position: Vec3 {x: 10.0, y: 10.0, z: 0.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
-                falloff: Default::default(),
+                ..Light::default()
             },
             // blue_light
             Light {
                 position: Vec3 {x: -9.0, y: 4.0, z: 0.0},
                 color: Rgb {r: 0.406471, g: 0.901283, b: 1.0},
-                falloff: Default::default(),
+                ..Light::default()
             },
         ],
         ambient: Rgb {r: 0.2, g: 0.2, b: 0.2},

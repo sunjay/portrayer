@@ -71,12 +71,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             Light {
                 position: Vec3 {x: 0.0, y: 5.0, z: 4.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
-                falloff: Default::default(),
+                ..Light::default()
             },
             Light {
                 position: Vec3 {x: 0.0, y: 1.0, z: -4.0},
                 color: Rgb {r: 0.5, g: 0.5, b: 0.5},
-                falloff: Default::default(),
+                ..Light::default()
             },
         ],
         ambient: Rgb {r: 0.3, g: 0.3, b: 0.3},
