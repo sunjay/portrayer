@@ -73,10 +73,18 @@ impl Quadratic {
         let Quadratic {a, b, c} = self;
         let discriminant = b*b - 4.0*a*c;
 
+        // If the denominator 2*a is negative, we need to swap the sign in order to get the right
+        // order of solutions
+        let sign = if a < 0.0 {
+            -1.0
+        } else {
+            1.0
+        };
+
         // Lazily generate the solutions by creating closures that compute them as needed
         // Using an alternate form of the quadratic formula that is prone to fewer numerical errors
-        let sol1 = move || 2.0*c / (-b + discriminant.sqrt());
-        let sol2 = move || 2.0*c / (-b - discriminant.sqrt());
+        let sol1 = move || 2.0*c / (-b + sign*discriminant.sqrt());
+        let sol2 = move || 2.0*c / (-b - sign*discriminant.sqrt());
 
         //TODO: Replace this mess with std::iter::once_with() when that is stable
         //once_with(move || if discriminant >= -EPSILON { Some(sol1()) } else { None })
@@ -126,5 +134,13 @@ mod tests {
         // discriminant < 0
         test_quadratic!(3.0*x^2 + 4.0*x + 2.0 = 0,
             []);
+    }
+
+    #[test]
+    fn solution_order() {
+        // Since the denominator is negative, figuring out the smallest t value is more complex
+        test_quadratic!(-2.0*x^2 + 8.0*x + 3.0 = 0,
+            // Solutions ordered from smallest to largest
+            [2.0 - (11.0/2.0f64).sqrt(), 2.0 + (11.0/2.0f64).sqrt()]);
     }
 }
