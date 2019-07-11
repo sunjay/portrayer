@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{Vec3, Quadratic, Uv};
+use crate::math::{Vec3, Mat3, Quadratic, Uv};
 use crate::bounding_box::{BoundingBox, Bounds};
 
 /// The radius of the sphere
@@ -70,6 +70,7 @@ impl RayHit for Sphere {
                 u: (PI + (-hit_point.z).atan2(hit_point.x)) / (2.0 * PI),
                 v: hit_point.y.acos() / PI,
             }),
+            normal_map_transform: Some(Mat3::identity()), //TODO
         })
     }
 }

@@ -1,7 +1,7 @@
 use std::ops::Range;
 use std::sync::Arc;
 
-use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat4, Rgb, Uv};
+use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat4, Mat3, Rgb, Uv};
 use crate::scene::Scene;
 use crate::material::Material;
 
@@ -22,7 +22,17 @@ pub struct RayIntersection {
     pub normal: Vec3,
 
     /// The texture coordinate of the hit point (if any)
+    ///
+    /// Set to None if the surface does not support texture mapping.
     pub tex_coord: Option<Uv>,
+
+    /// The matrix to compute the normal from a normal in a normal map
+    ///
+    /// The normal applied to this matrix will have a right-handed, y-up coordinate system where
+    /// a normal (nx,ny,nz) perpendicular to the surface is (0.0,1.0,0.0)
+    ///
+    /// Set to None if the surface does not support normal mapping.
+    pub normal_map_transform: Option<Mat3>,
 }
 
 /// Abstracts the ray hitting a single primitive
@@ -104,7 +114,7 @@ impl Ray {
 
         match hit {
             Some((hit, mat)) => mat.hit_color(scene, background, self.direction, hit.hit_point,
-                hit.normal, hit.tex_coord, recursion_depth),
+                hit.normal, hit.tex_coord, hit.normal_map_transform, recursion_depth),
             None => background,
         }
     }

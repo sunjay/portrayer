@@ -89,6 +89,7 @@ impl RayHit for Triangle {
             hit_point: ray.at(t),
             normal,
             tex_coord: None,
+            normal_map_transform: None,
         })
     }
 }

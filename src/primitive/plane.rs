@@ -74,6 +74,7 @@ impl RayHit for Plane {
             hit_point: ray.at(t),
             normal: self.normal,
             tex_coord: None,
+            normal_map_transform: None,
         })
     }
 }

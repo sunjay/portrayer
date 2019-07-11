@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{EPSILON, Vec3, Uv};
+use crate::math::{EPSILON, Vec3, Uv, Mat3};
 use crate::bounding_box::{BoundingBox, Bounds};
 
 use super::plane::Plane;
@@ -41,6 +41,9 @@ impl RayHit for FinitePlane {
                     u: hit.hit_point.x + L2,
                     v: hit.hit_point.z + L2,
                 });
+
+                // Normal direction is already oriented correctly
+                hit.normal_map_transform = Some(Mat3::identity());
                 Some(hit)
             } else {
                 None

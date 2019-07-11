@@ -108,6 +108,7 @@ fn ray_hit_body(ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
         hit_point,
         normal,
         tex_coord: None,
+        normal_map_transform: None,
     })
 }
 
@@ -151,6 +152,7 @@ fn ray_hit_cap(ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
         hit_point,
         normal,
         tex_coord: None,
+        normal_map_transform: None,
     })
 }
 

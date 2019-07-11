@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{EPSILON, Vec3, Uv};
+use crate::math::{EPSILON, Vec3, Mat3, Uv};
 use crate::bounding_box::{BoundingBox, Bounds};
 
 use super::plane::Plane;
@@ -96,6 +96,9 @@ impl RayHit for Cube {
                     // in one of the 6 images of the full 4x3 cube map.
                     let global_uv = norm_uv / Uv {u: 4.0, v: 3.0} + uv_offset;
                     p_hit.tex_coord = Some(global_uv);
+
+                    //TODO
+                    p_hit.normal_map_transform = Some(Mat3::identity());
 
                     // Limit the search of the next face using the current t value
                     t_range.end = p_hit.ray_parameter;

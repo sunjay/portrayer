@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use rand::{Rng, thread_rng};
 
-use crate::math::{EPSILON, INFINITY, Vec3, Uv, Rgb};
+use crate::math::{EPSILON, INFINITY, Vec3, Mat3, Uv, Rgb};
 use crate::scene::Scene;
 use crate::ray::{Ray, RayCast};
 use crate::texture::{Texture, TextureSource};
@@ -45,6 +45,7 @@ impl Material {
         hit_point: Vec3,
         normal: Vec3,
         tex_coord: Option<Uv>,
+        normal_map_transform: Option<Mat3>,
         recursion_depth: u32,
     ) -> Rgb {
         if recursion_depth > MAX_RECURSION_DEPTH {
@@ -61,9 +62,21 @@ impl Material {
         let normal = match &self.normals {
             // Need to normalize because the normal provided is not guaranteed to be a unit vector
             None => normal.normalized(),
-            Some(tex) => match tex_coord {
-                Some(tex_coord) => tex.at(tex_coord).into(),
-                None => panic!("Texturing (and thus normal mapping) is not supported for this primitive!"),
+            // Need both the texture coordinate and the normal map transform to be present
+            Some(tex) => match (tex_coord, normal_map_transform) {
+                (Some(tex_coord), Some(norm_trans)) => {
+                    // Normals in a normal map are oriented so that a normal perpendicular to the
+                    // surface will point along the -Z axis of a left-handed coordinate system.
+                    // This matrix takes the normal map normal (nx,ny,nz) and turns it into (nx,-nz,-ny)
+                    let normal_to_rh = Mat3::new(
+                        1.0, 0.0, 0.0, // * (nx, ny, nz) = nx
+                        0.0, 0.0, -1.0, // * (nx, ny, nz) = -nz
+                        0.0, -1.0, 0.0, // * (nx, ny, nz) = -ny
+                    );
+                    let tex_norm: Vec3 = tex.at(tex_coord).into();
+                    norm_trans * normal_to_rh * tex_norm
+                },
+                _ => panic!("Normal/Texture mapping is not supported for this primitive!"),
             },
         };
 
@@ -71,7 +84,7 @@ impl Material {
             None => self.diffuse,
             Some(tex) => match tex_coord {
                 Some(tex_coord) => tex.at(tex_coord),
-                None => panic!("Texturing is not supported for this primitive!"),
+                None => panic!("Texture mapping is not supported for this primitive!"),
             },
         };
 
