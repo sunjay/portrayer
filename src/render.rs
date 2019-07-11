@@ -1,6 +1,7 @@
 use vek::ops::Clamp;
 use rayon::prelude::*;
 use image::Pixel;
+use rand::{Rng, thread_rng};
 
 use crate::math::{Uv, Rgb};
 use crate::scene::{Scene, HierScene};
@@ -29,21 +30,30 @@ pub trait Render {
 }
 
 /// Ray traces a single pixel through the scene
-fn render_single_pixel<R: RayCast, T: TextureSource>(
-    (x, y): (f64, f64),
+fn render_single_pixel<R: RayCast + Send + Sync, T: TextureSource>(
+    (x, y): (usize, usize),
     scene: &Scene<R>,
     camera: &Camera,
     width: f64,
     height: f64,
     background: &T,
 ) -> Rgb {
-    let ray = camera.ray_at((x, y));
-
     let background_color = background.at(Uv {
         u: x as f64 / width,
         v: y as f64 / height,
     });
-    let color = ray.color(scene, background_color, 0);
+
+    const SAMPLES: usize = 100;
+    let total_color: Rgb = (0..SAMPLES).into_par_iter().map(|_| {
+        // Choose a random point in the pixel square
+        let mut rng = thread_rng();
+        let (x, y) = (x as f64 + rng.gen::<f64>(), y as f64 + rng.gen::<f64>());
+        let ray = camera.ray_at((x, y));
+
+        ray.color(scene, background_color, 0)
+    }).reduce(|| Rgb::black(), |x, y| x + y);
+
+    let color = total_color / SAMPLES as f64;
 
     // Gamma correction to ensure that image colors are closer to what we want them
     // to be. This gamma value is the same as Blender and is also in the source below:
@@ -81,8 +91,6 @@ impl Render for image::RgbImage {
                 let x = i % width as usize;
                 let y = i / width as usize;
 
-                // +0.5 so in the middle of the pixel square
-                let (x, y) = (x as f64 + 0.5, y as f64 + 0.5);
                 let color = render_single_pixel((x, y), scene, &camera, width, height, &background);
 
                 // Convert into the type supported by the image library and write the pixel
