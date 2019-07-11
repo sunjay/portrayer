@@ -2,6 +2,9 @@ language: rust
 rust:
   - stable
 cache: cargo
+env:
+  # Limit number of samples so build doesn't take forever
+  - SAMPLES=2
 script:
   - cargo build --verbose --release --all --examples
   - cargo test --verbose --release --all
