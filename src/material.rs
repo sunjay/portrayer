@@ -30,6 +30,8 @@ pub struct Material {
     pub glossy_side_length: f64,
     /// The texture to sample the diffuse color from
     pub texture: Option<Arc<Texture>>,
+    /// The texture to sample the shading normal from
+    pub normals: Option<Arc<Texture>>,
 }
 
 impl Material {
@@ -56,8 +58,14 @@ impl Material {
         // hit point
         let view = -ray_dir;
         // Surface normal of hit point
-        // Need to normalize because the normal provided is not guaranteed to be a unit vector
-        let normal = normal.normalized();
+        let normal = match &self.normals {
+            // Need to normalize because the normal provided is not guaranteed to be a unit vector
+            None => normal.normalized(),
+            Some(tex) => match tex_coord {
+                Some(tex_coord) => tex.at(tex_coord).into(),
+                None => panic!("Texturing (and thus normal mapping) is not supported for this primitive!"),
+            },
+        };
 
         let diffuse_color = match &self.texture {
             None => self.diffuse,
