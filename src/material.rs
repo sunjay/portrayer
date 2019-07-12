@@ -6,14 +6,16 @@ use rand::{Rng, thread_rng};
 use crate::math::{EPSILON, INFINITY, Vec3, Mat3, Uv, Rgb};
 use crate::scene::Scene;
 use crate::ray::{Ray, RayCast};
-use crate::texture::{Texture, TextureSource};
+use crate::texture::{Texture, NormalMap, TextureSource};
 
 // Controls the maximum ray recursion depth
 const MAX_RECURSION_DEPTH: u32 = 10;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Material {
-    /// The diffuse reflection constant
+    /// The diffuse color and intensity of the material
+    ///
+    /// Ignored if a texture is provided
     pub diffuse: Rgb,
     /// The specular reflection constant
     pub specular: Rgb,
@@ -31,7 +33,7 @@ pub struct Material {
     /// The texture to sample the diffuse color from
     pub texture: Option<Arc<Texture>>,
     /// The texture to sample the shading normal from
-    pub normals: Option<Arc<Texture>>,
+    pub normals: Option<Arc<NormalMap>>,
 }
 
 impl Material {
@@ -58,23 +60,20 @@ impl Material {
         // Note that this is the same as -ray.direction() since the ray intersects with the
         // hit point
         let view = -ray_dir;
+
         // Surface normal of hit point
+        //
+        // The code below relies on this being normalized
         let normal = match &self.normals {
             // Need to normalize because the normal provided is not guaranteed to be a unit vector
             None => normal.normalized(),
             // Need both the texture coordinate and the normal map transform to be present
             Some(tex) => match (tex_coord, normal_map_transform) {
                 (Some(tex_coord), Some(norm_trans)) => {
-                    // Normals in a normal map are oriented so that a normal perpendicular to the
-                    // surface will point along the -Z axis of a left-handed coordinate system.
-                    // This matrix takes the normal map normal (nx,ny,nz) and turns it into (nx,-nz,-ny)
-                    let normal_to_rh = Mat3::new(
-                        1.0, 0.0, 0.0, // * (nx, ny, nz) = nx
-                        0.0, 0.0, -1.0, // * (nx, ny, nz) = -nz
-                        0.0, -1.0, 0.0, // * (nx, ny, nz) = -ny
-                    );
-                    let tex_norm: Vec3 = tex.at(tex_coord).into();
-                    norm_trans * normal_to_rh * tex_norm
+                    let tex_norm = tex.normal_at(tex_coord);
+                    // Need to normalize because normal from texture map may not be normalized and
+                    // norm_trans may also potentially result in a non-normalized vector
+                    norm_trans * tex_norm.normalized()
                 },
                 _ => panic!("Normal/Texture mapping is not supported for this primitive!"),
             },

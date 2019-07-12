@@ -9,7 +9,7 @@ use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
     primitive::{Primitive, Cube, FinitePlane, Sphere},
     material::Material,
-    texture::{Texture, ImageTexture},
+    texture::{Texture, ImageTexture, NormalMap},
     light::Light,
     render::Render,
     reporter::RenderProgress,
@@ -19,8 +19,8 @@ use portrayer::{
 use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let tex_map = Arc::new(Texture::from(ImageTexture::open("assets/Metal_Tiles_001_basecolor.jpg")?));
-    let norm_map = Arc::new(Texture::from(ImageTexture::open("assets/Metal_Tiles_001_normal.jpg")?));
+    let tex_map = Arc::new(Texture::from(ImageTexture::open("assets/Metal_Tiles_001_basecolor_2.png")?));
+    let norm_map = Arc::new(NormalMap::open("assets/Metal_Tiles_001_normal_2.png")?);
 
     let mat_tex = Arc::new(Material {
         diffuse: Rgb {r: 0.37168, g: 0.236767, b: 0.692066},
@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     let tex_map_cube = Arc::new(Texture::from(ImageTexture::open("assets/Metal_Tiles_001_basecolor_cubemap.png")?));
-    let norm_map_cube = Arc::new(Texture::from(ImageTexture::open("assets/Metal_Tiles_001_normal_cubemap.png")?));
+    let norm_map_cube = Arc::new(NormalMap::open("assets/Metal_Tiles_001_normal_cubemap.png")?);
 
     let mat_tex_cube = Arc::new(Material {
         diffuse: Rgb {r: 0.37168, g: 0.236767, b: 0.692066},
