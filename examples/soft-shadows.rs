@@ -72,8 +72,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 position: Vec3 {x: 2.0, y: 2.0, z: 16.0},
                 color: Rgb {r: 0.5, g: 0.5, b: 0.5},
                 area: Parallelogram {
-                    a: Vec3 {x: 0.0, y: 1.0, z: 0.0},
-                    b: Vec3 {x: 1.0, y: 0.0, z: 0.0},
+                    a: Vec3 {x: 0.0, y: 0.5, z: 0.0},
+                    b: Vec3 {x: 0.5, y: 0.0, z: 0.0},
                 },
                 ..Light::default()
             },
