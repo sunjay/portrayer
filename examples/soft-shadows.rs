@@ -1,4 +1,4 @@
-//! Demonstrates the glossy reflection feature
+//! Demonstrates the soft shadows feature with area lights
 
 use std::error::Error;
 use std::sync::Arc;

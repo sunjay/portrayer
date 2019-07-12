@@ -1,4 +1,6 @@
-//! A simple scene with some miscellaneous geometry.
+//! A very large (resource intensive) scene with some miscellaneous geometry.
+//!
+//! Used to test k-d tree acceleration mechanism.
 
 use std::error::Error;
 use std::sync::Arc;

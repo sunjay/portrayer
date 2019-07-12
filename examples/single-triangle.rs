@@ -1,4 +1,4 @@
-//! A simple scene with five spheres
+//! A simple scene with a single triangle
 
 use std::io;
 use std::sync::Arc;
