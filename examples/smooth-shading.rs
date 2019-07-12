@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Mesh, MeshData, Shading, Cube},
+    primitive::{Mesh, MeshData, Shading},
     material::Material,
     light::Light,
     render::Render,
@@ -16,66 +16,71 @@ use portrayer::{
 use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mat_mirror = Arc::new(Material {
-        diffuse: Rgb {r: 0.0, g: 0.0, b: 0.0},
+    let mat_rock = Arc::new(Material {
+        diffuse: Rgb {r: 0.256361, g: 0.256361, b: 0.256361},
         specular: Rgb {r: 0.6, g: 0.6, b: 0.6},
-        shininess: 1000.0,
-        reflectivity: 1.0,
+        shininess: 50.0,
         ..Material::default()
     });
-    let mat_wood = Arc::new(Material {
-        diffuse: Rgb {r: 0.545, g: 0.353, b: 0.169},
-        specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
+    let mat_cow = Arc::new(Material {
+        diffuse: Rgb {r: 0.692066, g: 0.477245, b: 0.293336},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
         ..Material::default()
     });
     let mat_monkey = Arc::new(Material {
-        diffuse: Rgb {r: 0.68, g: 0.784, b: 0.633},
+        diffuse: Rgb {r: 0.261829, g: 0.8, b: 0.310477},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
         ..Material::default()
     });
 
-    let monkey = Arc::new(MeshData::load_obj("assets/monkey.obj")?);
-
-    let mirror = Arc::new(SceneNode::from(Geometry::new(Cube, mat_wood))
-        .scaled((9.0, 0.5, 6.0))
-        .rotated_x(Radians::from_degrees(10.0))
-        .with_child(
-            SceneNode::from(Geometry::new(Cube, mat_mirror))
-                .scaled((8.1/9.0, 0.05/0.5, 5.4/6.0))
-                .translated((0.0, 0.27/0.5, 0.0))
-        ));
-
-    // Make sure phong works well with hierarchical modelling
-    let flat_monkey = Arc::new(SceneNode::from(Geometry::new(Mesh::new(monkey.clone(), Shading::Flat), mat_monkey.clone()))
-        .rotated_y(Radians::from_degrees(10.0)));
-
-    let smooth_monkey = Arc::new(SceneNode::from(Geometry::new(Mesh::new(monkey.clone(), Shading::Smooth), mat_monkey.clone()))
-        .rotated_y(Radians::from_degrees(-10.0)));
+    let monkey_mesh = Arc::new(MeshData::load_obj("assets/monkey.obj")?);
+    let cow_mesh = Arc::new(MeshData::load_obj("assets/cow.obj")?);
+    let flat_rock_mesh = Arc::new(MeshData::load_obj("assets/flat_rock.obj")?);
+    let smooth_rock_mesh = Arc::new(MeshData::load_obj("assets/smooth_rock.obj")?);
 
     let scene = HierScene {
         root: SceneNode::from(vec![
-            mirror,
+            // Flat objects
 
-            SceneNode::from(flat_monkey)
-                .translated((-2.0, 2.0, 0.0))
+            SceneNode::from(Geometry::new(Mesh::new(monkey_mesh.clone(), Shading::Flat), mat_monkey.clone()))
+                .rotated_y(Radians::from_degrees(45.0))
+                .translated((-1.904434, 1.4, 0.0))
                 .into(),
 
-            SceneNode::from(smooth_monkey)
-                .translated((2.0, 2.0, 0.0))
+            SceneNode::from(Geometry::new(Mesh::new(cow_mesh.clone(), Shading::Flat), mat_cow.clone()))
+                .scaled(0.5)
+                .rotated_y(Radians::from_degrees(-15.0))
+                .translated((-4.2, 1.8, 4.0))
+                .into(),
+
+            SceneNode::from(Geometry::new(Mesh::new(flat_rock_mesh.clone(), Shading::Flat), mat_rock.clone()))
+                .translated((-3.396987, -1.4, 2.286671))
+                .into(),
+
+            // Smooth objects
+
+            SceneNode::from(Geometry::new(Mesh::new(monkey_mesh.clone(), Shading::Smooth), mat_monkey.clone()))
+                .rotated_y(Radians::from_degrees(-45.0))
+                .translated((1.242585, 1.4, 0.0))
+                .into(),
+
+            SceneNode::from(Geometry::new(Mesh::new(cow_mesh.clone(), Shading::Smooth), mat_cow.clone()))
+                .scaled(0.5)
+                .rotated_y(Radians::from_degrees(205.0))
+                .translated((3.8, 1.8, 4.0))
+                .into(),
+
+            SceneNode::from(Geometry::new(Mesh::new(smooth_rock_mesh.clone(), Shading::Smooth), mat_rock.clone()))
+                .translated((3.271008, -1.406423, 2.372513))
                 .into(),
         ]).into(),
 
         lights: vec![
             Light {
-                position: Vec3 {x: 0.0, y: 5.0, z: 4.0},
+                position: Vec3 {x: 0.0, y: 5.0, z: 10.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
-                ..Light::default()
-            },
-            Light {
-                position: Vec3 {x: 0.0, y: 1.0, z: -4.0},
-                color: Rgb {r: 0.5, g: 0.5, b: 0.5},
                 ..Light::default()
             },
         ],
@@ -83,10 +88,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let cam = CameraSettings {
-        eye: (0.0, 10.15667, 11.579666).into(),
-        center: (0.0, -5.913023, -7.571445).into(),
+        eye: (1.062382, 0.54746, 22.827951).into(),
+        center: (-0.813817, 0.424462, -8.112782).into(),
         up: Vec3::up(),
-        fovy: Radians::from_degrees(25.0),
+        fovy: Radians::from_degrees(24.0),
     };
 
     let mut image = RgbImage::new(910, 512);
