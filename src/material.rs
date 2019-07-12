@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use rand::{Rng, thread_rng};
 
-use crate::math::{EPSILON, INFINITY, Vec3, Mat3, Uv, Rgb};
+use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat3, Uv, Rgb};
 use crate::scene::Scene;
 use crate::ray::{Ray, RayCast};
 use crate::texture::{Texture, NormalMap, TextureSource};
@@ -168,9 +168,7 @@ impl Material {
             let mut reflect_dir = ray_dir - normal * 2.0 * ray_dir.dot(normal);
             if self.glossy_side_length > 0.0 {
                 // Create a basis u, v from the ideal reflection ray
-                // This is a technique for creating a basis from a single vector:
-                let u_basis = reflect_dir.cross(reflect_dir + Vec3 {x: 0.0, y: 0.0, z: 0.1});
-                let v_basis = reflect_dir.cross(u_basis);
+                let (_, u_basis, v_basis) = reflect_dir.orthonormal_basis();
 
                 // Generate a random coordinate on the rectangle
                 let u_coord = -self.glossy_side_length / 2.0 + rng.gen::<f64>() * self.glossy_side_length;
