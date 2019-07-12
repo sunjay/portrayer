@@ -127,14 +127,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         lights: vec![
             // Left Point Light
             Light {
-                position: Vec3 {x: -10.0, y: 9.0, z: 7.0},
+                position: Vec3 {x: -8.0, y: 12.0, z: 7.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
                 ..Light::default()
             },
 
             // Right Point Light
             Light {
-                position: Vec3 {x: 10.0, y: 9.0, z: 7.0},
+                position: Vec3 {x: 8.0, y: 12.0, z: 7.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
                 ..Light::default()
             },

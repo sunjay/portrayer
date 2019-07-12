@@ -44,6 +44,7 @@ impl RayHit for FinitePlane {
 
                 // Normal direction is already oriented correctly
                 hit.normal_map_transform = Some(Mat3::identity());
+
                 Some(hit)
             } else {
                 None
