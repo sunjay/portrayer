@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Primitive, Sphere, Mesh, MeshData, Shading, Cube},
+    primitive::{Primitive, Sphere, Cube, Cone, Cylinder},
     material::Material,
     light::Light,
     render::Render,
@@ -32,23 +32,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         ..Material::default()
     })).collect();
 
-    let monkey = Arc::new(MeshData::load_obj("assets/monkey.obj")?);
-    let cow = Arc::new(MeshData::load_obj("assets/cow.obj")?);
-
     let primitives: &[Primitive] = &[
         Sphere.into(),
         Cube.into(),
-        Mesh::new(monkey.clone(), Shading::Smooth).into(),
-        Mesh::new(monkey.clone(), Shading::Flat).into(),
-        Mesh::new(cow.clone(), Shading::Smooth).into(),
-        Mesh::new(cow.clone(), Shading::Flat).into(),
+        Cone.into(),
+        Cylinder.into(),
     ];
 
     let width = 800.0;
     let length = 800.0;
     let height = 800.0;
 
-    let n = 5;
+    let n = 10;
 
     let mut nodes = Vec::new();
     for i in 0..n {
@@ -61,10 +56,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let prim = primitives.choose(&mut rng).unwrap();
                 let mat = materials.choose(&mut rng).unwrap();
 
-                let (scale_increase, scale_base) = match prim {
-                    Primitive::Sphere(_) | Primitive::Cube(_) => (60.0, 100.0),
-                    _ => (30.0, 10.0),
-                };
+                let scale_base = 30.0;
+                let scale_increase = 30.0;
 
                 let geo = Geometry::new(prim.clone(), mat.clone());
                 let node = SceneNode::from(geo)

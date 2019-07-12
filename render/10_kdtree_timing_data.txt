@@ -1,0 +1,16 @@
+$ time SAMPLES=1 cargo run --release --example big-scene
+    Finished release [optimized + debuginfo] target(s) in 0.05s
+     Running `target/release/examples/big-scene`
+
+real	0m14.730s
+user	1m50.135s
+sys 	0m0.109s
+
+$ time SAMPLES=1 cargo run --release --example big-scene --features kdtree
+    Finished release [optimized + debuginfo] target(s) in 0.04s
+     Running `target/release/examples/big-scene`
+
+real	0m1.169s
+user	0m7.075s
+sys 	0m0.013s
+
