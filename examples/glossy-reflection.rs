@@ -24,7 +24,7 @@ fn main() -> io::Result<()> {
         ..Material::default()
     });
     let glossy_ball = Arc::new(Material {
-        glossy_side_length: 1.0,
+        glossy_side_length: 2.0,
         ..(*non_glossy_ball).clone()
     });
     let center_ball = Arc::new(Material {
