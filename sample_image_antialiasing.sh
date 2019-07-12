@@ -16,9 +16,13 @@ convert resize_antialiasing_32.png -crop 300x250+0+0 resize_antialiasing_32_crop
 convert resize_antialiasing_1_crop.png -resize 200% +antialias resize_antialiasing_1_crop2.png
 convert resize_antialiasing_32_crop.png -resize 200% +antialias resize_antialiasing_32_crop2.png
 
+# Add labels
+composite -background none -pointsize 32 label:"Samples: 1" -geometry +10+10 resize_antialiasing_1.png resize_antialiasing_1_label.png
+composite -background none -pointsize 32 label:"Samples: 32" -geometry +10+10 resize_antialiasing_32.png resize_antialiasing_32_label.png
+
 montage -mode concatenate -tile 2x \
-  resize_antialiasing_1.png resize_antialiasing_1_crop2.png \
-  resize_antialiasing_32.png resize_antialiasing_32_crop2.png \
+  resize_antialiasing_1_label.png resize_antialiasing_1_crop2.png \
+  resize_antialiasing_32_label.png resize_antialiasing_32_crop2.png \
   antialiasing.png
 
 rm resize_antialiasing_*.png
