@@ -1,16 +1,16 @@
 $ time SAMPLES=1 cargo run --release --example big-scene
-    Finished release [optimized + debuginfo] target(s) in 0.05s
+   Compiling portrayer v0.1.0 (/users/s5varma/Documents/portrayer)
+    Finished release [optimized + debuginfo] target(s) in 5.18s
      Running `target/release/examples/big-scene`
 
-real	0m14.730s
-user	1m50.135s
-sys 	0m0.109s
+real	1m11.758s # Don't forget to subtract compilation time
+user	66m16.851s
+sys 	0m2.984s
 
 $ time SAMPLES=1 cargo run --release --example big-scene --features kdtree
-    Finished release [optimized + debuginfo] target(s) in 0.04s
+    Finished release [optimized + debuginfo] target(s) in 0.37s
      Running `target/release/examples/big-scene`
 
-real	0m1.169s
-user	0m7.075s
-sys 	0m0.013s
-
+real	0m5.070s # Don't forget to subtract compilation time
+user	4m17.679s
+sys 	0m0.636s
