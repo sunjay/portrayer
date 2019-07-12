@@ -68,44 +68,50 @@ impl RayHit for Cube {
 
         // Find the nearest intersection
         let mut t_range = init_t_range.clone();
-        FACES.iter().fold(None, |hit, (plane, uv_axis, uv_offset)| {
+        FACES.iter().fold(None, |hit, face| {
+            let (plane, _, _) = face;
             match plane.ray_hit(ray, &t_range) {
                 // Need to check if the cube actually contains the hit point since each
                 // plane is infinite
-                Some(mut p_hit) => if self.contains(p_hit.hit_point) {
-                    // Compute texture coordinate by finding 2D intersection coordinate on cube face
-
-                    // Get the uv coordinate on the face by finding the right set of two points
-                    let hit_p = p_hit.hit_point;
-                    let face_uv = match plane.normal {
-                        n if n.x != 0.0 => Uv {u: hit_p.z, v: hit_p.y},
-                        n if n.y != 0.0 => Uv {u: hit_p.x, v: hit_p.z},
-                        n if n.z != 0.0 => Uv {u: hit_p.x, v: hit_p.y},
-                        _ => unreachable!(),
-                    };
-
-                    // Convert face to normalized image coordinate system with +x to the right and
-                    // +y down
-                    let norm_uv = Uv {
-                        u: face_uv.u * uv_axis.u + L2,
-                        v: L2 - face_uv.v * uv_axis.v,
-                    };
-
-                    // Convert from the coordinate system of this particular face texture to the
-                    // full coordinate system of the cube map. Models how face_uv is a coordinate
-                    // in one of the 6 images of the full 4x3 cube map.
-                    let global_uv = norm_uv / Uv {u: 4.0, v: 3.0} + uv_offset;
-                    p_hit.tex_coord = Some(global_uv);
-
-                    //TODO
-                    p_hit.normal_map_transform = Some(Mat3::identity());
-
+                Some(p_hit) => if self.contains(p_hit.hit_point) {
                     // Limit the search of the next face using the current t value
                     t_range.end = p_hit.ray_parameter;
-                    Some(p_hit)
+                    Some((face, p_hit))
                 } else { hit },
                 None => hit,
             }
+        }).map(|(face, mut hit)| {
+            // Additional hit properties are computed once at the end to avoid wasted computations
+            let &(ref plane, uv_axis, uv_offset) = face;
+
+            // Compute texture coordinate by finding 2D intersection coordinate on cube face
+
+            // Get the uv coordinate on the face by finding the right set of two points
+            let hit_p = hit.hit_point;
+            let face_uv = match plane.normal {
+                n if n.x != 0.0 => Uv {u: hit_p.z, v: hit_p.y},
+                n if n.y != 0.0 => Uv {u: hit_p.x, v: hit_p.z},
+                n if n.z != 0.0 => Uv {u: hit_p.x, v: hit_p.y},
+                _ => unreachable!(),
+            };
+
+            // Convert face to normalized image coordinate system with +x to the right and
+            // +y down
+            let norm_uv = Uv {
+                u: face_uv.u * uv_axis.u + L2,
+                v: L2 - face_uv.v * uv_axis.v,
+            };
+
+            // Convert from the coordinate system of this particular face texture to the
+            // full coordinate system of the cube map. Models how face_uv is a coordinate
+            // in one of the 6 images of the full 4x3 cube map.
+            let global_uv = norm_uv / Uv {u: 4.0, v: 3.0} + uv_offset;
+            hit.tex_coord = Some(global_uv);
+
+            //TODO
+            hit.normal_map_transform = Some(Mat3::identity());
+
+            hit
         })
     }
 }
