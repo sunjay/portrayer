@@ -1,8 +1,14 @@
+//! Math-related utilities/constants/type definitions.
+//!
 //! The vek crate that we use to provide math primitives is very generic, but we will always want
 //! to use it with floats. This module exports type aliases that allow us to not have to specify
 //! that we are using "f64" all the time.
 
 pub use std::f64::INFINITY;
+
+use std::ops::Range;
+
+use roots::Roots;
 
 /// This constant is a "fudge factor" used to account for floating point error in calculations.
 /// It is different from machine epsilon because we accumulate quite a bit more error than that.
@@ -86,6 +92,32 @@ impl Radians {
     }
 }
 
+#[derive(Debug)]
+pub struct QuadraticSolutions(Roots<f64>);
+
+impl PartialEq<[f64]> for QuadraticSolutions {
+    fn eq(&self, other: &[f64]) -> bool {
+        self.0.as_ref() == other
+    }
+}
+
+impl QuadraticSolutions {
+    /// Returns the number of solutions
+    pub fn len(&self) -> usize {
+        self.0.as_ref().len()
+    }
+
+    /// Provides an iterator over the solutions, from smallest to largest
+    pub fn iter(&self) -> impl Iterator<Item=f64> + '_ {
+        self.0.as_ref().iter().cloned()
+    }
+
+    /// Finds the smallest solution in the given range
+    pub fn find_in_range(&self, range: &Range<f64>) -> Option<f64> {
+        self.0.as_ref().iter().find(|t| range.contains(t)).cloned()
+    }
+}
+
 /// A quadratic equation solver for: a*x^2 + b*x + c = 0
 #[derive(Debug, Clone, Copy)]
 pub struct Quadratic {
@@ -95,33 +127,11 @@ pub struct Quadratic {
 }
 
 impl Quadratic {
-    /// Lazily generates up to 2 solutions in order from smallest to largest
-    pub fn solve(self) -> impl Iterator<Item=f64> {
+    /// Solve the given equation and return up to two solutions
+    pub fn solve(self) -> QuadraticSolutions {
         let Quadratic {a, b, c} = self;
-        let discriminant = b*b - 4.0*a*c;
 
-        // If the denominator 2*a is negative, we need to swap the sign in order to get the right
-        // order of solutions
-        let sign = if a < 0.0 {
-            -1.0
-        } else {
-            1.0
-        };
-
-        // Lazily generate the solutions by creating closures that compute them as needed
-        // Using an alternate form of the quadratic formula that is prone to fewer numerical errors
-        let sol1 = move || 2.0*c / (-b + sign*discriminant.sqrt());
-        let sol2 = move || 2.0*c / (-b - sign*discriminant.sqrt());
-
-        //TODO: Replace this mess with std::iter::once_with() when that is stable
-        //once_with(move || if discriminant >= -EPSILON { Some(sol1()) } else { None })
-        //    .chain(once_with(move || if discriminant > 0.0 { Some(sol2()) } else { None }))
-        if discriminant >= -EPSILON { Some(()) } else { None }
-            .into_iter()
-            .map(move |_| sol1())
-            .chain(if discriminant > 0.0 { Some(()) } else { None }
-                .into_iter()
-                .map(move |_| sol2()))
+        QuadraticSolutions(roots::find_roots_quadratic(a, b, c))
     }
 }
 
@@ -136,14 +146,14 @@ mod tests {
     macro_rules! test_quadratic {
         ($a:literal * x ^ 2 + $b:literal * x + $c:literal = 0, [ $($sol:expr),* ]) => {
             let equation = Quadratic {a: $a, b: $b, c: $c};
-            let solutions = equation.solve().collect::<Vec<_>>();
+            let solutions = equation.solve();
 
             let expected: &[f64] = &[$($sol),*];
 
             assert_eq!(expected.len(), solutions.len(),
                 "got {} solution(s) when expected {} solution(s):\n\texpected: {:?}\n\tactual: {:?}",
                 solutions.len(), expected.len(), expected, solutions);
-            for (expected, actual) in expected.into_iter().zip(solutions) {
+            for (expected, actual) in expected.iter().zip(solutions.iter()) {
                 assert_approx_eq!(expected, actual);
             }
         };

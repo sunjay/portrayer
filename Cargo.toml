@@ -11,6 +11,7 @@ tobj = "0.1"
 rayon = "1.1"
 indicatif = "0.11"
 rand = "0.7"
+roots = "0.0.5"
 
 [dev-dependencies]
 assert_approx_eq = "1.1"

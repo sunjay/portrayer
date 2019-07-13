@@ -47,7 +47,7 @@ fn ray_hit_body(ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
 
     let equation = Quadratic {a, b, c};
     // Find the smallest t for which this equation is satisfied
-    let t = equation.solve().find(|sol| t_range.contains(sol))?;
+    let t = equation.solve().find_in_range(t_range)?;
     // Stop processing as early as possible if we're not in the valid range
     if !t_range.contains(&t) {
         return None;

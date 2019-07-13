@@ -53,7 +53,7 @@ impl RayHit for Sphere {
         let c = origin.dot(origin) - RADIUS * RADIUS;
 
         let equation = Quadratic {a, b, c};
-        let t = equation.solve().find(|sol| t_range.contains(sol))?;
+        let t = equation.solve().find_in_range(t_range)?;
 
         let hit_point = ray.at(t);
         let tex_coord = Uv {
