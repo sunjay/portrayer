@@ -26,6 +26,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             desk()?.into(),
             computer(&monkey_mesh)?.into(),
             chair().into(),
+            character(&monkey_mesh)?.into(),
         ]).into(),
 
         lights: vec![
@@ -239,4 +240,41 @@ fn chair() -> SceneNode {
             .translated((0.0, 5.334378, 5.404959))
             .into(),
     ])
+}
+
+fn character(monkey_mesh: &Arc<MeshData>) -> Result<SceneNode, Box<dyn Error>> {
+    let mat_torso = Arc::new(Material {
+        diffuse: Rgb {r: 0.077701, g: 0.075793, b: 0.125964},
+        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        shininess: 25.0,
+        ..Material::default()
+    });
+    let mat_head = Arc::new(Material {
+        diffuse: Rgb {r: 0.064598, g: 0.270305, b: 0.716789},
+        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let monkey_torso_mesh = Arc::new(MeshData::load_obj("assets/monkey_torso.obj")?);
+
+    Ok(SceneNode::from(vec![
+        // Head
+        SceneNode::from(Geometry::new(Mesh::new(monkey_mesh.clone(), Shading::Smooth), mat_head.clone()))
+            .rotated_y(Radians::from_degrees(180.0))
+            .translated((0.0, 7.0, 4.0))
+            .into(),
+
+        // Torso
+        SceneNode::from(Geometry::new(Mesh::new(monkey_torso_mesh, Shading::Smooth), mat_torso.clone()))
+            .translated((0.0, 5.148612, 4.23546))
+            .into(),
+
+        // Arm
+        SceneNode::from(Geometry::new(Sphere, mat_torso.clone()))
+            .scaled((0.282782, 1.299079, 0.282782))
+            .rotated_z(Radians::from_degrees(19.0))
+            .translated((0.984683, 5.126376, 4.344858))
+            .into(),
+    ]))
 }
