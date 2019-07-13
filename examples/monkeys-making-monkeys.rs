@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Plane, Cylinder, Sphere, Mesh, MeshData, Shading},
+    primitive::{Cube, Plane, Sphere, Cone, Mesh, MeshData, Shading},
     material::Material,
     texture::{Texture, ImageTexture, NormalMap},
     light::{Light, Parallelogram},
@@ -24,6 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         root: SceneNode::from(vec![
             room().into(),
             desk()?.into(),
+            desk_objects()?.into(),
             computer(&monkey_mesh)?.into(),
             chair().into(),
             character(&monkey_mesh)?.into(),
@@ -275,6 +276,77 @@ fn character(monkey_mesh: &Arc<MeshData>) -> Result<SceneNode, Box<dyn Error>> {
             .scaled((0.282782, 1.299079, 0.282782))
             .rotated_z(Radians::from_degrees(19.0))
             .translated((0.984683, 5.126376, 4.344858))
+            .into(),
+    ]))
+}
+
+fn desk_objects() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_teapot = Arc::new(Material {
+        diffuse: Rgb {r: 0.314666, g: 0.314666, b: 0.314666},
+        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        shininess: 25.0,
+        reflectivity: 0.3,
+        glossy_side_length: 1.0,
+        ..Material::default()
+    });
+
+    let mat_glass = Arc::new(Material {
+        diffuse: Rgb::one(),
+        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        shininess: 25.0,
+        reflectivity: 0.4,
+        ..Material::default()
+    });
+
+    let mat_apple = Arc::new(Material {
+        diffuse: Rgb {r: 0.8, g: 0.0, b: 0.0},
+        ..Material::default()
+    });
+
+    let mat_golf_ball = Arc::new(Material {
+        diffuse: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        shininess: 25.0,
+        reflectivity: 0.3,
+        glossy_side_length: 1.0,
+        ..Material::default()
+    });
+
+    let mat_cone = Arc::new(Material {
+        diffuse: Rgb {r: 0.368949, g: 0.335492, b: 0.8},
+        ..Material::default()
+    });
+
+    let teapot_mesh = Arc::new(MeshData::load_obj("assets/teapot.obj")?);
+
+    Ok(SceneNode::from(vec![
+        // Teapot
+        SceneNode::from(Geometry::new(Mesh::new(teapot_mesh.clone(), Shading::Smooth), mat_teapot.clone()))
+           .translated((2.43888, 5.241134, -0.617814))
+           .into(),
+
+        // Glass ball
+        SceneNode::from(Geometry::new(Sphere, mat_glass.clone()))
+            .scaled(0.5)
+            .translated((2.768083, 5.751237, -1.475317))
+            .into(),
+
+        // Apple
+        SceneNode::from(Geometry::new(Sphere, mat_apple.clone()))
+            .scaled(0.28)
+            .translated((3.369787, 5.538453, -0.782367))
+            .into(),
+
+        // Golf Ball
+        SceneNode::from(Geometry::new(Sphere, mat_golf_ball.clone()))
+            .scaled(0.14)
+            .translated((3.03616, 5.384166, -0.381234))
+            .into(),
+
+        // Cone
+        SceneNode::from(Geometry::new(Cone, mat_cone.clone()))
+            .scaled((0.64963, 1.106842, 0.64963))
+            .translated((3.182365, 5.777666, -2.332999))
             .into(),
     ]))
 }
