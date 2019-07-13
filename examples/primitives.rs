@@ -6,7 +6,7 @@ use std::iter::once;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Cylinder, Cone, Sphere, Mesh, MeshData, Shading, FinitePlane},
+    primitive::{Cube, Cylinder, Cone, Sphere, Mesh, MeshData, Shading, Plane},
     material::Material,
     light::Light,
     render::Render,
@@ -36,7 +36,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             trees,
 
             // Floor
-            SceneNode::from(Geometry::new(FinitePlane, mat_grass))
+            SceneNode::from(Geometry::new(Plane, mat_grass))
                 .scaled(30.0)
                 .into()
         ]).into(),

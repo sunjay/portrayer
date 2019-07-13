@@ -4,7 +4,7 @@ use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::{EPSILON, Vec3, Mat3, Uv};
 use crate::bounding_box::{BoundingBox, Bounds};
 
-use super::plane::Plane;
+use super::InfinitePlane;
 
 /// L = length/width/height of the cube
 const L: f64 = 1.0;
@@ -43,24 +43,24 @@ impl RayHit for Cube {
         // Texture coordinate offset comes from the cubemap being a 4x3 grid:
         // Each offset can be calculated from (col * 1/4, row * 1/3) where col = 0..=2 and row = 0..=3
         // For a reference image: https://learnopengl.com/Advanced-OpenGL/Cubemaps
-        static FACES: [(Plane, Uv, Uv); 6] = [
+        static FACES: [(InfinitePlane, Uv, Uv); 6] = [
             // Right
-            (Plane {point: Vec3 {x: L2, y: 0.0, z: 0.0}, normal: Vec3 {x: 1.0, y: 0.0, z: 0.0}},
+            (InfinitePlane {point: Vec3 {x: L2, y: 0.0, z: 0.0}, normal: Vec3 {x: 1.0, y: 0.0, z: 0.0}},
                 Uv {u: -1.0, v: 1.0}, Uv {u: 1.0/2.0, v: 1.0/3.0}),
             // Left
-            (Plane {point: Vec3 {x: -L2, y: 0.0, z: 0.0}, normal: Vec3 {x: -1.0, y: 0.0, z: 0.0}},
+            (InfinitePlane {point: Vec3 {x: -L2, y: 0.0, z: 0.0}, normal: Vec3 {x: -1.0, y: 0.0, z: 0.0}},
                 Uv {u: 1.0, v: 1.0}, Uv {u: 0.0, v: 1.0/3.0}),
             // Top
-            (Plane {point: Vec3 {x: 0.0, y: L2, z: 0.0}, normal: Vec3 {x: 0.0, y: 1.0, z: 0.0}},
+            (InfinitePlane {point: Vec3 {x: 0.0, y: L2, z: 0.0}, normal: Vec3 {x: 0.0, y: 1.0, z: 0.0}},
                 Uv {u: 1.0, v: -1.0}, Uv {u: 1.0/4.0, v: 0.0}),
             // Bottom
-            (Plane {point: Vec3 {x: 0.0, y: -L2, z: 0.0}, normal: Vec3 {x: 0.0, y: -1.0, z: 0.0}},
+            (InfinitePlane {point: Vec3 {x: 0.0, y: -L2, z: 0.0}, normal: Vec3 {x: 0.0, y: -1.0, z: 0.0}},
                 Uv {u: 1.0, v: 1.0}, Uv {u: 1.0/4.0, v: 2.0/3.0}),
             // Near
-            (Plane {point: Vec3 {x: 0.0, y: 0.0, z: L2}, normal: Vec3 {x: 0.0, y: 0.0, z: 1.0}},
+            (InfinitePlane {point: Vec3 {x: 0.0, y: 0.0, z: L2}, normal: Vec3 {x: 0.0, y: 0.0, z: 1.0}},
                 Uv {u: 1.0, v: 1.0}, Uv {u: 1.0/4.0, v: 1.0/3.0}),
             // Far
-            (Plane {point: Vec3 {x: 0.0, y: 0.0, z: -L2}, normal: Vec3 {x: 0.0, y: 0.0, z: -1.0}},
+            (InfinitePlane {point: Vec3 {x: 0.0, y: 0.0, z: -L2}, normal: Vec3 {x: 0.0, y: 0.0, z: -1.0}},
                 Uv {u: -1.0, v: 1.0}, Uv {u: 3.0/4.0, v: 1.0/3.0}),
         ];
 

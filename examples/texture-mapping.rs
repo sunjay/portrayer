@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Sphere, Cube, FinitePlane},
+    primitive::{Sphere, Cube, Plane},
     material::Material,
     texture::{Texture, ImageTexture},
     light::Light,
@@ -60,7 +60,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         root: SceneNode::from(vec![
             mirror,
 
-            SceneNode::from(Geometry::new(FinitePlane, mat_tex.clone()))
+            SceneNode::from(Geometry::new(Plane, mat_tex.clone()))
                 .scaled((8.0, 1.0, 2.0))
                 .rotated_x(Radians::from_degrees(90.0))
                 .translated((0.0, 2.0, -2.0))

@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, FinitePlane, Mesh, MeshData, Shading},
+    primitive::{Cube, Plane, Mesh, MeshData, Shading},
     material::Material,
     light::{Light, Parallelogram},
     render::Render,
@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let scene = HierScene {
         root: SceneNode::from(vec![
             // Walls + Floor
-            SceneNode::from(Geometry::new(FinitePlane, mat_wall_floor.clone()))
+            SceneNode::from(Geometry::new(Plane, mat_wall_floor.clone()))
                 .scaled(30.0)
                 .into(),
             SceneNode::from(Geometry::new(Cube, mat_wall_floor.clone()))

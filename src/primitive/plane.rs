@@ -1,80 +1,53 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{EPSILON, Vec3};
+use crate::math::{EPSILON, Vec3, Uv, Mat3};
+use crate::bounding_box::{BoundingBox, Bounds};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PlaneSide {
-    /// In front of the plane (or on its face)
-    Front,
-    /// Behind the plane
-    Back,
+use super::InfinitePlane;
+
+/// L = length/width of the plane (the height is 0.0)
+const L: f64 = 1.0;
+const L2: f64 = L / 2.0;
+
+/// A flat, finite plane with center (0, 0, 0), length = 1.0, width = 1.0, and height = 0.0
+///
+/// The plane's normal faces "up", i.e. {x: 0.0, y: 1.0, z: 0.0}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Plane;
+
+impl Bounds for Plane {
+    fn bounds(&self) -> BoundingBox {
+        let min = Vec3 {x: -L2, y: 0.0, z: -L2};
+        let max = Vec3 {x: L2, y: 0.0, z: L2};
+        BoundingBox::new(min, max)
+    }
 }
 
-/// A flat, infinite plane
-#[derive(Debug, Clone, PartialEq)]
-pub struct Plane {
-    /// The normal of the plane (MUST be a unit vector)
-    ///
-    /// Assumption: In order to be visible, the normal must point *towards* the view
-    pub normal: Vec3,
-    /// Any point on the plane
-    pub point: Vec3,
-}
-
-impl Plane {
-    /// Returns which side of this place the given point is on.
-    pub fn which_side(&self, other_point: Vec3) -> PlaneSide {
-        // Need to compare with 0.0, not EPSILON or else ray_hit_axis_aligned_plane will not always
-        // produce a solution.
-        if (other_point - self.point).dot(self.normal) >= 0.0 {
-            PlaneSide::Front
-        } else {
-            PlaneSide::Back
-        }
-    }
-
-    /// Returns a plane with the normal flipped
-    pub fn flipped(&self) -> Self {
-        Self {
-            normal: -self.normal,
-            point: self.point,
-        }
-    }
+/// Returns true if the given point is within the boundary of the plane
+///
+/// Only need to check two axes because third axis is guaranteed to be zero
+fn contains(Vec3 {x, y: _, z}: Vec3) -> bool {
+    let radius = L2 + EPSILON;
+    -radius <= x && x <= radius && -radius <= z && z <= radius
 }
 
 impl RayHit for Plane {
     fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
-        // Formula provided in the Graphics Codex, Ray Casting Chapter, Section 3
-        // http://graphicscodex.com
-        // Can be derived by substituting ray into implicit plane equation.
+        InfinitePlane {normal: Vec3::up(), point: Vec3::zero()}
+            .ray_hit(ray, t_range)
+            .and_then(|mut hit| if contains(hit.hit_point) {
+                hit.tex_coord = Some(Uv {
+                    u: hit.hit_point.x + L2,
+                    v: hit.hit_point.z + L2,
+                });
 
-        // Four cases where intersection can fail
-        // 1. n.dot(d) == 0 (plane is perpendicular to the normal / parallel with the plane)
-        // 2. (origin - point).dot(n) == 0 (ray is entirely in the plane)
-        // 3. t < 0 (intersected in the past)
-        // 4. n.dot(d) > 0 (intersection with the back of the plane face)
-        //
-        // 1 and 4 are checked for directly in the next step. 2 and 3 are caught by checking if t
-        // is in t_range since t_range is typically (EPSILON, some positive value).
+                // Normal direction is already oriented correctly
+                hit.normal_map_transform = Some(Mat3::identity());
 
-        let dot_dir_normal = ray.direction().dot(self.normal);
-        if dot_dir_normal >= -EPSILON { // >= 0.0
-            return None;
-        }
-
-        // Note that the formula in the graphics codex misses this negative sign
-        let t = -(ray.origin() - self.point).dot(self.normal) / dot_dir_normal;
-        if !t_range.contains(&t) {
-            return None;
-        }
-
-        Some(RayIntersection {
-            ray_parameter: t,
-            hit_point: ray.at(t),
-            normal: self.normal,
-            tex_coord: None,
-            normal_map_transform: None,
-        })
+                Some(hit)
+            } else {
+                None
+            })
     }
 }

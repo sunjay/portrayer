@@ -12,7 +12,7 @@ use crate::material::Material;
 use crate::flat_scene::{FlatScene, FlatSceneNode};
 use crate::bounding_box::{BoundingBox, Bounds};
 use crate::ray::{RayCast, Ray, RayIntersection};
-use crate::primitive::{Plane, PlaneSide};
+use crate::primitive::{InfinitePlane, PlaneSide};
 
 /// A scene organized as a KDTree for fast intersections
 pub type KDTreeScene = Scene<KDTreeNode>;
@@ -137,7 +137,7 @@ impl KDLeaf {
         /// sides. Returns (front, back) where each is true if the node is on that side.
         fn partition_node(
             node: &Arc<NodeBounds>,
-            sep_plane: &Plane,
+            sep_plane: &InfinitePlane,
         ) -> Partition {
             use PlaneSide::*;
 
@@ -161,7 +161,7 @@ impl KDLeaf {
         let max_axis = axis * bounds.max();
         // The plane is infinite, so it doesn't actually matter where this point is
         // (e.g. it does not need to depend on the previous split if any)
-        let mut sep_plane = Plane {
+        let mut sep_plane = InfinitePlane {
             normal: axis,
             point: min_axis + (max_axis - min_axis) / 2.0,
         };
@@ -211,13 +211,13 @@ impl KDLeaf {
             // The separating plane is currently in this range:
             let (plane_min, plane_max) = plane_range;
             if front > back {
-                // Plane must be in the forward half of its range
+                // plane must be in the forward half of its range
                 plane_range = (sep_plane.point, plane_max);
                 // Move plane forward
                 sep_plane.point = sep_plane.point + (plane_max - sep_plane.point) / 2.0;
 
             } else {
-                // Plane must be in the back half of its range
+                // plane must be in the back half of its range
                 plane_range = (plane_min, sep_plane.point);
                 // Move plane backward
                 sep_plane.point = plane_min + (sep_plane.point - plane_min) / 2.0;
@@ -259,7 +259,7 @@ impl KDLeaf {
 pub enum KDTreeNode {
     Split {
         /// The separating plane that divides the children
-        sep_plane: Plane,
+        sep_plane: InfinitePlane,
         /// A bounding box that encompases all of the nodes in this node
         bounds: BoundingBox,
         /// The nodes in front of the separating plane (in the direction of the plane normal)
@@ -290,9 +290,9 @@ impl KDTreeNode {
         // axis-aligned and thus we already know one of the components of the hit_point that would
         // be returned from any other call to ray_hit.
         //
-        // The ray_hit implementation of Plane suffers from some numerical issues when the ray is
-        // right on the plane itself. This isn't typical for most scenes, but it can easily happen
-        // in the k-d tree when the separating plane cross the eye point.
+        // The ray_hit implementation of InfinitePlane suffers from some numerical issues when the
+        // ray is right on the plane itself. This isn't typical for most scenes, but it can easily
+        // happen in the k-d tree when the separating plane cross the eye point.
         //
         // This function takes advantage of the fact that the ray is defined as r(t) = p + t*d and
         // that this equation can produce the same value of t regardless of which of the following
@@ -303,7 +303,7 @@ impl KDTreeNode {
         // intersection point we would get from the full ray_hit must have that value for that
         // component in the hit_point it would have returned.
         fn ray_hit_axis_aligned_plane(
-            sep_plane: &Plane,
+            sep_plane: &InfinitePlane,
             ray_start: Vec3,
             ray_end: Vec3,
             t_min: f64,
@@ -429,7 +429,7 @@ mod tests {
     use crate::math::{EPSILON, INFINITY, Rgb, Mat4, Vec3};
     use crate::material::Material;
     use crate::scene::Geometry;
-    use crate::primitive::{FinitePlane};
+    use crate::primitive::{Plane};
 
     #[test]
     fn single_axis_center_partition() {
@@ -447,7 +447,7 @@ mod tests {
         let mat = Arc::new(Material::default());
 
         let make_node_bounds = |x| {
-            let node = FlatSceneNode::new(Geometry::new(FinitePlane, mat.clone()),
+            let node = FlatSceneNode::new(Geometry::new(Plane, mat.clone()),
                 Mat4::rotation_z(90.0f64.to_radians()).translated_3d((x, 0.0, 0.0)));
             Arc::new(NodeBounds {bounds: node.bounds(), node})
         };
@@ -470,7 +470,7 @@ mod tests {
         let back_nodes = vec![node_a, node_b];
         let front_nodes = vec![node_c, node_d, node_e];
         let expected_root = KDTreeNode::Split {
-            sep_plane: Plane {normal: Vec3::unit_x(), point: Vec3::zero()},
+            sep_plane: InfinitePlane {normal: Vec3::unit_x(), point: Vec3::zero()},
             bounds: nodes_bounds,
             front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 bounds: front_nodes.bounds(),
@@ -504,7 +504,7 @@ mod tests {
         let mat = Arc::new(Material::default());
 
         let make_node_bounds = |x| {
-            let node = FlatSceneNode::new(Geometry::new(FinitePlane, mat.clone()),
+            let node = FlatSceneNode::new(Geometry::new(Plane, mat.clone()),
                 Mat4::rotation_z(90.0f64.to_radians()).translated_3d((x, 0.0, 0.0)));
             Arc::new(NodeBounds {bounds: node.bounds(), node})
         };
@@ -527,7 +527,7 @@ mod tests {
         let back_nodes = vec![node_a, node_b, node_c];
         let front_nodes = vec![node_d, node_e];
         let expected_root = KDTreeNode::Split {
-            sep_plane: Plane {
+            sep_plane: InfinitePlane {
                 normal: Vec3::unit_x(),
                 point: Vec3 {x: 4.0, y: 0.0, z: 0.0},
             },
@@ -577,7 +577,7 @@ mod tests {
         let trans_b = Mat4::scaling_3d(2.0)
             .rotated_x(90f64.to_radians())
             .translated_3d((0.0, 1.2, -0.4));
-        let node_b = FlatSceneNode::new(Geometry::new(FinitePlane, mat_b.clone()), trans_b);
+        let node_b = FlatSceneNode::new(Geometry::new(Plane, mat_b.clone()), trans_b);
         let b_node_bounds = Arc::new(NodeBounds {
             bounds: node_b.bounds(),
             node: node_b,
@@ -592,14 +592,14 @@ mod tests {
         let trans_c = Mat4::scaling_3d(2.0)
             .rotated_x(50f64.to_radians())
             .translated_3d((0.0, 0.0, -0.3));
-        let node_c = FlatSceneNode::new(Geometry::new(FinitePlane, mat_c.clone()), trans_c);
+        let node_c = FlatSceneNode::new(Geometry::new(Plane, mat_c.clone()), trans_c);
         let c_node_bounds = Arc::new(NodeBounds {
             bounds: node_c.bounds(),
             node: node_c,
         });
 
         let root = KDTreeNode::Split {
-            sep_plane: Plane {normal: Vec3::unit_z(), point: Vec3::zero()},
+            sep_plane: InfinitePlane {normal: Vec3::unit_z(), point: Vec3::zero()},
             bounds: vec![b_node_bounds.clone(), c_node_bounds.clone()].bounds(),
             front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 // leaf bounds do not matter currently
@@ -635,7 +635,7 @@ mod tests {
         let trans_b = Mat4::scaling_3d(2.0)
             .rotated_x(-90f64.to_radians())
             .translated_3d((0.0, 1.2, 0.4));
-        let node_b = FlatSceneNode::new(Geometry::new(FinitePlane, mat_b.clone()), trans_b);
+        let node_b = FlatSceneNode::new(Geometry::new(Plane, mat_b.clone()), trans_b);
         let b_node_bounds = Arc::new(NodeBounds {
             bounds: node_b.bounds(),
             node: node_b,
@@ -650,14 +650,14 @@ mod tests {
         let trans_c = Mat4::scaling_3d(2.0)
             .rotated_x(-50f64.to_radians())
             .translated_3d((0.0, 0.0, 0.3));
-        let node_c = FlatSceneNode::new(Geometry::new(FinitePlane, mat_c.clone()), trans_c);
+        let node_c = FlatSceneNode::new(Geometry::new(Plane, mat_c.clone()), trans_c);
         let c_node_bounds = Arc::new(NodeBounds {
             bounds: node_c.bounds(),
             node: node_c,
         });
 
         let root = KDTreeNode::Split {
-            sep_plane: Plane {normal: Vec3::unit_z(), point: Vec3::zero()},
+            sep_plane: InfinitePlane {normal: Vec3::unit_z(), point: Vec3::zero()},
             bounds: vec![b_node_bounds.clone(), c_node_bounds.clone()].bounds(),
             front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 // leaf bounds do not matter currently

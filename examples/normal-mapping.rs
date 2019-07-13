@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, FinitePlane, Sphere},
+    primitive::{Cube, Plane, Sphere},
     material::Material,
     texture::{Texture, ImageTexture, NormalMap},
     light::Light,
@@ -86,13 +86,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let scene = HierScene {
         root: SceneNode::from(vec![
             // Floor
-            SceneNode::from(Geometry::new(FinitePlane, mat_wall_floor))
+            SceneNode::from(Geometry::new(Plane, mat_wall_floor))
                 .scaled(40.0)
                 .translated((0.0, -1.0, 0.0))
                 .into(),
 
             // Left - Texture Only
-            SceneNode::from(Geometry::new(FinitePlane, mat_tex_plane))
+            SceneNode::from(Geometry::new(Plane, mat_tex_plane))
                 .scaled(6.0)
                 .rotated_x(Radians::from_degrees(90.0))
                 .translated((-4.0, 2.0, -6.0))
@@ -115,7 +115,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .into(),
 
             // Right - Normal + Texture
-            SceneNode::from(Geometry::new(FinitePlane, mat_tex_plane_norm))
+            SceneNode::from(Geometry::new(Plane, mat_tex_plane_norm))
                 .scaled(6.0)
                 .rotated_x(Radians::from_degrees(90.0))
                 .translated((4.0, 2.0, -6.0))

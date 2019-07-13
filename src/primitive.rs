@@ -1,9 +1,9 @@
 mod sphere;
 mod triangle;
 mod mesh;
-mod plane;
+mod infinite_plane;
 mod cube;
-mod finite_plane;
+mod plane;
 mod cylinder;
 mod cone;
 
@@ -11,12 +11,12 @@ pub use sphere::*;
 pub use triangle::*;
 pub use mesh::*;
 pub use cube::*;
-pub use finite_plane::*;
+pub use plane::*;
 pub use cylinder::*;
 pub use cone::*;
 
 // Internal-use only
-pub(crate) use plane::*;
+pub(crate) use infinite_plane::*;
 
 use std::ops::Range;
 
@@ -69,9 +69,9 @@ primitive_enum! {
         Sphere(Sphere),
         Triangle(Triangle),
         Mesh(Mesh),
-        // Plane cannot be part of this enum because it is infinite and that means that there is
-        // no logical implementation of the Bounds trait for Plane
-        FinitePlane(FinitePlane),
+        // InfinitePlane cannot be part of this enum because it is infinite and that means that
+        // there is no logical implementation of the Bounds trait for InfinitePlane
+        Plane(Plane),
         Cube(Cube),
         Cylinder(Cylinder),
         Cone(Cone),
