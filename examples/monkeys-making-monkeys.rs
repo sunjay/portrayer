@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Plane, Cylinder},
+    primitive::{Cube, Plane, Cylinder, Sphere},
     material::Material,
     texture::{Texture, ImageTexture, NormalMap},
     light::{Light, Parallelogram},
@@ -22,6 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         root: SceneNode::from(vec![
             room().into(),
             desk()?.into(),
+            computer().into(),
         ]).into(),
 
         lights: vec![
@@ -73,10 +74,16 @@ fn room() -> SceneNode {
             .translated((0.0, 0.0, 3.708507))
             .into(),
 
-        SceneNode::from(Geometry::new(Plane, mat_floor.clone()))
+        SceneNode::from(Geometry::new(Plane, mat_walls.clone()))
             .scaled(16.0)
             .rotated_z(Radians::from_degrees(-90.0))
             .translated((-6.340487, 5.0, 4.199467))
+            .into(),
+
+        SceneNode::from(Geometry::new(Plane, mat_walls.clone()))
+            .scaled(16.0)
+            .rotated_x(Radians::from_degrees(90.0))
+            .translated((0.0, 5.0, -3.2))
             .into(),
     ])
 }
@@ -120,4 +127,28 @@ fn desk() -> Result<SceneNode, Box<dyn Error>> {
     }
 
     Ok(SceneNode::from(nodes))
+}
+
+fn computer() -> SceneNode {
+    let mat_computer = Arc::new(Material {
+        diffuse: Rgb {r: 0.043232, g: 0.043232, b: 0.043232},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 10.0,
+        ..Material::default()
+    });
+
+    SceneNode::from(vec![
+        // CPU
+        //TODO: Texture Map?
+        SceneNode::from(Geometry::new(Cube, mat_computer.clone()))
+            .scaled((1.6, 3.0, 2.0))
+            .translated((-3.0, 6.74, 0.0))
+            .into(),
+
+        // Mouse
+        SceneNode::from(Geometry::new(Sphere, mat_computer.clone()))
+            .scaled((0.28, 0.12, 0.4))
+            .translated((1.411292, 5.327119, 1.857835))
+            .into(),
+    ])
 }
