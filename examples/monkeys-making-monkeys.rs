@@ -26,12 +26,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         ]).into(),
 
         lights: vec![
+            // Overhead light
             Light {
                 position: Vec3 {x: 0.0, y: 13.0, z: 1.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
                 area: Parallelogram {
                     a: Vec3 {x: 4.0, y: 0.0, z: 0.0},
                     b: Vec3 {x: 0.0, y: 0.0, z: 4.0},
+                },
+                ..Light::default()
+            },
+
+            // Window
+            Light {
+                position: Vec3 {x: 8.0, y: 8.0, z: 8.0},
+                color: Rgb {r: 0.4, g: 0.4, b: 0.4},
+                area: Parallelogram {
+                    a: Vec3 {x: 0.0, y: 0.0, z: 2.5},
+                    b: Vec3 {x: 0.0, y: 2.5, z: 0.0},
                 },
                 ..Light::default()
             },
