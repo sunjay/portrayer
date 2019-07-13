@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{Vec3, Mat3, Quadratic, Uv};
+use crate::math::{EPSILON, Vec3, Mat3, Quadratic, Uv};
 use crate::bounding_box::{BoundingBox, Bounds};
 
 /// The radius of the sphere
@@ -64,27 +64,43 @@ impl RayHit for Sphere {
             u: (PI + (-hit_point.z).atan2(hit_point.x)) / (2.0 * PI),
             v: hit_point.y.acos() / PI,
         };
+
         // Normal of sphere is the hit point on the sphere minus the center (0, 0, 0)
         // Note that we do not divide by the radius because the radius is 1.0
         let normal = hit_point;
 
-        // Can create a tangent space using the normal based on our knowledge that the sphere is
-        // axis-aligned. That means that we can find a horizontal tangent (aligned with the x-z
-        // plane) by taking the cross product of the normal with a vector with a higher y value.
-        let horizontal_tangent = normal.cross(normal + Vec3 {x: 0.0, y: 0.1, z: 0.0}).normalized();
-        let second_tangent = normal.cross(horizontal_tangent);
-        let normal_map_transform = Mat3::from_col_arrays([
-            horizontal_tangent.into_array(),
-            normal.into_array(),
-            second_tangent.into_array(),
-        ]);
+        // To find the normal map transform, we need a basis that aligns with the unwrapped texture
+        // That means that we need a horizontal tangent on the xz-plane and a vertical tangent
+        // perpendicular to both the normal and the horizontal tangent.
+        // For the special case of normal = +/- y-axis, there are an infinite number of tangent
+        // spaces. We will arbitrarily choose the standard basis (with +/- y-axis) for this case.
+
+        // To find the horizontal tangent, we can take advantage of all points in the sphere
+        // meeting at the top of the sphere (technically all points meet at every point).
+        let to_top = (Vec3 {x: 0.0, y: RADIUS, z: 0.0} - hit_point).normalized();
+        // Special case: pointing straight up or down, return standard basis with +/- y-axis
+        let normal_map_transform = if to_top.x.abs() < EPSILON && to_top.z.abs() < EPSILON {
+            Mat3::from_col_arrays([
+                Vec3::right().into_array(),
+                normal.into_array(),
+                Vec3::back_rh().into_array(),
+            ])
+        } else {
+            let horizontal_tangent = to_top.cross(normal);
+            let vertical_tangent = normal.cross(horizontal_tangent);
+            Mat3::from_col_arrays([
+                horizontal_tangent.into_array(),
+                normal.into_array(),
+                vertical_tangent.into_array(),
+            ])
+        };
 
         Some(RayIntersection {
             ray_parameter: t,
             hit_point,
             normal,
             tex_coord: Some(tex_coord),
-            normal_map_transform: Some(normal_map_transform), //TODO
+            normal_map_transform: Some(normal_map_transform),
         })
     }
 }
