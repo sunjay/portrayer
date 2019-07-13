@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Plane, Cylinder, Sphere},
+    primitive::{Cube, Plane, Cylinder, Sphere, Mesh, MeshData, Shading},
     material::Material,
     texture::{Texture, ImageTexture, NormalMap},
     light::{Light, Parallelogram},
@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         root: SceneNode::from(vec![
             room().into(),
             desk()?.into(),
-            computer().into(),
+            computer()?.into(),
         ]).into(),
 
         lights: vec![
@@ -129,15 +129,31 @@ fn desk() -> Result<SceneNode, Box<dyn Error>> {
     Ok(SceneNode::from(nodes))
 }
 
-fn computer() -> SceneNode {
+fn computer() -> Result<SceneNode, Box<dyn Error>> {
     let mat_computer = Arc::new(Material {
         diffuse: Rgb {r: 0.043232, g: 0.043232, b: 0.043232},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 10.0,
         ..Material::default()
     });
+    let mat_screen = Arc::new(Material {
+        diffuse: Rgb {r: 0.655925, g: 0.655925, b: 0.655925},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 10.0,
+        ..Material::default()
+    });
+    let mat_screen_text = Arc::new(Material {
+        diffuse: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 10.0,
+        ..Material::default()
+    });
 
-    SceneNode::from(vec![
+    let computer_screen_base_mesh = Arc::new(MeshData::load_obj("assets/computer_screen_base.obj")?);
+    let computer_edge_display_mesh = Arc::new(MeshData::load_obj("assets/computer_edge_display.obj")?);
+    let screen_text_mesh = Arc::new(MeshData::load_obj("assets/text_monkey.3d.obj")?);
+
+    Ok(SceneNode::from(vec![
         // CPU
         //TODO: Texture Map?
         SceneNode::from(Geometry::new(Cube, mat_computer.clone()))
@@ -150,5 +166,16 @@ fn computer() -> SceneNode {
             .scaled((0.28, 0.12, 0.4))
             .translated((1.411292, 5.327119, 1.857835))
             .into(),
-    ])
+
+        // Computer screen
+        SceneNode::from(Geometry::new(Mesh::new(computer_screen_base_mesh, Shading::Smooth), mat_computer.clone()))
+            .translated((0.0, 5.25, 0.0))
+            .into(),
+        SceneNode::from(Geometry::new(Mesh::new(computer_edge_display_mesh, Shading::Flat), mat_screen.clone()))
+            .translated((0.0, 7.256888, 0.0))
+            .into(),
+        SceneNode::from(Geometry::new(Mesh::new(screen_text_mesh, Shading::Flat), mat_screen_text.clone()))
+            .translated((0.0, 9.081371, 0.01))
+            .into(),
+    ]))
 }
