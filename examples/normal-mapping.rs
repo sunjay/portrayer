@@ -38,19 +38,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         ..Material::default()
     });
 
-    let tex_map_sphere = Arc::new(Texture::from(ImageTexture::open("assets/Metal_plate_016_Base_Color_2.jpg")?));
-    let norm_map_sphere = Arc::new(NormalMap::open("assets/Metal_plate_016_Normal_2.jpg")?);
+    let tex_map_sphere = Arc::new(Texture::from(ImageTexture::open("assets/Rock_033_baseColor_2.jpg")?));
+    let norm_map_sphere = Arc::new(NormalMap::open("assets/Rock_033_normal_2.jpg")?);
 
     let mat_tex_sphere = Arc::new(Material {
         diffuse: Rgb {r: 0.37168, g: 0.236767, b: 0.692066},
-        specular: Rgb {r: 0.4, g: 0.4, b: 0.4},
+        specular: Rgb {r: 0.6, g: 0.6, b: 0.6},
         shininess: 25.0,
         texture: Some(tex_map_sphere.clone()),
         ..Material::default()
     });
     let mat_tex_sphere_norm = Arc::new(Material {
         diffuse: Rgb {r: 0.37168, g: 0.236767, b: 0.692066},
-        specular: Rgb {r: 0.4, g: 0.4, b: 0.4},
+        specular: Rgb {r: 0.6, g: 0.6, b: 0.6},
         shininess: 25.0,
         texture: Some(tex_map_sphere),
         normals: Some(norm_map_sphere),
