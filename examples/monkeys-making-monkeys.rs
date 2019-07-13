@@ -81,23 +81,39 @@ fn room() -> SceneNode {
         shininess: 25.0,
         ..Material::default()
     });
+    let mat_poster = Arc::new(Material {
+        diffuse: Rgb {r: 0.8, g: 0.329194, b: 0.120657},
+        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        shininess: 25.0,
+        ..Material::default()
+    });
 
     SceneNode::from(vec![
+        // Ground
         SceneNode::from(Geometry::new(Plane, mat_floor.clone()))
             .scaled(16.0)
             .translated((0.0, 0.0, 3.708507))
             .into(),
 
+        // Left wall
         SceneNode::from(Geometry::new(Plane, mat_walls.clone()))
             .scaled(16.0)
             .rotated_z(Radians::from_degrees(-90.0))
             .translated((-6.340487, 5.0, 4.199467))
             .into(),
 
+        // Right wall
         SceneNode::from(Geometry::new(Plane, mat_walls.clone()))
             .scaled(16.0)
             .rotated_x(Radians::from_degrees(90.0))
             .translated((0.0, 5.0, -3.2))
+            .into(),
+
+        // Poster
+        SceneNode::from(Geometry::new(Plane, mat_poster.clone()))
+            .scaled(4.74905)
+            .rotated_z(Radians::from_degrees(-90.0))
+            .translated((-6.118618, 8.043096, 3.401992))
             .into(),
     ])
 }
