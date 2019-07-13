@@ -83,7 +83,7 @@ impl RayHit for Sphere {
             Mat3::from_col_arrays([
                 Vec3::right().into_array(),
                 normal.into_array(),
-                Vec3::back_rh().into_array(),
+                if normal.y > 0.0 { Vec3::back_rh() } else { Vec3::forward_rh() }.into_array(),
             ])
         } else {
             let horizontal_tangent = to_top.cross(normal);

@@ -19,8 +19,8 @@ use portrayer::{
 use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let tex_map_plane = Arc::new(Texture::from(ImageTexture::open("assets/Stone_Wall_007_COLOR.jpg")?));
-    let norm_map_plane = Arc::new(NormalMap::open("assets/Stone_Wall_007_NORM.jpg")?);
+    let tex_map_plane = Arc::new(Texture::from(ImageTexture::open("assets/Terracotta_Tiles_002_Base_Color.jpg")?));
+    let norm_map_plane = Arc::new(NormalMap::open("assets/Terracotta_Tiles_002_Normal.jpg")?);
 
     let mat_tex_plane = Arc::new(Material {
         diffuse: Rgb {r: 0.37168, g: 0.236767, b: 0.692066},
@@ -38,8 +38,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         ..Material::default()
     });
 
-    let tex_map_sphere = Arc::new(Texture::from(ImageTexture::open("assets/Metal_Tiles_001_basecolor_2.png")?));
-    let norm_map_sphere = Arc::new(NormalMap::open("assets/Metal_Tiles_001_normal_2.png")?);
+    let tex_map_sphere = Arc::new(Texture::from(ImageTexture::open("assets/Metal_plate_016_Base_Color_2.jpg")?));
+    let norm_map_sphere = Arc::new(NormalMap::open("assets/Metal_plate_016_Normal_2.jpg")?);
 
     let mat_tex_sphere = Arc::new(Material {
         diffuse: Rgb {r: 0.37168, g: 0.236767, b: 0.692066},
@@ -57,8 +57,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         ..Material::default()
     });
 
-    let tex_map_cube = Arc::new(Texture::from(ImageTexture::open("assets/Metal_Tiles_001_basecolor_cubemap.png")?));
-    let norm_map_cube = Arc::new(NormalMap::open("assets/Metal_Tiles_001_normal_cubemap.png")?);
+    let tex_map_cube = Arc::new(Texture::from(ImageTexture::open("assets/Stone_Wall_007_COLOR_cubemap.jpg")?));
+    let norm_map_cube = Arc::new(NormalMap::open("assets/Stone_Wall_007_NORM_cubemap.jpg")?);
 
     let mat_tex_cube = Arc::new(Material {
         diffuse: Rgb {r: 0.37168, g: 0.236767, b: 0.692066},

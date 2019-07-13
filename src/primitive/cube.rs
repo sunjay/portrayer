@@ -108,8 +108,32 @@ impl RayHit for Cube {
             let global_uv = norm_uv / Uv {u: 4.0, v: 3.0} + uv_offset;
             hit.tex_coord = Some(global_uv);
 
-            //TODO
-            hit.normal_map_transform = Some(Mat3::identity());
+            // To find the normal map transform, we need a basis for each face that aligns the face
+            // normal with the right-handed y-axis. That means that for the majority of the faces,
+            // we need a horizontal tangent on the xz-plane and a vertical tangent perpendicular to
+            // both the normal and the horizontal tangent. For the special case of the top and
+            // bottom faces, we can use the standard right-handed basis rotated up or down
+
+            // To find the horizontal tangent, we can take advantage of the top face being "above"
+            // every other face.
+            let to_top = (Vec3 {x: 0.0, y: L, z: 0.0} - hit.hit_point).normalized();
+            let normal_map_transform = if to_top.x.abs() < EPSILON && to_top.z.abs() < EPSILON {
+                // Special case: top or bottom face, return standard basis aligned with normal
+                Mat3::from_col_arrays([
+                    Vec3::right().into_array(),
+                    plane.normal.into_array(),
+                    if plane.normal.y > 0.0 { Vec3::back_rh() } else { Vec3::forward_rh() }.into_array(),
+                ])
+            } else {
+                let horizontal_tangent = to_top.cross(plane.normal);
+                let vertical_tangent = plane.normal.cross(horizontal_tangent);
+                Mat3::from_col_arrays([
+                    horizontal_tangent.into_array(),
+                    plane.normal.into_array(),
+                    vertical_tangent.into_array(),
+                ])
+            };
+            hit.normal_map_transform = Some(normal_map_transform);
 
             hit
         })
