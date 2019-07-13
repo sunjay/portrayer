@@ -57,17 +57,32 @@ impl RayHit for Torus {
         // Rearranging:
         //     c^2 + (p.x + t*d.x)^2 + (p.z + t*d.z)^2 + (p.y + t*d.y)^2 - a^2 = 2*c*sqrt((p.x + t*d.x)^2 + (p.z + t*d.z)^2)
         // Squaring both sides and expanding: (via Wolfram Alpha)
-        //     (c^2 + (p.x + t*d.x)^2 + (p.z + t*d.z)^2 + (p.y + t*d.y)^2 - a^2)^2 = (2*c*sqrt((p.x + t*d.x)^2 + (p.z + t*d.z)^2))^2
+        //     (c^2 + (p.x + t*d.x)^2 + (p.z + t*d.z)^2 + (p.y + t*d.y)^2 - a^2)^2 - (2*c*sqrt((p.x + t*d.x)^2 + (p.z + t*d.z)^2))^2 = 0
         //
-        // Grouping by t: (via Python)
+        // Grouping previous step answer by t: (via Python)
         //     t^4 : d.x^4 + 2*d.x^2*d.y^2 + 2*d.x^2*d.z^2 + d.y^4 + 2*d.y^2*d.z^2 + d.z^4
         //     t^3 : 4*d.x^3*p.x + 4*d.x^2*d.y*p.y + 4*d.x^2*d.z*p.z + 4*d.x*d.y^2*p.x + 4*d.x*d.z^2*p.x + 4*d.y^3*p.y + 4*d.y^2*d.z*p.z + 4*d.y*d.z^2*p.y + 4*d.z^3*p.z
-        //     t^2 : -2*a^2*d.x^2 + -2*a^2*d.y^2 + -2*a^2*d.z^2 + 2*c^2*d.x^2 + 2*c^2*d.y^2 + 2*c^2*d.z^2 + 6*d.x^2*p.x^2 + 2*d.x^2*p.y^2 + 2*d.x^2*p.z^2 + 8*d.x*d.y*p.x*p.y + 8*d.x*d.z*p.x*p.z + 2*d.y^2*p.x^2 + 6*d.y^2*p.y^2 + 2*d.y^2*p.z^2 + 8*d.y*d.z*p.y*p.z + 2*d.z^2*p.x^2 + 2*d.z^2*p.y^2 + 6*d.z^2*p.z^2 + p.z^4*=*4*c^2*d.x^2 + 4*c^2*d.z^2
-        //     t^1 : -4*a^2*d.x*p.x + -4*a^2*d.y*p.y + -4*a^2*d.z*p.z + 4*c^2*d.x*p.x + 4*c^2*d.y*p.y + 4*c^2*d.z*p.z + 4*d.x*p.x^3 + 4*d.x*p.x*p.y^2 + 4*d.x*p.x*p.z^2 + 4*d.y*p.x^2*p.y + 4*d.y*p.y^3 + 4*d.y*p.y*p.z^2 + 4*d.z*p.x^2*p.z + 4*d.z*p.y^2*p.z + 4*d.z*p.z^3 + 8*c^2*d.x*p.x + 8*c^2*d.z*p.z
-        //     t^0 : a^4 + -2*a^2*c^2 + -2*a^2*p.x^2 + -2*a^2*p.y^2 + -2*a^2*p.z^2 + c^4 + 2*c^2*p.x^2 + 2*c^2*p.y^2 + 2*c^2*p.z^2 + p.x^4 + 2*p.x^2*p.y^2 + 2*p.x^2*p.z^2 + p.y^4 + 2*p.y^2*p.z^2 + 4*c^2*p.x^2 + 4*c^2*p.z^2
+        //     t^2 : -2*a^2*d.x^2 + -2*a^2*d.y^2 + -2*a^2*d.z^2 + -2*c^2*d.x^2 + 2*c^2*d.y^2 + -2*c^2*d.z^2 + 6*d.x^2*p.x^2 + 2*d.x^2*p.y^2 + 2*d.x^2*p.z^2 + 8*d.x*d.y*p.x*p.y + 8*d.x*d.z*p.x*p.z + 2*d.y^2*p.x^2 + 6*d.y^2*p.y^2 + 2*d.y^2*p.z^2 + 8*d.y*d.z*p.y*p.z + 2*d.z^2*p.x^2 + 2*d.z^2*p.y^2 + 6*d.z^2*p.z^2
+        //     t^1 : -4*a^2*d.x*p.x + -4*a^2*d.y*p.y + -4*a^2*d.z*p.z + -4*c^2*d.x*p.x + 4*c^2*d.y*p.y + -4*c^2*d.z*p.z + 4*d.x*p.x^3 + 4*d.x*p.x*p.y^2 + 4*d.x*p.x*p.z^2 + 4*d.y*p.x^2*p.y + 4*d.y*p.y^3 + 4*d.y*p.y*p.z^2 + 4*d.z*p.x^2*p.z + 4*d.z*p.y^2*p.z + 4*d.z*p.z^3
+        //     t^0 : a^4 + -2*a^2*c^2 + -2*a^2*p.x^2 + -2*a^2*p.y^2 + -2*a^2*p.z^2 + c^4 + -2*c^2*p.x^2 + 2*c^2*p.y^2 + -2*c^2*p.z^2 + p.x^4 + 2*p.x^2*p.y^2 + 2*p.x^2*p.z^2 + p.y^4 + 2*p.y^2*p.z^2 + p.z^4
         //
+        // Factoring: (via Wolfram Alpha)
+        //     t^4 : (d.x^2 + d.y^2 + d.z^2)^2
+        //     t^3 : 4*(d.x^2 + d.y^2 + d.z^2)*(d.x*p.x + d.y*p.y + d.z*p.z)
+        //     t^2 :
+        //
+        //     t^4 : d1^4 + 2*d1^2*d2^2 + 2*d1^2*d3^2 + d2^4 + 2*d2^2*d3^2 + d3^4
+        //     t^3 : 4*d1^3*p1 + 4*d1^2*d2*p2 + 4*d1^2*d3*p3 + 4*d1*d2^2*p1 + 4*d1*d3^2*p1 + 4*d2^3*p2 + 4*d2^2*d3*p3 + 4*d2*d3^2*p2 + 4*d3^3*p3
+        //     t^2 : -2*a^2*d1^2 + -2*a^2*d2^2 + -2*a^2*d3^2 + -2*c^2*d1^2 + 2*c^2*d2^2 + -2*c^2*d3^2 + 6*d1^2*p1^2 + 2*d1^2*p2^2 + 2*d1^2*p3^2 + 8*d1*d2*p1*p2 + 8*d1*d3*p1*p3 + 2*d2^2*p1^2 + 6*d2^2*p2^2 + 2*d2^2*p3^2 + 8*d2*d3*p2*p3 + 2*d3^2*p1^2 + 2*d3^2*p2^2 + 6*d3^2*p3^2
+        //     t^1 : -4*a^2*d1*p1 + -4*a^2*d2*p2 + -4*a^2*d3*p3 + -4*c^2*d1*p1 + 4*c^2*d2*p2 + -4*c^2*d3*p3 + 4*d1*p1^3 + 4*d1*p1*p2^2 + 4*d1*p1*p3^2 + 4*d2*p1^2*p2 + 4*d2*p2^3 + 4*d2*p2*p3^2 + 4*d3*p1^2*p3 + 4*d3*p2^2*p3 + 4*d3*p3^3
+        //     t^0 : a^4 + -2*a^2*c^2 + -2*a^2*p1^2 + -2*a^2*p2^2 + -2*a^2*p3^2 + c^4 + -2*c^2*p1^2 + 2*c^2*p2^2 + -2*c^2*p3^2 + p1^4 + 2*p1^2*p2^2 + 2*p1^2*p3^2 + p2^4 + 2*p2^2*p3^2 + p3^4
 
 
+        //     (c^2 + (p1 + t*d1)^2 + (p3 + t*d3)^2 + (p2 + t*d2)^2 - a^2)^2 - (2*c*sqrt((p1 + t*d1)^2 + (p3 + t*d3)^2))^2 = 0
+        //
+        // a^4 - 2 a^2 c^2 - 2 a^2 d1^2 t^2 - 4 a^2 d1 p1 t - 2 a^2 d2^2 t^2 - 4 a^2 d2 p2 t - 2 a^2 d3^2 t^2 - 4 a^2 d3 p3 t - 2 a^2 p1^2 - 2 a^2 p2^2 - 2 a^2 p3^2 + c^4 - 2 c^2 d1^2 t^2 - 4 c^2 d1 p1 t + 2 c^2 d2^2 t^2 + 4 c^2 d2 p2 t - 2 c^2 d3^2 t^2 - 4 c^2 d3 p3 t - 2 c^2 p1^2 + 2 c^2 p2^2 - 2 c^2 p3^2 + d1^4 t^4 + 4 d1^3 p1 t^3 + 2 d1^2 d2^2 t^4 + 4 d1^2 d2 p2 t^3 + 2 d1^2 d3^2 t^4 + 4 d1^2 d3 p3 t^3 + 6 d1^2 p1^2 t^2 + 2 d1^2 p2^2 t^2 + 2 d1^2 p3^2 t^2 + 4 d1 d2^2 p1 t^3 + 8 d1 d2 p1 p2 t^2 + 4 d1 d3^2 p1 t^3 + 8 d1 d3 p1 p3 t^2 + 4 d1 p1^3 t + 4 d1 p1 p2^2 t + 4 d1 p1 p3^2 t + d2^4 t^4 + 4 d2^3 p2 t^3 + 2 d2^2 d3^2 t^4 + 4 d2^2 d3 p3 t^3 + 2 d2^2 p1^2 t^2 + 6 d2^2 p2^2 t^2 + 2 d2^2 p3^2 t^2 + 4 d2 d3^2 p2 t^3 + 8 d2 d3 p2 p3 t^2 + 4 d2 p1^2 p2 t + 4 d2 p2^3 t + 4 d2 p2 p3^2 t + d3^4 t^4 + 4 d3^3 p3 t^3 + 2 d3^2 p1^2 t^2 + 2 d3^2 p2^2 t^2 + 6 d3^2 p3^2 t^2 + 4 d3 p1^2 p3 t + 4 d3 p2^2 p3 t + 4 d3 p3^3 t + p1^4 + 2 p1^2 p2^2 + 2 p1^2 p3^2 + p2^4 + 2 p2^2 p3^2 + p3^4
+        //
+        // WRONG:
         //     a^4 - 2*a^2*c^2 - 2*a^2*d.x^2*t^2 - 4*a^2*d.x*p.x*t - 2*a^2*d.y^2*t^2 - 4*a^2*d.y*p.y*t - 2*a^2*d.z^2*t^2 - 4*a^2*d.z*p.z*t - 2*a^2*p.x^2 - 2*a^2*p.y^2 - 2*a^2*p.z^2 + c^4 + 2*c^2*d.x^2*t^2 + 4*c^2*d.x*p.x*t + 2*c^2*d.y^2*t^2 + 4*c^2*d.y*p.y*t + 2*c^2*d.z^2*t^2 + 4*c^2*d.z*p.z*t + 2*c^2*p.x^2 + 2*c^2*p.y^2 + 2*c^2*p.z^2 + d.x^4*t^4 + 4*d.x^3*p.x*t^3 + 2*d.x^2*d.y^2*t^4 + 4*d.x^2*d.y*p.y*t^3 + 2*d.x^2*d.z^2*t^4 + 4*d.x^2*d.z*p.z*t^3 + 6*d.x^2*p.x^2*t^2 + 2*d.x^2*p.y^2*t^2 + 2*d.x^2*p.z^2*t^2 + 4*d.x*d.y^2*p.x*t^3 + 8*d.x*d.y*p.x*p.y*t^2 + 4*d.x*d.z^2*p.x*t^3 + 8*d.x*d.z*p.x*p.z*t^2 + 4*d.x*p.x^3*t + 4*d.x*p.x*p.y^2*t + 4*d.x*p.x*p.z^2*t + d.y^4*t^4 + 4*d.y^3*p.y*t^3 + 2*d.y^2*d.z^2*t^4 + 4*d.y^2*d.z*p.z*t^3 + 2*d.y^2*p.x^2*t^2 + 6*d.y^2*p.y^2*t^2 + 2*d.y^2*p.z^2*t^2 + 4*d.y*d.z^2*p.y*t^3 + 8*d.y*d.z*p.y*p.z*t^2 + 4*d.y*p.x^2*p.y*t + 4*d.y*p.y^3*t + 4*d.y*p.y*p.z^2*t + d.z^4*t^4 + 4*d.z^3*p.z*t^3 + 2*d.z^2*p.x^2*t^2 + 2*d.z^2*p.y^2*t^2 + 6*d.z^2*p.z^2*t^2 + 4*d.z*p.x^2*p.z*t + 4*d.z*p.y^2*p.z*t + 4*d.z*p.z^3*t + p.x^4 + 2*p.x^2*p.y^2 + 2*p.x^2*p.z^2 + p.y^4 + 2*p.y^2*p.z^2 + p.z^4*=*4*c^2*d.x^2*t^2 + 8*c^2*d.x*p.x*t + 4*c^2*d.z^2*t^2 + 8*c^2*d.z*p.z*t + 4*c^2*p.x^2 + 4*c^2*p.z^2
         //
         // Expanding: (via Wolfram Alpha)
