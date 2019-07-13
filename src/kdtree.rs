@@ -304,19 +304,17 @@ impl KDTreeNode {
         // component in the hit_point it would have returned.
         fn ray_hit_axis_aligned_plane(
             sep_plane: &InfinitePlane,
-            ray_start: Vec3,
-            ray_end: Vec3,
-            t_min: f64,
+            ray: &Ray,
             t_range: &Range<f64>,
         ) -> Option<f64> {
             // Multiplying by the normal will set two components to zero and sum() will
             // let us fish out the non-zero value.
             let plane_value = (sep_plane.normal * sep_plane.point).sum();
-            let ray_origin = (sep_plane.normal * ray_start).sum();
-            let ray_direction = (sep_plane.normal * (ray_end - ray_start).normalized()).sum();
+            let ray_origin = (sep_plane.normal * ray.origin()).sum();
+            let ray_direction = (sep_plane.normal * ray.direction()).sum();
 
             // Need to add t_min because we used ray_start as the ray origin above
-            let t = t_min + (plane_value - ray_origin) / ray_direction;
+            let t = (plane_value - ray_origin) / ray_direction;
 
             // Must always ensure that we respect t_range or things can go *very* wrong
             if t_range.contains(&t) {
@@ -360,7 +358,7 @@ impl KDTreeNode {
                         // limiting the t_range based on the value of t for which the ray
                         // intersects the plane.
 
-                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray_start, ray_end, t_min, t_range)
+                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray, t_range)
                             .expect("bug: ray should definitely hit infinite plane");
 
                         // Only going to continue with this range if it hits
@@ -391,7 +389,7 @@ impl KDTreeNode {
                         // limiting the t_range based on the value of t for which the ray
                         // intersects the plane.
 
-                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray_start, ray_end, t_min, t_range)
+                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray, t_range)
                             .expect("bug: ray should definitely hit infinite plane");
 
                         // Only going to continue with this range if it hits
