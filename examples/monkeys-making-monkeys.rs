@@ -25,6 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             room().into(),
             desk()?.into(),
             computer(&monkey_mesh)?.into(),
+            chair().into(),
         ]).into(),
 
         lights: vec![
@@ -221,4 +222,21 @@ fn computer(monkey_mesh: &Arc<MeshData>) -> Result<SceneNode, Box<dyn Error>> {
             .translated((0.0, 7.0, 0.0))
             .into(),
     ]))
+}
+
+fn chair() -> SceneNode {
+    let mat_chair = Arc::new(Material {
+        diffuse: Rgb {r: 0.032075, g: 0.032075, b: 0.032075},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    SceneNode::from(vec![
+        // Chair back
+        SceneNode::from(Geometry::new(Sphere, mat_chair.clone()))
+            .scaled((1.283107, 1.537732, 0.425492))
+            .translated((0.0, 5.334378, 5.404959))
+            .into(),
+    ])
 }
