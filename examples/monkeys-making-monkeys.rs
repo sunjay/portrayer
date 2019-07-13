@@ -18,11 +18,13 @@ use portrayer::{
 use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let monkey_mesh = Arc::new(MeshData::load_obj("assets/monkey.obj")?);
+
     let scene = HierScene {
         root: SceneNode::from(vec![
             room().into(),
             desk()?.into(),
-            computer()?.into(),
+            computer(&monkey_mesh)?.into(),
         ]).into(),
 
         lights: vec![
@@ -141,7 +143,7 @@ fn desk() -> Result<SceneNode, Box<dyn Error>> {
     Ok(SceneNode::from(nodes))
 }
 
-fn computer() -> Result<SceneNode, Box<dyn Error>> {
+fn computer(monkey_mesh: &Arc<MeshData>) -> Result<SceneNode, Box<dyn Error>> {
     let mat_computer = Arc::new(Material {
         diffuse: Rgb {r: 0.043232, g: 0.043232, b: 0.043232},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
@@ -158,6 +160,12 @@ fn computer() -> Result<SceneNode, Box<dyn Error>> {
         diffuse: Rgb {r: 0.8, g: 0.8, b: 0.8},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 10.0,
+        ..Material::default()
+    });
+    let mat_hologram = Arc::new(Material {
+        diffuse: Rgb {r: 0.479036, g: 0.8, b: 0.518124},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
         ..Material::default()
     });
 
@@ -188,6 +196,13 @@ fn computer() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
         SceneNode::from(Geometry::new(Mesh::new(screen_text_mesh, Shading::Flat), mat_screen_text.clone()))
             .translated((0.0, 9.081371, 0.01))
+            .into(),
+
+        // Holographic monkey
+        SceneNode::from(Geometry::new(Mesh::new(monkey_mesh.clone(), Shading::Flat), mat_hologram.clone()))
+            .scaled(1.5)
+            .rotated_xzy((Radians::from_degrees(-33.2668), Radians::from_degrees(8.17821), Radians::from_degrees(-8.17821)))
+            .translated((0.0, 7.0, 0.0))
             .into(),
     ]))
 }
