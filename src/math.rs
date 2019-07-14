@@ -34,10 +34,6 @@ pub trait Vec3Ext {
 
     /// Interprets this as a direction and applies the given transformation matrix
     fn transformed_direction(self, trans: Mat4) -> Self;
-
-    /// Creates an orthonormal basis from this vector. This will return a normalized version of
-    /// self, and two normalized tangent vectors
-    fn orthonormal_basis(self) -> (Self, Self, Self) where Self: Sized;
 }
 
 impl Vec3Ext for Vec3 {
@@ -47,29 +43,6 @@ impl Vec3Ext for Vec3 {
 
     fn transformed_direction(self, trans: Mat4) -> Self {
         Vec3::from(trans * Vec4::from_direction(self))
-    }
-
-    fn orthonormal_basis(self) -> (Self, Self, Self) {
-        // Can create a basis from a single vector by taking the cross product twice: once with
-        // a vector in a slightly different direction (any non-collinear direction), then once with
-        // the original vector and that vector.
-
-        let norm_self = self.normalized();
-
-        // To find a non-collinear vector, start with norm_self and set the smallest magnitude
-        // component of it to 1.0.
-        // This trick is from Fundamentals of Computer Graphics, 4th ed.
-        // Section 2.4.6 Constructing a Basis from a Single Vector
-        let mut offset_vector = norm_self;
-        let mut smallest = 0;
-        if offset_vector.y < offset_vector[smallest] { smallest = 1; }
-        if offset_vector.z < offset_vector[smallest] { smallest = 2; }
-        offset_vector[smallest] = 1.0;
-
-        let tangent1 = norm_self.cross(offset_vector).normalized();
-        let tangent2 = norm_self.cross(tangent1).normalized();
-
-        (norm_self, tangent1, tangent2)
     }
 }
 
@@ -179,21 +152,5 @@ mod tests {
         test_quadratic!(-2.0*x^2 + 8.0*x + 3.0 = 0,
             // Solutions ordered from smallest to largest
             [2.0 - (11.0/2.0f64).sqrt(), 2.0 + (11.0/2.0f64).sqrt()]);
-    }
-
-    #[test]
-    fn orthonormal_basis() {
-        let vecs = &[
-            Vec3 {x: 0.0, y: 1.0, z: 0.0},
-            Vec3 {x: 1.0, y: 0.0, z: 0.0},
-            Vec3 {x: 0.0, y: 0.0, z: 1.0},
-        ];
-
-        for &v in vecs {
-            let (xb, yb, zb) = v.orthonormal_basis();
-            assert!(xb.dot(yb).abs() < EPSILON);
-            assert!(yb.dot(zb).abs() < EPSILON);
-            assert!(zb.dot(xb).abs() < EPSILON);
-        }
     }
 }
