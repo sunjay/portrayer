@@ -7,7 +7,7 @@ use std::sync::Arc;
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
     primitive::{Cube, Plane, Sphere, Cone, Mesh, MeshData, Shading},
-    material::Material,
+    material::{Material, OPTICAL_GLASS_REFRACTION_INDEX},
     texture::{Texture, ImageTexture, NormalMap},
     light::{Light, Parallelogram},
     render::Render,
@@ -291,10 +291,11 @@ fn desk_objects() -> Result<SceneNode, Box<dyn Error>> {
     });
 
     let mat_glass = Arc::new(Material {
-        diffuse: Rgb::one(),
-        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        diffuse: Rgb {r: 0.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
-        reflectivity: 0.4,
+        reflectivity: 1.0,
+        refraction_index: OPTICAL_GLASS_REFRACTION_INDEX,
         ..Material::default()
     });
 
