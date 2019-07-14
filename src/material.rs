@@ -164,7 +164,14 @@ impl Material {
             if self.glossy_side_length > 0.0 {
                 // Create a basis u, v from the ideal reflection ray
                 // This is a technique for creating a basis from a single vector:
-                let u_basis = reflect_dir.cross(reflect_dir + Vec3 {x: 0.0, y: 0.0, z: 0.1});
+                let offset_vector = if reflect_dir.x.abs() < EPSILON && reflect_dir.y.abs() < EPSILON {
+                    // Edge case: reflection direction is aligned with z axis, so the offset in the
+                    // else case would result in a collinear vector
+                    reflect_dir + Vec3 {x: 0.0, y: 0.1, z: 0.0}
+                } else {
+                    reflect_dir + Vec3 {x: 0.0, y: 0.0, z: 0.1}
+                };
+                let u_basis = reflect_dir.cross(offset_vector);
                 let v_basis = reflect_dir.cross(u_basis);
 
                 // Generate a random coordinate on the rectangle
