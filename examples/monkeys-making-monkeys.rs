@@ -322,7 +322,7 @@ fn desk_objects() -> Result<SceneNode, Box<dyn Error>> {
     Ok(SceneNode::from(vec![
         // Teapot
         SceneNode::from(Geometry::new(Mesh::new(teapot_mesh.clone(), Shading::Smooth), mat_teapot.clone()))
-           .scaled(0.15)
+           .scaled(0.015)
            .translated((2.43888, 5.241134, -0.617814))
            .into(),
 
