@@ -7,7 +7,7 @@ use std::sync::Arc;
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
     primitive::{Cube, Plane, Sphere, Cone, Mesh, MeshData, Shading},
-    material::{Material, OPTICAL_GLASS_REFRACTION_INDEX},
+    material::{Material, OPTICAL_GLASS_REFRACTION_INDEX, WATER_REFRACTION_INDEX},
     texture::{Texture, ImageTexture, NormalMap},
     light::{Light, Parallelogram},
     render::Render,
@@ -221,8 +221,8 @@ fn computer(monkey_mesh: &Arc<MeshData>) -> Result<SceneNode, Box<dyn Error>> {
     });
     let mat_hologram = Arc::new(Material {
         diffuse: Rgb {r: 0.479036, g: 0.8, b: 0.518124},
-        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
-        shininess: 25.0,
+        reflectivity: 0.6,
+        refraction_index: WATER_REFRACTION_INDEX,
         ..Material::default()
     });
 
