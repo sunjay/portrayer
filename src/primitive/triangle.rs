@@ -90,7 +90,12 @@ impl RayHit for Triangle {
         let tex_coord = match self.tex_coords {
             Some((ta, tb, tc)) => {
                 let alpha = 1.0 - beta - gamma;
-                Some(ta * alpha + tb * beta + tc * gamma)
+                let uv = ta * alpha + tb * beta + tc * gamma;
+                // Need to reverse uv because we've been using a top-to-bottom convention where the
+                // rest of the world uses a bottom to top convention
+                //TODO: Consider reversing this everywhere else in the code instead so that we
+                // follow the rest of the world in our UV coordinate conventions
+                Some(Uv {u: uv.u, v: 1.0 - uv.v})
             },
             None => None,
         };
