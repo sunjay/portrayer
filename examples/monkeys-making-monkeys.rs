@@ -23,6 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let scene = HierScene {
         root: SceneNode::from(vec![
             room().into(),
+            wall_decor()?.into(),
             desk()?.into(),
             desk_objects()?.into(),
             computer(&monkey_mesh)?.into(),
@@ -84,12 +85,6 @@ fn room() -> SceneNode {
         shininess: 25.0,
         ..Material::default()
     });
-    let mat_poster = Arc::new(Material {
-        diffuse: Rgb {r: 0.8, g: 0.329194, b: 0.120657},
-        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
-        shininess: 25.0,
-        ..Material::default()
-    });
 
     SceneNode::from(vec![
         // Ground
@@ -111,14 +106,51 @@ fn room() -> SceneNode {
             .rotated_x(Radians::from_degrees(90.0))
             .translated((0.0, 5.0, -3.2))
             .into(),
+    ])
+}
 
+fn wall_decor() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_poster = Arc::new(Material {
+        diffuse: Rgb {r: 0.8, g: 0.329194, b: 0.120657},
+        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        shininess: 25.0,
+        ..Material::default()
+    });
+    let painting = Arc::new(Texture::from(ImageTexture::open("assets/four-shapes.png")?));
+    let mat_painting = Arc::new(Material {
+        // diffuse comes from texture
+        specular: Rgb {r: 0.2, g: 0.2, b: 0.2},
+        shininess: 25.0,
+        texture: Some(painting),
+        ..Material::default()
+    });
+
+    let mat_canvas = Arc::new(Material {
+        diffuse: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        specular: Rgb {r: 0.2, g: 0.2, b: 0.2},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    Ok(SceneNode::from(vec![
         // Poster
         SceneNode::from(Geometry::new(Plane, mat_poster.clone()))
             .scaled(4.74905)
             .rotated_z(Radians::from_degrees(-90.0))
             .translated((-6.330487, 8.043096, 3.401992))
             .into(),
-    ])
+
+        // Canvas painting (right wall)
+        SceneNode::from(Geometry::new(Plane, mat_painting.clone()))
+            .scaled((6.0, 1.0, 1.6))
+            .rotated_x(Radians::from_degrees(90.0))
+            .translated((-1.0, 10.2, -3.095))
+            .into(),
+        SceneNode::from(Geometry::new(Cube, mat_canvas.clone()))
+            .scaled((6.0, 1.6, 0.2))
+            .translated((-1.0, 10.2, -3.2))
+            .into(),
+    ]))
 }
 
 fn desk() -> Result<SceneNode, Box<dyn Error>> {
