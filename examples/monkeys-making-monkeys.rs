@@ -163,6 +163,12 @@ fn desk() -> Result<SceneNode, Box<dyn Error>> {
 }
 
 fn computer(monkey_mesh: &Arc<MeshData>) -> Result<SceneNode, Box<dyn Error>> {
+    let cpu = Arc::new(Texture::from(ImageTexture::open("assets/cpu_cubemap.png")?));
+    let mat_cpu = Arc::new(Material {
+        // diffuse comes from texture
+        texture: Some(cpu),
+        ..Material::default()
+    });
     let mat_computer = Arc::new(Material {
         diffuse: Rgb {r: 0.043232, g: 0.043232, b: 0.043232},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
@@ -194,8 +200,7 @@ fn computer(monkey_mesh: &Arc<MeshData>) -> Result<SceneNode, Box<dyn Error>> {
 
     Ok(SceneNode::from(vec![
         // CPU
-        //TODO: Texture Map?
-        SceneNode::from(Geometry::new(Cube, mat_computer.clone()))
+        SceneNode::from(Geometry::new(Cube, mat_cpu.clone()))
             .scaled((1.6, 3.0, 2.0))
             .translated((-3.0, 6.74, 0.0))
             .into(),
