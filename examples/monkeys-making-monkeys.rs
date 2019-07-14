@@ -244,10 +244,12 @@ fn chair() -> SceneNode {
 }
 
 fn character(monkey_mesh: &Arc<MeshData>) -> Result<SceneNode, Box<dyn Error>> {
+    let fabric = Arc::new(Texture::from(ImageTexture::open("assets/Fabric_011_COLOR.jpg")?));
     let mat_torso = Arc::new(Material {
         diffuse: Rgb {r: 0.077701, g: 0.075793, b: 0.125964},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 25.0,
+        texture: Some(fabric),
         ..Material::default()
     });
     let mat_head = Arc::new(Material {
