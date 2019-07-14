@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::Vec3;
+use crate::math::{Vec3, Uv};
 use crate::bounding_box::{BoundingBox, Bounds};
 
 /// A triangle with the given 3 vertices
@@ -13,13 +13,16 @@ pub struct Triangle {
     /// The normals for a, b, and c respectively. If not provided, the intersection
     /// normal will be the same for all points on the triangle.
     pub normals: Option<(Vec3, Vec3, Vec3)>,
+    /// The texture coordinates for a, b, and c respectively. The texture coordinate
+    /// for a ray hit will only be set if these are provided.
+    pub tex_coords: Option<(Uv, Uv, Uv)>
 }
 
 impl Triangle {
     /// Creates a new flat shaded triangle. Normals will be computed from the given
     /// vertices and will be same all across the face.
     pub fn flat(a: Vec3, b: Vec3, c: Vec3) -> Self {
-        Self {a, b, c, normals: None}
+        Self {a, b, c, normals: None, tex_coords: None}
     }
 }
 
@@ -84,11 +87,19 @@ impl RayHit for Triangle {
             None => (self.b - self.a).cross(self.c - self.a),
         };
 
+        let tex_coord = match self.tex_coords {
+            Some((ta, tb, tc)) => {
+                let alpha = 1.0 - beta - gamma;
+                Some(ta * alpha + tb * beta + tc * gamma)
+            },
+            None => None,
+        };
+
         Some(RayIntersection {
             ray_parameter: t,
             hit_point: ray.at(t),
             normal,
-            tex_coord: None,
+            tex_coord,
             normal_map_transform: None,
         })
     }

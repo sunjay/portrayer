@@ -2,7 +2,7 @@ use std::ops::Range;
 use std::sync::Arc;
 use std::path::Path;
 
-use crate::math::Vec3;
+use crate::math::{Vec3, Uv};
 use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::bounding_box::{BoundingBox, Bounds};
 
@@ -27,6 +27,8 @@ pub struct MeshData {
     positions: Vec<Vec3>,
     /// Vertex normals. Only used if shading == Smooth
     normals: Vec<Vec3>,
+    /// Texture coordinates for each vertex. If provided, must have enough for each vertex.
+    tex_coords: Vec<Uv>,
     /// A bounding box that encompases all vertices of this mesh. Used to avoid having to test all
     /// triangles if we can already trivially know that there is no intersection.
     bounds: BoundingBox,
@@ -43,8 +45,11 @@ impl<'a> From<&'a tobj::Mesh> for MeshData {
         let normals = mesh.normals.chunks_exact(3)
             .map(|p| Vec3 {x: p[0] as f64, y: p[1] as f64, z: p[2] as f64})
             .collect();
+        let tex_coords = mesh.texcoords.chunks_exact(2)
+            .map(|uv| Uv {u: uv[0] as f64, v: uv[1] as f64})
+            .collect();
 
-        MeshData::new(positions, triangles, normals)
+        MeshData::new(positions, triangles, normals, tex_coords)
     }
 }
 
@@ -56,7 +61,12 @@ impl MeshData {
         Ok(MeshData::from(&models[0].mesh))
     }
 
-    pub fn new(positions: Vec<Vec3>, triangles: Vec<(usize, usize, usize)>, normals: Vec<Vec3>) -> Self {
+    pub fn new(
+        positions: Vec<Vec3>,
+        triangles: Vec<(usize, usize, usize)>,
+        normals: Vec<Vec3>,
+        tex_coords: Vec<Uv>,
+    ) -> Self {
         // Compute bounding cube
         //TODO: Experiment with parallelism via rayon for computing bounds (benchmark)
         assert!(!positions.is_empty(), "Meshes must have at least one vertex");
@@ -65,10 +75,15 @@ impl MeshData {
             (Vec3::partial_min(min, vert), Vec3::partial_max(max, vert))
         });
 
+        if !tex_coords.is_empty() && tex_coords.len() != positions.len() {
+            panic!("If meshes have texture coordinates, they must have enough for all vertices");
+        }
+
         Self {
             triangles,
             positions,
             normals,
+            tex_coords,
             bounds: BoundingBox::new(min, max),
         }
     }
@@ -126,6 +141,11 @@ impl RayHit for Mesh {
                     Flat => None,
                     Smooth => Some((data.normals[a], data.normals[b], data.normals[c])),
                 },
+                tex_coords: if data.tex_coords.is_empty() {
+                    None
+                } else {
+                    Some((data.tex_coords[a], data.tex_coords[b], data.tex_coords[c]))
+                }
             };
 
             match tri.ray_hit(ray, &t_range) {
