@@ -95,11 +95,6 @@ impl Material {
             let light_pos = if light.area.is_empty() {
                 light.position
             } else {
-                // Check if we are behind this light
-                if light.area.normal().dot(normal) > 0.0 {
-                    // Behind the light, do not count its contribution
-                    continue;
-                }
                 light.sample_position(&mut rng)
             };
 
