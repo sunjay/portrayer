@@ -116,7 +116,7 @@ fn room() -> SceneNode {
         SceneNode::from(Geometry::new(Plane, mat_poster.clone()))
             .scaled(4.74905)
             .rotated_z(Radians::from_degrees(-90.0))
-            .translated((-6.118618, 8.043096, 3.401992))
+            .translated((-6.330487, 8.043096, 3.401992))
             .into(),
     ])
 }
