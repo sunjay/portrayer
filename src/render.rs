@@ -5,7 +5,7 @@ use rayon::prelude::*;
 use image::Pixel;
 use rand::{Rng, thread_rng};
 
-use crate::math::{Uv, Rgb};
+use crate::math::{GAMMA, Uv, Rgb};
 use crate::scene::{Scene, HierScene};
 #[cfg(any(feature = "kdtree", feature = "flat_scene"))]
 use crate::flat_scene::FlatScene;
@@ -57,11 +57,7 @@ fn render_single_pixel<R: RayCast + Send + Sync, T: TextureSource>(
 
     let color = total_color / samples as f64;
 
-    // Gamma correction to ensure that image colors are closer to what we want them
-    // to be. This gamma value is the same as Blender and is also in the source below:
-    // Source: https://learnopengl.com/Advanced-Lighting/Gamma-Correction
-    let gamma = 2.2;
-    let color = color.map(|c| c.powf(1.0/gamma));
+    let color = color.map(|c| c.powf(1.0/GAMMA));
 
     // Clamp to 0.0 to 1.0 or else we will get invalid pixels in the output PNG
     Clamp::<f64>::clamp01(color)

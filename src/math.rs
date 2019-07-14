@@ -14,6 +14,11 @@ use roots::Roots;
 /// It is different from machine epsilon because we accumulate quite a bit more error than that.
 pub const EPSILON: f64 = 0.00001;
 
+// Gamma correction is used to ensure that image colors are closer to what we want them to be.
+// This gamma value is the same as Blender and is also in the source below.
+// Source: https://learnopengl.com/Advanced-Lighting/Gamma-Correction
+pub const GAMMA: f64 = 2.2;
+
 pub type Vec2 = vek::Vec2<f64>;
 pub type Vec3 = vek::Vec3<f64>;
 pub type Vec4 = vek::Vec4<f64>;

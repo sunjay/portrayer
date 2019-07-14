@@ -3,7 +3,7 @@ use std::path::Path;
 
 use vek::Clamp;
 
-use crate::math::{Uv, Rgb, Vec3, Mat3};
+use crate::math::{GAMMA, Uv, Rgb, Vec3, Mat3};
 
 pub trait TextureSource {
     /// Sample the texture at the given point.
@@ -72,38 +72,38 @@ impl TextureSource for Texture {
     }
 }
 
-/// A texture where each point is sampled from an image
-pub struct ImageTexture {
+/// A buffer that directly loads the pixel values without doing any correction
+struct RgbImageBuffer {
     buffer: image::RgbImage,
 }
 
-impl fmt::Debug for ImageTexture {
+impl fmt::Debug for RgbImageBuffer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("ImageTexture").field(&format_args!("..")).finish()
+        write!(f, "RgbImageBuffer(..)")
     }
 }
 
-impl PartialEq for ImageTexture {
-    fn eq(&self, other: &Self) -> bool {
-        self.buffer.eq(&*other.buffer)
-    }
-}
-
-impl From<image::RgbImage> for ImageTexture {
+impl From<image::RgbImage> for RgbImageBuffer {
     fn from(buffer: image::RgbImage) -> Self {
         Self {buffer}
     }
 }
 
-impl ImageTexture {
-    /// Creates an image texture from the image file at the given path
+impl PartialEq for RgbImageBuffer {
+    fn eq(&self, other: &Self) -> bool {
+        self.buffer.eq(&*other.buffer)
+    }
+}
+
+impl RgbImageBuffer {
+    /// Creates an image buffer from the image file at the given path
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, image::ImageError> {
         let img = image::open(path)?.to_rgb();
         Ok(Self::from(img))
     }
 }
 
-impl TextureSource for ImageTexture {
+impl TextureSource for RgbImageBuffer {
     fn at(&self, uv: Uv) -> Rgb {
         // Need to clamp to 0.0 to 1.0 to account for floating point error and ensure we never
         // accidentally index out of bounds
@@ -121,30 +121,57 @@ impl TextureSource for ImageTexture {
     }
 }
 
+/// A texture where each point is sampled from an image
+///
+/// All colors are converted from sRGB space (gamma corrected) to linear space using a gamma of 2.2
+/// before they are used in the scene. These colors are then converted back to sRGB space at the
+/// end of the rendering process.
+#[derive(Debug, PartialEq)]
+pub struct ImageTexture {
+    buffer: RgbImageBuffer,
+}
+
+impl ImageTexture {
+    /// Creates an image texture from the image file at the given path
+    pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, image::ImageError> {
+        Ok(Self {
+            buffer: RgbImageBuffer::open(path)?,
+        })
+    }
+}
+
+impl TextureSource for ImageTexture {
+    fn at(&self, uv: Uv) -> Rgb {
+        // Note that we need to convert the color back from sRGB space to linear space to avoid
+        // issues with double gamma correction
+        self.buffer.at(uv).map(|c| c.powf(GAMMA))
+    }
+}
+
 /// Interprets normals loaded from a texture
 ///
 /// The normals in the texture are assumed to be in a left-handed coordinate system where a normal
 /// that is perpendicular to the surface points along the -Z axis.
 #[derive(Debug, PartialEq)]
 pub struct NormalMap {
-    texture: ImageTexture,
+    buffer: RgbImageBuffer,
 }
 
 impl NormalMap {
-    /// Creates a normal map that samples from a texture made from the image file at the given path
+    /// Creates a normal map that samples from an image buffer craeted from the image at the given path
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, image::ImageError> {
         Ok(Self {
-            texture: ImageTexture::open(path)?,
+            buffer: RgbImageBuffer::open(path)?,
         })
     }
 
-    /// Loads a normal from the texture and transforms it so that it is in the same right-handed
+    /// Loads a normal from the buffer and transforms it so that it is in the same right-handed
     /// coordinate system as the rest of the ray tracer. A normal perpendicular to the surface will
     /// point along the +Y axis.
     ///
-    /// The returned normal is normalized if the normals in the texture are normalized.
+    /// The returned normal is normalized if the normals in the buffer are normalized.
     pub fn normal_at(&self, uv: Uv) -> Vec3 {
-        // The color loaded from the texture map needs to be converted to a vector
+        // The color loaded from the buffer map needs to be converted to a vector
         // using the following mapping:
         //
         // X: -1 to +1 :  Red:     0 to 255 (0.0 to 1.0)
@@ -152,7 +179,7 @@ impl NormalMap {
         // Z:  0 to -1 :  Blue:  128 to 255 (0.5 to 1.0)
         //
         // Source: https://en.wikipedia.org/wiki/Normal_mapping#Interpreting_Tangent_Space_Maps
-        let tex_norm = self.texture.at(uv);
+        let tex_norm = self.buffer.at(uv);
         let norm = Vec3 {
             x: 2.0 * tex_norm.r - 1.0,
             y: 2.0 * tex_norm.g - 1.0,
