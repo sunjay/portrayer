@@ -97,13 +97,6 @@ impl BoundingBox {
         // Take the ray from its current coordinate system and put it into the local coordinate
         // system of the bounding box
         let local_ray = ray.transformed(self.invtrans);
-        // If the minimum ray parameter value results in a point inside the cube, the ray
-        // unconditionally intersects with this bounding box even if none of the edges will be hit
-        // by it. (None of the edges will be hit because the normals face outwards)
-        if Cube.contains(local_ray.at(t_range.start)) {
-            return Some(t_range.start);
-        }
-
         Cube.ray_hit(&local_ray, t_range).map(|hit| hit.ray_parameter)
     }
 }

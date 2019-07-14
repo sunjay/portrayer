@@ -18,7 +18,7 @@ use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mat_glass = Arc::new(Material {
-        diffuse: Rgb {r: 0.37168, g: 0.236767, b: 0.692066},
+        diffuse: Rgb {r: 0.0, g: 0.0, b: 0.0},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
         reflectivity: 1.0,

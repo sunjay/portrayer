@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{EPSILON, Vec3};
+use crate::math::Vec3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PlaneSide {
@@ -11,7 +11,7 @@ pub enum PlaneSide {
     Back,
 }
 
-/// A flat, infinite plane
+/// A flat, two-sided, infinite plane
 #[derive(Debug, Clone, PartialEq)]
 pub struct InfinitePlane {
     /// The normal of the plane (MUST be a unit vector)
@@ -57,11 +57,11 @@ impl RayHit for InfinitePlane {
         //
         // 1 and 4 are checked for directly in the next step. 2 and 3 are caught by checking if t
         // is in t_range since t_range is typically (EPSILON, some positive value).
+        //
+        // UPDATE: Case 4 is now accepted as valid in order to support refracted rays leaving the
+        //  inside of a surface. That means that all planes are two-sided.
 
         let dot_dir_normal = ray.direction().dot(self.normal);
-        if dot_dir_normal >= -EPSILON { // >= 0.0
-            return None;
-        }
 
         // Note that the formula in the graphics codex misses this negative sign
         let t = -(ray.origin() - self.point).dot(self.normal) / dot_dir_normal;
