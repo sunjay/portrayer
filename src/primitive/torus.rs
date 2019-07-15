@@ -3,7 +3,10 @@ use std::ops::Range;
 use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::Quartic;
 
-/// A surface containing a single hole, shaped like a donut
+/// A surface containing a single hole, shaped like a donut.
+///
+/// The torus has center (0,0,0) and is oriented so that the y-axis passes straight through the
+/// hole.
 ///
 /// More Info: http://mathworld.wolfram.com/Torus.html
 #[derive(Debug)]
@@ -100,6 +103,23 @@ impl RayHit for Torus {
         let t = equation.solve().find_in_range(t_range)?;
 
         let hit_point = ray.at(t);
+
+        // One way to find the normal is to find a point at the center of the tube and use:
+        //     hit_point - tube_point
+        // This will give you a vector perpendicular to the surface at hit_point.
+        //
+        // The center of the torus tube is given by a circle: x^2 + z^2 = c^2
+        // Let (xc, 0.0, zc) be the point on this circle nearest to the hit_point. Our goal is to
+        // find this point. We can use similar triangles:
+        //
+        // (xc, a, zc)
+        //      o
+        //      |             hit_point
+        //    a |          o
+        //      |          |
+        //      o -------------------- o (0, 0, 0)
+        // (xc, 0.0, zc)   c
+
 
         Some(RayIntersection {
             ray_parameter: t,
