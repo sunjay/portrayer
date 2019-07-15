@@ -54,9 +54,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
                 ..Light::default()
             },
+            // Need a light inside the mesh to illuminate the cow
+            Light {
+                position: Vec3 {x: 0.8, y: 0.806596, z: 0.9},
+                color: Rgb {r: 0.3, g: 0.3, b: 0.3},
+                ..Light::default()
+            },
         ],
 
-        ambient: Rgb {r: 0.1, g: 0.1, b: 0.1},
+        ambient: Rgb {r: 0.3, g: 0.3, b: 0.3},
     };
 
     let cam = CameraSettings {
