@@ -14,11 +14,8 @@ jobs:
         - cargo build --verbose --release --all --examples --features render_bounding_volumes
         - cargo build --verbose --release --all --examples --features flat_scene
         - cargo build --verbose --release --all --examples --features kdtree
-    - stage: run
-      script: source ./run-all-examples.sh
-    - stage: render_bounding_volumes
-      script: source ./run-all-examples.sh --features render_bounding_volumes
-    - stage: flat_scene
-      script: source ./run-all-examples.sh --features flat_scene
-    - stage: kdtree
-      script: source ./run-all-examples.sh --features kdtree
+    - stage: run all examples
+      script: source ./run-all-examples.sh --verbose
+    - script: source ./run-all-examples.sh --verbose --features render_bounding_volumes
+    - script: source ./run-all-examples.sh --verbose --features flat_scene
+    - script: source ./run-all-examples.sh --verbose --features kdtree
