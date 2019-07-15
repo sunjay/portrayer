@@ -71,15 +71,15 @@ impl Radians {
 }
 
 #[derive(Debug)]
-pub struct QuadraticSolutions(Roots<f64>);
+pub struct Solutions(Roots<f64>);
 
-impl PartialEq<[f64]> for QuadraticSolutions {
+impl PartialEq<[f64]> for Solutions {
     fn eq(&self, other: &[f64]) -> bool {
         self.0.as_ref() == other
     }
 }
 
-impl QuadraticSolutions {
+impl Solutions {
     /// Returns the number of solutions
     pub fn len(&self) -> usize {
         self.0.as_ref().len()
@@ -106,10 +106,29 @@ pub struct Quadratic {
 
 impl Quadratic {
     /// Solve the given equation and return up to two solutions
-    pub fn solve(self) -> QuadraticSolutions {
+    pub fn solve(self) -> Solutions {
         let Quadratic {a, b, c} = self;
 
-        QuadraticSolutions(roots::find_roots_quadratic(a, b, c))
+        Solutions(roots::find_roots_quadratic(a, b, c))
+    }
+}
+
+/// A quartic equation solver for: a*x^4 + b*x^3 + c*x^2 + d*x + e = 0
+#[derive(Debug, Clone, Copy)]
+pub struct Quartic {
+    pub a: f64,
+    pub b: f64,
+    pub c: f64,
+    pub d: f64,
+    pub e: f64,
+}
+
+impl Quartic {
+    /// Solve the given equation and return up to two solutions
+    pub fn solve(self) -> Solutions {
+        let Quartic {a, b, c, d, e} = self;
+
+        Solutions(roots::find_roots_quartic(a, b, c, d, e))
     }
 }
 

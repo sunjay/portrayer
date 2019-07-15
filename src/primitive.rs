@@ -6,6 +6,7 @@ mod cube;
 mod plane;
 mod cylinder;
 mod cone;
+mod torus;
 
 pub use sphere::*;
 pub use triangle::*;
@@ -14,6 +15,7 @@ pub use cube::*;
 pub use plane::*;
 pub use cylinder::*;
 pub use cone::*;
+pub use torus::*;
 
 // Internal-use only
 pub(crate) use infinite_plane::*;

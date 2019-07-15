@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{EPSILON, Vec3};
+use crate::math::Quartic;
 
 /// A surface containing a single hole, shaped like a donut
 ///
@@ -46,11 +46,67 @@ impl RayHit for Torus {
         // Factoring: (via Wolfram Alpha + By Hand)
         //     t^4 : (d.x^2 + d.y^2 + d.z^2)^2
         //     t^3 : 4*(d.x^2 + d.y^2 + d.z^2)*(d.x*p.x + d.y*p.y + d.z*p.z)
-        //     t^2 : 2*(d.x^2 + d.y^2 + d.z^2)*(p.x^2 + p.y^2 + p.z^2 - (c^2 + a^2)) + 4(p.x*d.x + p.y*d.y + p.z*d.z)^2 + 4*c^2*d.y^2
+        //     t^2 : 2*(d.x^2 + d.y^2 + d.z^2)*(p.x^2 + p.y^2 + p.z^2 - (a^2 + c^2)) + 4*(p.x*d.x + p.y*d.y + p.z*d.z)^2 + 4*c^2*d.y^2
         //     t^1 : 4*(p.x^2 + p.y^2 + p.z^2 - (a^2 + c^2))*(p.x*d.x + p.y*d.y + p.z*d.z) + 8*c^2*p.y*d.y
-        //     t^0 : (p.x^2 + p.y^2 + p.z^2 - (a^2 + c^2))^2 - 4*c^2(a^2-p.y^2)
+        //     t^0 : (p.x^2 + p.y^2 + p.z^2 - (a^2 + c^2))^2 - 4*c^2*(a^2 - p.y^2)
+        //
+        // In terms of vector operations: (. = dot product)
+        //     t^4 : (d . d)*(d . d)
+        //     t^3 : 4*(d . d)*(d . p)
+        //     t^2 : 2*(d . d)*((p . p) - (a^2 + c^2)) + 4*(d . p)^2 + 4*c^2*d.y^2
+        //     t^1 : 4*((p . p) - (a^2 + c^2))*(d . p) + 2*4*c^2*p.y*d.y
+        //     t^0 : ((p . p) - (a^2 + c^2))^2 - 4*c^2*(a^2 - p.y^2)
         //
         // Checked against this blog post: https://marcin-chwedczuk.github.io/ray-tracing-torus
-        unimplemented!()
+        //
+        // These equations give the 5 constants of a quartic equation:
+        //     a*t^4 + b*t^3 + c*t^2 + d*t + e = 0
+
+        let origin = ray.origin();
+        let direction = ray.direction();
+
+        // d_dot_d = d.x*d.x + d.y*d.y + d.z*d.z
+        let d_dot_d = direction.dot(direction);
+        // p_dot_p = p.x*p.x + p.y*p.y + p.z*p.z
+        let p_dot_p = origin.dot(origin);
+        // d_dot_p = d.x*p.x + d.y*p.y + d.z*p.z
+        let d_dot_p = direction.dot(origin);
+
+        let Self {tube_radius, center_radius} = *self;
+
+        // a^2
+        let a_sqr = tube_radius * tube_radius;
+        // c^2
+        let c_sqr = center_radius * center_radius;
+        // a^2 + c^2
+        let radii_sqr = a_sqr + c_sqr;
+        // (p . p) - (a^2 + c^2)
+        let p_dot_p_minus_radii_sqr = p_dot_p - radii_sqr;
+        // 4*c^2
+        let four_c_sqr = 4.0 * c_sqr;
+        // p.y^2
+        let p_y_sqr = origin.y * origin.y;
+        // d.y^2
+        let d_y_sqr = direction.y * direction.y;
+
+        // Compute quartic coefficients
+        let a = d_dot_d*d_dot_d;
+        let b = 4.0*d_dot_d*d_dot_p;
+        let c = 2.0*d_dot_d*p_dot_p_minus_radii_sqr + 4.0*d_dot_p*d_dot_p + four_c_sqr*d_y_sqr;
+        let d = 4.0*p_dot_p_minus_radii_sqr*d_dot_p + 2.0*four_c_sqr*origin.y*direction.y;
+        let e = p_dot_p_minus_radii_sqr*p_dot_p_minus_radii_sqr - four_c_sqr*(a_sqr - p_y_sqr);
+
+        let equation = Quartic {a, b, c, d, e};
+        let t = equation.solve().find_in_range(t_range)?;
+
+        let hit_point = ray.at(t);
+
+        Some(RayIntersection {
+            ray_parameter: t,
+            hit_point,
+            normal: unimplemented!(),
+            tex_coord: None,
+            normal_map_transform: None,
+        })
     }
 }
