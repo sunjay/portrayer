@@ -22,9 +22,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         diffuse: Rgb {r: 0.0, g: 0.0, b: 0.1},
         specular: Rgb {r: 0.5, g: 0.5, b: 0.5},
         shininess: 100.0,
-        // reflectivity: 0.9,
-        // glossy_side_length: 3.0,
-        // refraction_index: WATER_REFRACTION_INDEX,
+        reflectivity: 0.9,
+        glossy_side_length: 1.0,
+        refraction_index: WATER_REFRACTION_INDEX,
         ..Material::default()
     });
 
@@ -47,7 +47,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let grass_model = Arc::new(MeshData::load_obj("assets/tog_grass.obj")?);
     let underwater_land_model = Arc::new(MeshData::load_obj("assets/tog_underwater_land.obj")?);
-    let water_model = Arc::new(MeshData::load_obj("assets/tog_water.obj")?);
 
     let scene = HierScene {
         root: SceneNode::from(vec![
@@ -75,13 +74,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .translated((1.958125, 16.093138, -86.113747))
                 .into(),
 
-            SceneNode::from(Geometry::new(KDMesh::new(&*water_model, Shading::Smooth), mat_water))
-                .translated((1.499644, -18.555456, 257.387817))
+            SceneNode::from(Geometry::new(Cube, mat_water))
+                .scaled((600.0, 200.0, 600.0))
+                .translated((0.0, -107.0, 300.0))
                 .into(),
 
-            // Flat to speed up rendering since the normals don't super matter for this (not visible)
+            // Flat shaded to speed up rendering since the normals don't super matter for this (not visible)
             SceneNode::from(Geometry::new(KDMesh::new(&*underwater_land_model, Shading::Flat), mat_dirt))
-                .translated((2.110489, -35.596691, 299.865814))
+                .translated((0.0, -107.0, 300.0))
                 .into(),
         ]).into(),
 
