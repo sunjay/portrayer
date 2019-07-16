@@ -104,23 +104,21 @@ impl RayHit for Torus {
 
         let hit_point = ray.at(t);
 
-        // One way to find the normal is to find a point at the center of the tube and use:
-        //     hit_point - tube_point
+        // One way to find the normal is to find a point at the center of the tube nearest to the
+        // hit_point and use:
+        //     hit_point - tube_center
         // This will give you a vector perpendicular to the surface at hit_point.
         //
-        // The center of the torus tube is given by a circle: x^2 + z^2 = c^2
-        // Let (xc, 0.0, zc) be the point on this circle nearest to the hit_point. Our goal is to
-        // find this point. We can use similar triangles:
+        // We know that:
+        //   * the center of the tube, tube_center, is on a circle given by: x^2 + z^2 = c^2
+        //   * the distance between the hit_point and the tube_center is: a = tube_radius
+        //     (hit_point - tube_center) . (hit_point - tube_center) = a^2
         //
-        // (xc, a, zc)
-        //      o
-        //      |             hit_point
-        //    a |          o
-        //      |          |
-        //      o -------------------- o (0, 0, 0)
-        // (xc, 0.0, zc)   c
-
-
+        // Suppose tube_center = (xc, 0.0, zc) and hit_point = (x_hit, y_hit, z_hit)
+        // This gives us:
+        //     (x_hit - xc)^2 + (y_hit - 0.0)^2 + (z_hit - zc)^2 = a^2       (1)
+        //     xc^2 + zc^2 = c^2                                             (2)
+        
         Some(RayIntersection {
             ray_parameter: t,
             hit_point,
