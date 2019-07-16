@@ -5,7 +5,8 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Plane, Cylinder, Mesh, MeshData, Shading},
+    primitive::{Cube, Plane, Cylinder, MeshData, Shading},
+    kdtree::KDMesh,
     material::{Material, WATER_REFRACTION_INDEX, WINDOW_GLASS_REFRACTION_INDEX},
     texture::{Texture, ImageTexture, NormalMap},
     light::Light,
@@ -213,6 +214,7 @@ fn water() -> Result<SceneNode, Box<dyn Error>> {
     });
 
     let fish_model = Arc::new(MeshData::load_obj("assets/fish.obj")?);
+    let fish_mesh = KDMesh::new(&*fish_model, Shading::Smooth);
 
     Ok(SceneNode::from(vec![
         // Water
@@ -222,11 +224,11 @@ fn water() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
 
         // Fishes
-        SceneNode::from(Geometry::new(Mesh::new(fish_model.clone(), Shading::Smooth), mat_fish.clone()))
+        SceneNode::from(Geometry::new(fish_mesh.clone(), mat_fish.clone()))
             .rotated_xzy((Radians::from_degrees(0.0), Radians::from_degrees(-71.8181), Radians::from_degrees(30.8927)))
             .translated((-4.798946, -0.970323, -5.246493))
             .into(),
-        SceneNode::from(Geometry::new(Mesh::new(fish_model.clone(), Shading::Smooth), mat_fish.clone()))
+        SceneNode::from(Geometry::new(fish_mesh.clone(), mat_fish.clone()))
             .rotated_xzy((Radians::from_degrees(0.0), Radians::from_degrees(108.666), Radians::from_degrees(-23.084)))
             .translated((3.110451, -2.562474, -6.838645))
             .into(),
