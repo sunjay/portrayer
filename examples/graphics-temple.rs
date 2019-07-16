@@ -6,7 +6,8 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Sphere, Cube, Mesh, MeshData, Shading},
+    primitive::{Cube, MeshData, Shading},
+    kdtree::KDMesh,
     material::{Material, WATER_REFRACTION_INDEX},
     light::Light,
     render::Render,
@@ -70,16 +71,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .translated((0.0, 70.0, 0.0))
                 .into(),
 
-            SceneNode::from(Geometry::new(Mesh::new(grass_model, Shading::Smooth), mat_grass))
+            SceneNode::from(Geometry::new(KDMesh::new(&*grass_model, Shading::Smooth), mat_grass))
                 .translated((1.958125, 16.093138, -86.113747))
                 .into(),
 
-            SceneNode::from(Geometry::new(Mesh::new(water_model, Shading::Smooth), mat_water))
+            SceneNode::from(Geometry::new(KDMesh::new(&*water_model, Shading::Smooth), mat_water))
                 .translated((1.499644, -18.555456, 257.387817))
                 .into(),
 
             // Flat to speed up rendering since the normals don't super matter for this (not visible)
-            SceneNode::from(Geometry::new(Mesh::new(underwater_land_model, Shading::Flat), mat_dirt))
+            SceneNode::from(Geometry::new(KDMesh::new(&*underwater_land_model, Shading::Flat), mat_dirt))
                 .translated((2.110489, -35.596691, 299.865814))
                 .into(),
         ]).into(),

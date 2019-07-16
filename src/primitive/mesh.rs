@@ -6,8 +6,7 @@ use crate::math::{Vec3, Uv};
 use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::bounding_box::{BoundingBox, Bounds};
 
-#[cfg(not(feature = "render_bounding_volumes"))]
-use super::triangle::Triangle;
+use super::Triangle;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Shading {
@@ -87,6 +86,31 @@ impl MeshData {
             bounds: BoundingBox::new(min, max),
         }
     }
+
+    /// Iterate through all the triangles represented by this data. The shading parametering
+    /// affects whther the yielded triangles are provided normals from the mesh or not.
+    ///
+    /// Note that if shading == Smooth you are guaranteeing that there is at least one normal per
+    /// vertex.
+    pub fn triangles(&self, shading: Shading) -> impl Iterator<Item=Triangle> + '_ {
+        self.triangles.iter().map(move |&(a, b, c)| {
+            use Shading::*;
+            Triangle {
+                a: self.positions[a],
+                b: self.positions[b],
+                c: self.positions[c],
+                normals: match shading {
+                    Flat => None,
+                    Smooth => Some((self.normals[a], self.normals[b], self.normals[c])),
+                },
+                tex_coords: if self.tex_coords.is_empty() {
+                    None
+                } else {
+                    Some((self.tex_coords[a], self.tex_coords[b], self.tex_coords[c]))
+                }
+            }
+        })
+    }
 }
 
 /// A 3D mesh made of triangles.
@@ -104,7 +128,7 @@ impl Bounds for Mesh {
 }
 
 impl Mesh {
-    /// Creates a new mesh with the given vertices and triangles.
+    /// Creates a new mesh from the given mesh data and with the given shading
     pub fn new(data: Arc<MeshData>, shading: Shading) -> Self {
         if shading == Shading::Smooth {
             assert_eq!(data.positions.len(), data.normals.len(),
@@ -131,23 +155,7 @@ impl RayHit for Mesh {
 
         let mut t_range = init_t_range.clone();
         //TODO: Parallelism via rayon
-        data.triangles.iter().fold(None, |hit, &(a, b, c)| {
-            use Shading::*;
-            let tri = Triangle {
-                a: data.positions[a],
-                b: data.positions[b],
-                c: data.positions[c],
-                normals: match self.shading {
-                    Flat => None,
-                    Smooth => Some((data.normals[a], data.normals[b], data.normals[c])),
-                },
-                tex_coords: if data.tex_coords.is_empty() {
-                    None
-                } else {
-                    Some((data.tex_coords[a], data.tex_coords[b], data.tex_coords[c]))
-                }
-            };
-
+        data.triangles(self.shading).fold(None, |hit, tri| {
             match tri.ray_hit(ray, &t_range) {
                 Some(hit) => {
                     t_range.end = hit.ray_parameter;

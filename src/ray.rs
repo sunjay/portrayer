@@ -41,32 +41,54 @@ pub trait RayHit {
     fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection>;
 }
 
+impl<T: RayHit> RayHit for Arc<T> {
+    fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
+        (&*self as &T).ray_hit(ray, t_range)
+    }
+}
+
+impl<T: RayHit> RayHit for [T] {
+    fn ray_hit(&self, ray: &Ray, init_t_range: &Range<f64>) -> Option<RayIntersection> {
+        let mut t_range = init_t_range.clone();
+        self.iter().fold(None, |hit, item| match item.ray_hit(ray, &t_range) {
+            Some(hit) => {
+                // Only allow further intersections if they are closer to the ray origin
+                // than this one
+                t_range.end = hit.ray_parameter;
+                Some(hit)
+            },
+            None => hit,
+        })
+    }
+}
+
 /// Abstracts the ray casting through the entire hierarchical structure of a scene
 pub trait RayCast {
     /// Cast the ray and find the nearest geometry that it intersects.
+    ///
+    /// The given t_range value should have its `end` field updated to the nearest t value found.
     ///
     /// Returned value contains information about what was hit and its material.
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)>;
 }
 
-impl<T: RayCast> RayCast for Vec<T> {
+impl<T: RayCast> RayCast for Arc<T> {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
-        (&*self as &[T]).ray_cast(ray, t_range)
+        (&*self as &T).ray_cast(ray, t_range)
     }
 }
 
-impl<T: RayCast> RayCast for &[T] {
+impl<T: RayCast> RayCast for [T] {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
-        // The resulting hit and material (initially None)
-        let mut hit_mat = None;
-
-        for item in *self {
-            if let Some(child_hit_mat) = item.ray_cast(ray, t_range) {
-                hit_mat = Some(child_hit_mat);
-            }
-        }
-
-        hit_mat
+        self.iter().fold(None, |hit_mat, item| match item.ray_cast(ray, t_range) {
+            Some((hit, mat)) => {
+                // Only allow further intersections if they are closer to the ray origin
+                // than this one
+                t_range.end = hit.ray_parameter;
+                Some((hit, mat))
+            },
+            None => hit_mat,
+        })
     }
 }
 

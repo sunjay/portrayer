@@ -24,6 +24,7 @@ use std::ops::Range;
 
 use crate::bounding_box::{BoundingBox, Bounds};
 use crate::ray::{Ray, RayHit, RayIntersection};
+use crate::kdtree::KDMesh;
 
 // This macro generates boilerplate code for the primitives and makes it easier to
 // add as many as needed without having to write the same thing over and over again.
@@ -71,6 +72,7 @@ primitive_enum! {
         Sphere(Sphere),
         Triangle(Triangle),
         Mesh(Mesh),
+        KDMesh(KDMesh),
         // InfinitePlane cannot be part of this enum because it is infinite and that means that
         // there is no logical implementation of the Bounds trait for InfinitePlane
         Plane(Plane),

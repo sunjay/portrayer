@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::ops::{Mul, Range};
 
 use crate::math::{EPSILON, INFINITY, Vec3, Vec3Ext, Mat4};
@@ -10,6 +11,12 @@ use crate::ray::RayIntersection;
 pub trait Bounds {
     /// Returns a bounding box that fully encapsulates this object
     fn bounds(&self) -> BoundingBox;
+}
+
+impl<T: Bounds> Bounds for Arc<T> {
+    fn bounds(&self) -> BoundingBox {
+        (&*self as &T).bounds()
+    }
 }
 
 /// Finds the maximum bounding box around a list of objects

@@ -77,7 +77,7 @@ impl From<Arc<SceneNode>> for SceneNode {
 }
 
 /// For casting a ray through a hierarchical scene
-impl RayCast for Arc<SceneNode> {
+impl RayCast for SceneNode {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
         // Take the ray from its current coordinate system and put it into the local coordinate
         // system of the current node

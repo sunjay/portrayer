@@ -11,11 +11,14 @@ use crate::scene::Scene;
 use crate::material::Material;
 use crate::flat_scene::{FlatScene, FlatSceneNode};
 use crate::bounding_box::{BoundingBox, Bounds};
-use crate::ray::{RayCast, Ray, RayIntersection};
-use crate::primitive::{InfinitePlane, PlaneSide};
+use crate::ray::{RayCast, RayHit, Ray, RayIntersection};
+use crate::primitive::{InfinitePlane, PlaneSide, MeshData, Shading, Triangle};
+
+/// The maximum depth of any k-d tree
+const MAX_TREE_DEPTH: usize = 10;
 
 /// A scene organized as a KDTree for fast intersections
-pub type KDTreeScene = Scene<KDTreeNode>;
+pub(crate) type KDTreeScene = Scene<KDTreeNode<FlatSceneNode>>;
 
 /// Builds a k-d tree from a flattened scene
 impl From<FlatScene> for KDTreeScene {
@@ -28,14 +31,11 @@ impl From<FlatScene> for KDTreeScene {
             .collect();
 
         let leaf = KDLeaf {bounds: nodes.bounds(), nodes};
-        // Arbitrary target number of leaves in each leaf. A leaf may end up with more or less than
-        // this depending on how things go during partitioning.
         let part_conf = PartitionConfig {
             target_max_nodes: 3,
             target_max_merit: 3,
             max_tries: 10,
         };
-        const MAX_TREE_DEPTH: usize = 10;
         let root = leaf.partitioned(Vec3::unit_x(), MAX_TREE_DEPTH, part_conf);
 
         Self {root, lights, ambient}
@@ -46,19 +46,19 @@ impl From<FlatScene> for KDTreeScene {
 ///
 /// Cached to avoid computing the bounding box from the node over and over again.
 #[derive(Debug, PartialEq)]
-pub struct NodeBounds {
+pub(crate) struct NodeBounds<T> {
     bounds: BoundingBox,
-    node: FlatSceneNode,
+    node: T,
 }
 
-impl Bounds for Arc<NodeBounds> {
+impl<T> Bounds for NodeBounds<T> {
     fn bounds(&self) -> BoundingBox {
         self.bounds.clone()
     }
 }
 
-impl From<FlatSceneNode> for NodeBounds {
-    fn from(node: FlatSceneNode) -> Self {
+impl<T: Bounds> From<T> for NodeBounds<T> {
+    fn from(node: T) -> Self {
         Self {
             bounds: node.bounds(),
             node,
@@ -66,7 +66,7 @@ impl From<FlatSceneNode> for NodeBounds {
     }
 }
 
-impl RayCast for Arc<NodeBounds> {
+impl<T: RayCast> RayCast for NodeBounds<T> {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
         // In the future we could potentially use the bounding box for a sort of BVH optimization.
         // This isn't necessary right now though because Mesh already uses its own BVH and no other
@@ -75,15 +75,24 @@ impl RayCast for Arc<NodeBounds> {
     }
 }
 
+impl<T: RayHit> RayHit for NodeBounds<T> {
+    fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
+        // In the future we could potentially use the bounding box for a sort of BVH optimization.
+        // This isn't necessary right now though because Mesh already uses its own BVH and no other
+        // primitive needs that extra optimization.
+        self.node.ray_hit(ray, t_range)
+    }
+}
+
 #[derive(Debug, PartialEq)]
-pub struct KDLeaf {
+pub(crate) struct KDLeaf<T> {
     /// A bounding box that encompases all of the scene nodes in this leaf node
     bounds: BoundingBox,
     /// The scene nodes to be tested for intersection
     ///
     /// Need to store in Arc because scene nodes can be shared between multiple tree nodes if
     /// the scene node could not be evenly split by the separating plane
-    nodes: Vec<Arc<NodeBounds>>,
+    nodes: Vec<Arc<NodeBounds<T>>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -101,7 +110,7 @@ struct PartitionConfig {
     max_tries: usize,
 }
 
-impl KDLeaf {
+impl<T> KDLeaf<T> {
     /// Partition the nodes in this leaf until the number of nodes is less than the given
     /// threshold or until the leaf cannot be partitioned anymore. There is no guarantee that the
     /// resulting tree will have fewer nodes in its leaves than the given threshold, but we will
@@ -110,7 +119,7 @@ impl KDLeaf {
     /// The provided axis vector must be a positive unit vector: (1,0,0), (0,1,0), or (0,0,1)
     ///
     /// When max_depth == 0, the remaining nodes will be returned in a single leaf node
-    fn partitioned(self, axis: Vec3, max_depth: usize, part_conf: PartitionConfig) -> KDTreeNode {
+    fn partitioned(self, axis: Vec3, max_depth: usize, part_conf: PartitionConfig) -> KDTreeNode<T> {
         let PartitionConfig {target_max_nodes, target_max_merit, max_tries} = part_conf;
         if max_depth == 0 || self.nodes.len() <= target_max_nodes {
             return KDTreeNode::Leaf(self);
@@ -135,8 +144,8 @@ impl KDLeaf {
 
         /// Tests which side of the separating plane a given node is on. The node may be on both
         /// sides. Returns (front, back) where each is true if the node is on that side.
-        fn partition_node(
-            node: &Arc<NodeBounds>,
+        fn partition_node<T>(
+            node: &Arc<NodeBounds<T>>,
             sep_plane: &InfinitePlane,
         ) -> Partition {
             use PlaneSide::*;
@@ -256,36 +265,67 @@ impl KDLeaf {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum KDTreeNode {
+pub(crate) enum KDTreeNode<T> {
     Split {
         /// The separating plane that divides the children
         sep_plane: InfinitePlane,
         /// A bounding box that encompases all of the nodes in this node
         bounds: BoundingBox,
         /// The nodes in front of the separating plane (in the direction of the plane normal)
-        front_nodes: Box<KDTreeNode>,
+        front_nodes: Box<KDTreeNode<T>>,
         /// The nodes behind the separating plane (in the direction opposite to the plane normal)
-        back_nodes: Box<KDTreeNode>,
+        back_nodes: Box<KDTreeNode<T>>,
     },
-    Leaf(KDLeaf),
+    Leaf(KDLeaf<T>),
 }
 
-impl RayCast for KDTreeNode {
+impl<T: RayCast> RayCast for KDTreeNode<T> {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
-        self.ray_cast_impl(ray, t_range, self.extent())
+        self.ray_cast_impl(ray, t_range, self.extent(), &mut RayCast::ray_cast)
     }
 }
 
-impl KDTreeNode {
-    fn extent(&self) -> f64 {
+impl<T: RayHit> RayHit for KDTreeNode<T> {
+    fn ray_hit(&self, ray: &Ray, init_t_range: &Range<f64>) -> Option<RayIntersection> {
+        // Need to emulate RayCast here and modify a range so that we can ensure we get the nearest
+        // intersection possible. This is also important because ray_cast_impl expects the given
+        // function to provide the same guarantees as RayCast about updating the t_range.
+        let mut t_range = init_t_range.clone();
+        self.ray_cast_impl(ray, &mut t_range, self.extent(), &mut |nodes, ray, t_range| {
+            match nodes.ray_hit(ray, t_range) {
+                Some(hit) => {
+                    // Only allow further intersections if they are closer to the ray origin
+                    // than this one
+                    t_range.end = hit.ray_parameter;
+                    Some(hit)
+                },
+                None => None,
+            }
+        })
+    }
+}
+
+impl<T> KDTreeNode<T> {
+    fn bounds(&self) -> &BoundingBox {
         use KDTreeNode::*;
         match self {
-            Split {bounds, ..} => bounds.extent(),
-            Leaf(KDLeaf {bounds, ..}) => bounds.extent(),
+            Split {bounds, ..} |
+            Leaf(KDLeaf {bounds, ..}) => bounds,
         }
     }
 
-    fn ray_cast_impl(&self, ray: &Ray, t_range: &mut Range<f64>, extent: f64) -> Option<(RayIntersection, Arc<Material>)> {
+    fn extent(&self) -> f64 {
+        self.bounds().extent()
+    }
+
+    fn ray_cast_impl<F, R>(
+        &self,
+        ray: &Ray,
+        t_range: &mut Range<f64>,
+        extent: f64,
+        cast_ray: &mut F,
+    ) -> Option<R>
+        where F: FnMut(&[Arc<NodeBounds<T>>], &Ray, &mut Range<f64>) -> Option<R> {
         // To find the t value of the plane intersection, we exploit the fact that the plane is
         // axis-aligned and thus we already know one of the components of the hit_point that would
         // be returned from any other call to ray_hit.
@@ -326,7 +366,7 @@ impl KDTreeNode {
 
         use KDTreeNode::*;
         match self {
-            Leaf(KDLeaf {nodes, ..}) => nodes.ray_cast(ray, t_range),
+            Leaf(KDLeaf {nodes, ..}) => cast_ray(&nodes[..], ray, t_range),
             Split {sep_plane, front_nodes, back_nodes, ..} => {
                 // A value of t large enough that the point on the ray for this t would be well
                 // beyond the extent of the scene. Need to add to t_range.start because otherwise
@@ -346,10 +386,10 @@ impl KDTreeNode {
                 use PlaneSide::*;
                 match (sep_plane.which_side(ray_start), sep_plane.which_side(ray_end)) {
                     // Ray segment lies entirely on front side of the separating plane
-                    (Front, Front) => front_nodes.ray_cast(ray, t_range),
+                    (Front, Front) => front_nodes.ray_cast_impl(ray, t_range, extent, cast_ray),
 
                     // Ray segment lies entirely on back side of the separating plane
-                    (Back, Back) => back_nodes.ray_cast(ray, t_range),
+                    (Back, Back) => back_nodes.ray_cast_impl(ray, t_range, extent, cast_ray),
 
                     // Ray segment goes through the front nodes, then the back nodes
                     (Front, Back) => {
@@ -363,7 +403,7 @@ impl KDTreeNode {
 
                         // Only going to continue with this range if it hits
                         let mut front_t_range = Range {start: t_range.start, end: plane_t};
-                        match front_nodes.ray_cast(ray, &mut front_t_range) {
+                        match front_nodes.ray_cast_impl(ray, &mut front_t_range, extent, cast_ray) {
                             Some(hit_mat) => {
                                 *t_range = front_t_range;
                                 Some(hit_mat)
@@ -371,7 +411,7 @@ impl KDTreeNode {
                             None => {
                                 // Only going to continue with this range if it hits
                                 let mut back_t_range = Range {start: plane_t, end: t_range.end};
-                                match back_nodes.ray_cast(ray, &mut back_t_range) {
+                                match back_nodes.ray_cast_impl(ray, &mut back_t_range, extent, cast_ray) {
                                     Some(hit_mat) => {
                                         *t_range = back_t_range;
                                         Some(hit_mat)
@@ -394,7 +434,7 @@ impl KDTreeNode {
 
                         // Only going to continue with this range if it hits
                         let mut back_t_range = Range {start: t_range.start, end: plane_t};
-                        match back_nodes.ray_cast(ray, &mut back_t_range) {
+                        match back_nodes.ray_cast_impl(ray, &mut back_t_range, extent, cast_ray) {
                             Some(hit_mat) => {
                                 *t_range = back_t_range;
                                 Some(hit_mat)
@@ -402,7 +442,7 @@ impl KDTreeNode {
                             None => {
                                 // Only going to continue with this range if it hits
                                 let mut front_t_range = Range {start: plane_t, end: t_range.end};
-                                match front_nodes.ray_cast(ray, &mut front_t_range) {
+                                match front_nodes.ray_cast_impl(ray, &mut front_t_range, extent, cast_ray) {
                                     Some(hit_mat) => {
                                         *t_range = front_t_range;
                                         Some(hit_mat)
@@ -415,6 +455,67 @@ impl KDTreeNode {
                 }
             },
         }
+    }
+}
+
+/// A Mesh backed by a k-d tree to store the triangles
+#[derive(Debug, Clone, PartialEq)]
+pub struct KDMesh {
+    // Storing the triangles in an Arc to make this cheap to clone without duplicating the tree.
+    // This is very important in case the node containing this primitive is instanced and then
+    // flattened. It's the same reason why Mesh stores Arc<MeshData>.
+    triangles: Arc<KDTreeNode<Triangle>>,
+}
+
+impl Bounds for KDMesh {
+    fn bounds(&self) -> BoundingBox {
+        self.triangles.bounds().clone()
+    }
+}
+
+impl KDMesh {
+    /// Creates a new mesh from the given mesh data and with the given shading
+    ///
+    /// Note that this does not store the given mesh data. Instead it copies the data into the
+    /// nodes of a k-d tree.
+    pub fn new(data: &MeshData, shading: Shading) -> Self {
+        // Turn all of the mesh triangles into a single, unpartitioned leaf node
+        let nodes: Vec<_> = data.triangles(shading)
+            .map(|node| NodeBounds::from(node).into())
+            .collect();
+
+        let leaf = KDLeaf {bounds: nodes.bounds(), nodes};
+        let part_conf = PartitionConfig {
+            target_max_nodes: 3,
+            target_max_merit: 3,
+            max_tries: 10,
+        };
+        let root = leaf.partitioned(Vec3::unit_x(), MAX_TREE_DEPTH, part_conf);
+
+        Self {triangles: Arc::new(root)}
+    }
+}
+
+#[cfg(not(feature = "render_bounding_volumes"))]
+impl RayHit for KDMesh {
+    fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
+        // Test the bounding volume first. If it does not get hit we can save a lot of time that
+        // we would have spent traversing the mesh triangles. This is important for the KDMesh but
+        // not the KDTreeScene because it's far less likely that a ray would miss the entire scene
+        // than it is that a ray would miss a given mesh.
+        if self.triangles.bounds().test_hit(ray, t_range).is_none() {
+            return None;
+        }
+
+        self.triangles.ray_hit(ray, t_range)
+    }
+}
+
+#[cfg(feature = "render_bounding_volumes")]
+impl RayHit for KDMesh {
+    fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
+        // Pretend that this mesh is the bounding volume and test that instead
+        self.triangles.bounds().ray_hit(ray, t_range)
     }
 }
 
