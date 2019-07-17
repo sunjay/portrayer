@@ -9,12 +9,11 @@ use portrayer::{
     material::Material,
     texture::{Texture, ImageTexture},
     light::Light,
-    render::Render,
+    render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
     math::{Radians, Vec3, Uv, Rgb},
 };
-use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let fish_skin = Arc::new(Texture::from(ImageTexture::open("assets/fish.png")?));
@@ -57,10 +56,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(25.0),
     };
 
-    let mut image = RgbImage::new(910, 512);
+    let mut image = Image::new("fish.png", 910, 512)?;
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
-    Ok(image.save("fish.png")?)
+    Ok(image.save()?)
 }

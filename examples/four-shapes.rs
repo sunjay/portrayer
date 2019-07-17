@@ -8,12 +8,11 @@ use portrayer::{
     primitive::{Cube, Sphere, Cone, Cylinder},
     material::Material,
     light::Light,
-    render::Render,
+    render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
     math::{Radians, Vec3, Rgb},
 };
-use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mat_glass_base = Material {
@@ -83,9 +82,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(10.0),
     };
 
-    let mut image = RgbImage::new(1920, 512);
+    let mut image = Image::new("four-shapes.png", 1920, 512)?;
 
     image.render::<RenderProgress, _>(&scene, cam, |_| Rgb::white());
 
-    Ok(image.save("four-shapes.png")?)
+    Ok(image.save()?)
 }

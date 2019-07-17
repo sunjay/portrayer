@@ -10,12 +10,11 @@ use portrayer::{
     kdtree::KDMesh,
     material::{Material, WATER_REFRACTION_INDEX},
     light::Light,
-    render::Render,
+    render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
     math::{Radians, Vec3, Rgb, Uv},
 };
-use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mat_temple_block = Arc::new(Material {
@@ -73,13 +72,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(25.0),
     };
 
-    // let mut image = RgbImage::new(1920, 1080);
-    let mut image = RgbImage::new(533, 300);
+    // let mut image = Image::new("graphics-temple.png", 1920, 1080);
+    let mut image = Image::new("graphics-temple.png", 533, 300)?;
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.529, g: 0.808, b: 0.922} * (1.0 - uv.v) + Rgb {r: 0.086, g: 0.38, b: 0.745} * uv.v);
 
-    Ok(image.save("graphics-temple.png")?)
+    Ok(image.save()?)
 }
 
 fn hills() -> Result<SceneNode, Box<dyn Error>> {

@@ -8,12 +8,11 @@ use portrayer::{
     primitive::{Mesh, MeshData, Shading},
     material::{Material, OPTICAL_GLASS_REFRACTION_INDEX},
     light::Light,
-    render::Render,
+    render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
     math::{Radians, Vec3, Rgb},
 };
-use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mat_glass = Arc::new(Material {
@@ -72,10 +71,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(35.0),
     };
 
-    // let mut image = RgbImage::new(1080, 1080);
-    let mut image = RgbImage::new(256, 256);
+    // let mut image = Image::new("graphics-poster.png", 1080, 1080)?;
+    let mut image = Image::new("graphics-poster.png", 256, 256)?;
 
     image.render::<RenderProgress, _>(&scene, cam, |_| Rgb::white());
 
-    Ok(image.save("graphics-poster.png")?)
+    Ok(image.save()?)
 }

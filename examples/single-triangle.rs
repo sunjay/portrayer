@@ -1,6 +1,6 @@
 //! A simple scene with a single triangle
 
-use std::io;
+use std::error::Error;
 use std::sync::Arc;
 
 use portrayer::{
@@ -8,14 +8,13 @@ use portrayer::{
     primitive::Triangle,
     material::Material,
     light::Light,
-    render::Render,
+    render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
     math::{Radians, Vec3, Uv, Rgb},
 };
-use image::RgbImage;
 
-fn main() -> io::Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     let mat1 = Arc::new(Material {
         diffuse: Rgb {r: 0.541, g: 0.169, b: 0.886},
         specular: Rgb {r: 0.5, g: 0.7, b: 0.5},
@@ -52,10 +51,10 @@ fn main() -> io::Result<()> {
         fovy: Radians::from_degrees(50.0),
     };
 
-    let mut image = RgbImage::new(640, 480);
+    let mut image = Image::new("single-triangle.png", 640, 480)?;
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
-    image.save("single-triangle.png")
+    Ok(image.save()?)
 }

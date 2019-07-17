@@ -1,4 +1,6 @@
+use std::io;
 use std::env;
+use std::path::{Path, PathBuf};
 
 use vek::ops::Clamp;
 use rayon::prelude::*;
@@ -15,21 +17,6 @@ use crate::ray::RayCast;
 use crate::camera::{CameraSettings, Camera};
 use crate::texture::TextureSource;
 use crate::reporter::Reporter;
-
-/// An extension trait for adding a render method to supported render targets
-///
-/// It is assumed that the render target has pixels that can be indexed from
-/// x = 0..width and y = 0..height. The image space is assumed to
-/// go left to right on the x axis and top to bottom on the y axis.
-pub trait Render {
-    /// Draw the given scene to this target using the given camera settings and background texture
-    fn render<R: Reporter + Send + Sync, T: TextureSource + Send + Sync>(
-        &mut self,
-        scene: &HierScene,
-        camera: CameraSettings,
-        background: T,
-    );
-}
 
 /// Ray traces a single pixel through the scene
 fn render_single_pixel<R: RayCast + Send + Sync, T: TextureSource>(
@@ -63,18 +50,57 @@ fn render_single_pixel<R: RayCast + Send + Sync, T: TextureSource>(
     Clamp::<f64>::clamp01(color)
 }
 
-impl Render for image::RgbImage {
-    fn render<R: Reporter + Send + Sync, T: TextureSource + Send + Sync>(
+/// Represents a 2D slice of an image
+///
+/// x and y are 0-indexed. x is left-to-right across and y is top-to-bottom down the image.
+pub struct ImageSliceMut<'a> {
+    image: &'a mut Image,
+    /// The (x, y) coordinate of the top left of the slice
+    ///
+    /// This is guaranteed to be inside the image, but not guaranteed to be less than bottom_right
+    top_left: (usize, usize),
+    /// The (x, y) of the bottom right of the slice
+    ///
+    /// This is guaranteed to be inside the image, but not guaranteed to be greater than top_left
+    bottom_right: (usize, usize),
+}
+
+impl<'a> From<&'a mut Image> for ImageSliceMut<'a> {
+    fn from(image: &'a mut Image) -> Self {
+        let width = image.width();
+        let height = image.height();
+        Self::new(image, (0, 0), (width - 1, height - 1))
+    }
+}
+
+impl<'a> ImageSliceMut<'a> {
+    /// Creates a new image slice from the given image and panics if either of the given (x, y)
+    /// positions are out of bounds
+    pub fn new(image: &'a mut Image, top_left: (usize, usize), bottom_right: (usize, usize)) -> Self {
+        let width = image.width();
+        let height = image.height();
+        let (x1, y1) = top_left;
+        let (x2, y2) = bottom_right;
+        if x1 >= width || y1 >= height || x2 >= width || y2 >= height {
+            panic!("The positions {{x: {}, y: {}}} and/or {{x: {}, y: {}}} are not within an image with width = {} and height = {}",
+                x1, y1, x2, y2, width, height);
+        }
+
+        Self {image, top_left, bottom_right}
+    }
+
+    /// Render the given scene onto the entirety of this image
+    pub fn render<R: Reporter + Send + Sync, T: TextureSource + Send + Sync>(
         &mut self,
         scene: &HierScene,
         camera: CameraSettings,
         background: T,
     ) {
-        let width = self.width() as f64;
-        let height = self.height() as f64;
+        let width = self.image.width() as f64;
+        let height = self.image.height() as f64;
         let camera = Camera::new(camera, (width, height));
 
-        let reporter = R::new((self.width() * self.height()) as u64);
+        let reporter = R::new((self.image.width() * self.image.height()) as u64);
 
         // Attempt to get the number of samples from an environment variable, and ignore the value
         // otherwise
@@ -86,18 +112,29 @@ impl Render for image::RgbImage {
             // Default value if not all conditions are met
             .unwrap_or(100);
 
+        // Only render the sliced pixels
+        let (x1, y1) = self.top_left;
+        let (x2, y2) = self.bottom_right;
+        let x_range = x1..=x2;
+        let y_range = y1..=y2;
+
         #[cfg(feature = "flat_scene")]
         let scene = &FlatScene::from(scene);
         #[cfg(feature = "kdtree")]
         let flat_scene = FlatScene::from(scene);
         #[cfg(feature = "kdtree")]
         let scene = &KDTreeScene::from(flat_scene);
-        self.par_chunks_mut(3)
+        self.image.buffer.par_chunks_mut(3)
             .map(image::Rgb::from_slice_mut)
             .enumerate()
             .for_each(|(i, pixel)| {
                 let x = i % width as usize;
                 let y = i / width as usize;
+
+                // Skip any pixels not in the range
+                if !x_range.contains(&x) || !y_range.contains(&y) {
+                    return;
+                }
 
                 let color = render_single_pixel((x, y), scene, &camera, width, height, samples, &background);
 
@@ -110,5 +147,77 @@ impl Render for image::RgbImage {
 
                 reporter.report_finished_pixels(1);
             });
+    }
+}
+
+pub struct Image {
+    path: PathBuf,
+    buffer: image::RgbImage,
+}
+
+impl Image {
+    /// Attempts to open the given image path as an RGB image.
+    ///
+    /// If the file does not exist or if the dimensions are different, a new file will be created
+    /// with the given path and dimensions. This allows you to preserve the image if only drawing
+    /// on a limited slice of it.
+    pub fn new<P: AsRef<Path>>(path: P, width: usize, height: usize) -> image::ImageResult<Self> {
+        let path = path.as_ref();
+        let buffer = match image::open(path) {
+            Ok(image) => {
+                let buffer = image.to_rgb();
+                if buffer.width() == width as u32 && buffer.height() == height as u32 {
+                    buffer
+                } else {
+                    // Wrong dimensions: Create a new buffer
+                    image::RgbImage::new(width as u32, height as u32)
+                }
+            },
+            Err(image::ImageError::IoError(ref err)) if err.kind() == io::ErrorKind::NotFound => {
+                // Image does not exist: Create a new buffer
+                image::RgbImage::new(width as u32, height as u32)
+            },
+            Err(err) => return Err(err),
+        };
+
+        Ok(Self {
+            path: path.to_path_buf(),
+            buffer,
+        })
+    }
+
+    /// Returns the width of this image
+    pub fn width(&self) -> usize {
+        self.buffer.width() as usize
+    }
+
+    /// Returns the height of this image
+    pub fn height(&self) -> usize {
+        self.buffer.height() as usize
+    }
+
+    /// Attempts to save/update the image
+    pub fn save(&self) -> io::Result<()> {
+        self.save_as(&self.path)
+    }
+
+    /// Attempts to save the image at the given path
+    pub fn save_as<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        self.buffer.save(path)
+    }
+
+    /// Returns a mutable slice to the area of the image between the given (x, y) pairs
+    pub fn slice_mut(&mut self, top_left: (usize, usize), bottom_right: (usize, usize)) -> ImageSliceMut {
+        ImageSliceMut::new(self, top_left, bottom_right)
+    }
+
+    /// Render the given scene onto the entirety of this image
+    pub fn render<R: Reporter + Send + Sync, T: TextureSource + Send + Sync>(
+        &mut self,
+        scene: &HierScene,
+        camera: CameraSettings,
+        background: T,
+    ) {
+        ImageSliceMut::from(self).render::<R, _>(scene, camera, background)
     }
 }

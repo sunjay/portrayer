@@ -9,12 +9,11 @@ use portrayer::{
     primitive::{Sphere, Mesh, MeshData, Shading, Cube},
     material::Material,
     light::Light,
-    render::Render,
+    render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
     math::{Radians, Vec3, Uv, Rgb},
 };
-use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Materials
@@ -182,10 +181,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(30.0),
     };
 
-    let mut image = RgbImage::new(800, 600);
+    let mut image = Image::new("entering-the-mirror-dimension.png", 800, 600)?;
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
-    Ok(image.save("entering-the-mirror-dimension.png")?)
+    Ok(image.save()?)
 }

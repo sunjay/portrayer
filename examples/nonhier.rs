@@ -8,12 +8,11 @@ use portrayer::{
     primitive::{Sphere, Mesh, MeshData, Shading, Cube},
     material::Material,
     light::Light,
-    render::Render,
+    render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
     math::{Radians, Vec3, Uv, Rgb},
 };
-use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mat1 = Arc::new(Material {
@@ -104,10 +103,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(50.0),
     };
 
-    let mut image = RgbImage::new(256, 256);
+    let mut image = Image::new("nonhier.png", 256, 256)?;
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
-    Ok(image.save("nonhier.png")?)
+    Ok(image.save()?)
 }

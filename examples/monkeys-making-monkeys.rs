@@ -10,12 +10,11 @@ use portrayer::{
     material::{Material, OPTICAL_GLASS_REFRACTION_INDEX, WATER_REFRACTION_INDEX},
     texture::{Texture, ImageTexture, NormalMap},
     light::{Light, Parallelogram},
-    render::Render,
+    render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
     math::{Radians, Vec3, Uv, Rgb},
 };
-use image::RgbImage;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let monkey_mesh = Arc::new(MeshData::load_obj("assets/monkey.obj")?);
@@ -64,12 +63,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(23.0),
     };
 
-    let mut image = RgbImage::new(1920, 1080);
+    let mut image = Image::new("monkeys-making-monkeys.png", 1920, 1080)?;
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
-    Ok(image.save("monkeys-making-monkeys.png")?)
+    Ok(image.save()?)
 }
 
 fn room() -> SceneNode {

@@ -1,6 +1,6 @@
 //! Demonstrates the glossy reflection feature
 
-use std::io;
+use std::error::Error;
 use std::sync::Arc;
 
 use portrayer::{
@@ -8,14 +8,13 @@ use portrayer::{
     primitive::{Sphere, Cube},
     material::Material,
     light::Light,
-    render::Render,
+    render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
     math::{Radians, Vec3, Uv, Rgb},
 };
-use image::RgbImage;
 
-fn main() -> io::Result<()> {
+fn main() -> Result<(), Box<dyn Error>> {
     let non_glossy_ball = Arc::new(Material {
         diffuse: Rgb {r: 0.146505, g: 0.314666, b: 0.170564},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
@@ -81,10 +80,10 @@ fn main() -> io::Result<()> {
         fovy: Radians::from_degrees(20.0),
     };
 
-    let mut image = RgbImage::new(910, 512);
+    let mut image = Image::new("glossy-reflection.png", 910, 512)?;
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
 
-    image.save("glossy-reflection.png")
+    Ok(image.save()?)
 }
