@@ -180,10 +180,11 @@ fn temple_floor_2() -> SceneNode {
     }
 
     // The ceiling
+    let ceiling_height = floor_height - column_height;
     nodes.push(
         SceneNode::from(Geometry::new(Cube, mat_column.clone()))
-            .scaled((floor_width, floor_height - column_height, floor_length))
-            .translated((0.0, floor_y_offset + column_height, 0.0))
+            .scaled((floor_width, ceiling_height, floor_length))
+            .translated((0.0, floor_y_offset + column_height + ceiling_height / 2.0, 0.0))
             .into()
     );
 
