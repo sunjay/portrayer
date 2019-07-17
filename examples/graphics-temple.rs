@@ -29,12 +29,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     let mat_dirt = Arc::new(Material {
-        diffuse: Rgb {r: 0.8, g: 0.579469, b: 0.342056},
+        // Color of algae makes the water blue!
+        diffuse: Rgb {r: 0.592, g: 0.671, b: 0.055},
         ..Material::default()
     });
 
     let mat_grass = Arc::new(Material {
-        diffuse: Rgb {r: 0.156113, g: 0.8, b: 0.152911},
+        diffuse: Rgb {r: 0.376, g: 0.502, b: 0.22},
         ..Material::default()
     });
 
