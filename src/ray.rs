@@ -78,6 +78,12 @@ impl<T: RayCast> RayCast for Arc<T> {
     }
 }
 
+impl<T: RayCast> RayCast for Vec<T> {
+    fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
+        (&*self as &[T]).ray_cast(ray, t_range)
+    }
+}
+
 impl<T: RayCast> RayCast for [T] {
     fn ray_cast(&self, ray: &Ray, t_range: &mut Range<f64>) -> Option<(RayIntersection, Arc<Material>)> {
         self.iter().fold(None, |hit_mat, item| match item.ray_cast(ray, t_range) {
