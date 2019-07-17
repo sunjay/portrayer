@@ -52,6 +52,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             lake()?.into(),
 
             temple_floor_1().into(),
+            temple_floor_2().into(),
         ]).into(),
 
         lights: vec![
@@ -72,7 +73,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(25.0),
     };
 
-    let mut image = RgbImage::new(1920, 1080);
+    // let mut image = RgbImage::new(1920, 1080);
+    let mut image = RgbImage::new(533, 300);
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.529, g: 0.808, b: 0.922} * (1.0 - uv.v) + Rgb {r: 0.086, g: 0.38, b: 0.745} * uv.v);
@@ -125,21 +127,25 @@ fn lake() -> Result<SceneNode, Box<dyn Error>> {
 }
 
 fn temple_floor_1() -> SceneNode {
+    SceneNode::from(vec![])
+}
+
+fn temple_floor_2() -> SceneNode {
     // Generate a layout with equally spaced sections of a given width. Each section has a column
     // on each side
-    let floor_width = 240.0;
+    let floor_width = 168.0;
     let floor_height = 20.0;
-    let floor_y_offset = 0.0;
-    let floor_front_z = 20.0;
+    let floor_y_offset = 20.0;
+    let floor_front_z = 16.0;
 
     let sections = 4;
-    let section_width = 40.0;
+    let section_width = 30.0;
 
     let column_width = 3.2;
     let column_height = 8.6;
 
     // -1 because there is only spacing *between* the sections, not at the end
-    let section_spacing = (floor_width - sections as f64 * section_width) / (sections-1) as f64;
+    let section_spacing = (floor_width - column_width - sections as f64 * section_width) / (sections-1) as f64;
     let column_scale = floor_height / column_height;
 
     let mut nodes = Vec::new();
