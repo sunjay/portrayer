@@ -33,11 +33,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .into(),
 
             SceneNode::from(Geometry::new(Cube, mat_temple_block.clone()))
-                .scaled((117.599998, 20.0, 25.6))
-                .translated((0.0, 50.0, 0.0))
-                .into(),
-
-            SceneNode::from(Geometry::new(Cube, mat_temple_block.clone()))
                 .scaled((82.32, 20.0, 20.480001))
                 .translated((0.0, 70.0, 0.0))
                 .into(),
@@ -47,6 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             temple_floor_1().into(),
             temple_floor_2().into(),
+            temple_floor_3()?.into(),
         ]).into(),
 
         lights: vec![
@@ -233,6 +229,62 @@ fn temple_floor_2() -> SceneNode {
     }
 
     SceneNode::from(nodes)
+}
+
+fn temple_floor_3() -> Result<SceneNode, Box<dyn Error>> {
+    let floor_width = 117.6;
+    let floor_length = 25.6;
+    let floor_height = 20.0;
+    let floor_y_offset = 40.0;
+
+    let puppet_height = 17.2;
+    let puppet_y_offset = 44.083061;
+
+    let ceiling_height = floor_height - puppet_height;
+    let ceiling_y_offset = floor_y_offset + puppet_height + ceiling_height / 2.0;
+
+    let mat_puppet = Arc::new(Material {
+        //TODO: Replace this material
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let puppet_model = Arc::new(MeshData::load_obj("assets/tog_puppet.obj")?);
+    let puppet = Arc::new(SceneNode::from(Geometry::new(KDMesh::new(&*puppet_model, Shading::Smooth), mat_puppet))
+        .translated((0.0, puppet_y_offset, 0.0)));
+
+    let mat_ceiling = Arc::new(Material {
+        //TODO: Replace this material
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    Ok(SceneNode::from(vec![
+        // The ceiling
+        SceneNode::from(Geometry::new(Cube, mat_ceiling.clone()))
+            .scaled((floor_width, ceiling_height, floor_length))
+            .translated((0.0, ceiling_y_offset, 0.0))
+            .into(),
+
+        // Left puppet
+        SceneNode::from(puppet.clone())
+            .rotated_y(Radians::from_degrees(90.0))
+            .translated((-55.1, 0.0, 0.0))
+            .into(),
+        // Center puppet
+        SceneNode::from(puppet.clone())
+            .translated((0.0, 0.0, -5.0))
+            .into(),
+        // Right puppet
+        SceneNode::from(puppet.clone())
+            .rotated_y(Radians::from_degrees(-90.0))
+            .translated((55.1, 0.0, 0.0))
+            .into(),
+    ]))
 }
 
 /// A cylinderical column with center at its bottom middle
