@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Sphere, Cylinder, MeshData, Shading},
+    primitive::{Cube, Sphere, Cylinder, Mesh, MeshData, Shading},
     kdtree::KDMesh,
     material::{Material, WATER_REFRACTION_INDEX},
     light::Light,
@@ -298,7 +298,7 @@ fn temple_floor_4() -> Result<SceneNode, Box<dyn Error>> {
 
     Ok(SceneNode::from(vec![
         // Monkey
-        SceneNode::from(Geometry::new(KDMesh::new(&*monkey_model, Shading::Smooth), mat_crystal.clone()))
+        SceneNode::from(Geometry::new(Mesh::new(monkey_model, Shading::Smooth), mat_crystal.clone()))
             .scaled(8.0)
             .rotated_xzy((Radians::from_degrees(-34.9072), Radians::from_degrees(25.0), Radians::from_degrees(0.0)))
             .translated((-30.0, 64.214905, 1.0))
