@@ -72,8 +72,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(25.0),
     };
 
-    // let mut image = Image::new("graphics-temple.png", 1920, 1080);
-    let mut image = Image::new("graphics-temple.png", 533, 300)?;
+    let mut image = Image::new("graphics-temple.png", 1920, 1080);
 
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.529, g: 0.808, b: 0.922} * (1.0 - uv.v) + Rgb {r: 0.086, g: 0.38, b: 0.745} * uv.v);
@@ -162,6 +161,50 @@ fn temple_floor_2() -> SceneNode {
                 .scaled(column_scale)
                 .translated((x, floor_y_offset, floor_front_z))
                 .into()
+        );
+    }
+
+    let mat_idol = Arc::new(Material {
+        //TODO: Replace this material
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    // Each section contains an "idol" or "diety" which for this floor represents a cube and the
+    // three types of transformations on it
+    let extent = section_width.min(floor_height);
+    let base_idol = Arc::new(
+        SceneNode::from(Geometry::new(Cube, mat_idol.clone()))
+            .scaled(extent * 0.5)
+            .rotated_y(Radians::from_degrees(30.0))
+    );
+    let idols = vec![
+        SceneNode::from(base_idol.clone()),
+        SceneNode::from(base_idol.clone())
+            .scaled((1.0, 0.4, 1.0)),
+        SceneNode::from(base_idol.clone())
+            .rotated_z(Radians::from_degrees(80.0)),
+        SceneNode::from(vec![
+            SceneNode::from(base_idol.clone())
+                .scaled(0.5)
+                .translated((-extent / 4.0, extent / 4.0, -1.0))
+                .into(),
+            SceneNode::from(base_idol.clone())
+                .scaled(0.5)
+                .translated((extent / 4.0, -extent / 4.0, 0.0))
+                .into(),
+        ]),
+    ];
+    assert_eq!(idols.len(), sections);
+
+    for (i, idol) in idols.into_iter().enumerate() {
+        let x = section_width * (i + 1) as f64 + section_spacing * i as f64
+              // Center in the image and section width
+              - floor_width / 2.0 - section_width / 2.0;
+        nodes.push(
+            idol.translated((x, floor_y_offset + floor_height / 2.0, floor_front_z)).into()
         );
     }
 
