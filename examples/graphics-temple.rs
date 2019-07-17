@@ -33,11 +33,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .into(),
 
             SceneNode::from(Geometry::new(Cube, mat_temple_block.clone()))
-                .scaled((168.0, 20.0, 32.0))
-                .translated((0.0, 30.0, 0.0))
-                .into(),
-
-            SceneNode::from(Geometry::new(Cube, mat_temple_block.clone()))
                 .scaled((117.599998, 20.0, 25.6))
                 .translated((0.0, 50.0, 0.0))
                 .into(),
@@ -97,9 +92,9 @@ fn lake() -> Result<SceneNode, Box<dyn Error>> {
         diffuse: Rgb {r: 0.0, g: 0.0, b: 0.1},
         specular: Rgb {r: 0.5, g: 0.5, b: 0.5},
         shininess: 100.0,
-        // reflectivity: 0.9,
-        // glossy_side_length: 1.0,
-        // refraction_index: WATER_REFRACTION_INDEX,
+        reflectivity: 0.9,
+        glossy_side_length: 1.0,
+        refraction_index: WATER_REFRACTION_INDEX,
         ..Material::default()
     });
 
@@ -133,37 +128,67 @@ fn temple_floor_2() -> SceneNode {
     // on each side
     let floor_width = 168.0;
     let floor_height = 20.0;
+    let floor_length = 32.0;
     let floor_y_offset = 20.0;
-    let floor_front_z = 16.0;
+    let floor_front_z = floor_length / 2.0;
 
     let sections = 4;
     let section_width = 30.0;
 
-    let column_width = 3.2;
-    let column_height = 8.6;
+    let column_scale = 2.0;
+    // The diameter in this case is width == length since the column has cubes at its ends
+    let column_diameter = 3.2 * column_scale;
+    let column_height = 8.6 * column_scale;
 
+    // Compute the amount of space between each section.
     // -1 because there is only spacing *between* the sections, not at the end
-    let section_spacing = (floor_width - column_width - sections as f64 * section_width) / (sections-1) as f64;
-    let column_scale = floor_height / column_height;
+    let section_spacing = (floor_width - column_diameter - sections as f64 * section_width) / (sections-1) as f64;
 
     let mut nodes = Vec::new();
 
-    let column = Arc::new(cylinder_column());
+    // Generate columns to hold up the ceiling
+    let mat_column = Arc::new(Material {
+        //TODO: Replace this material
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let column = Arc::new(cylinder_column(mat_column.clone()));
     for i in 0..sections * 2 {
         // Add section width on odd i
         let x = section_width * ((i+1)/2) as f64
               // Add section spacing on even i
               + section_spacing * (i/2) as f64
-              // Center in the image and column width
-              - floor_width / 2.0 + column_width / 2.0;
+              // Center in the image and column size
+              - floor_width / 2.0 + column_diameter / 2.0;
+        // Front column
         nodes.push(
             SceneNode::from(column.clone())
                 .scaled(column_scale)
-                .translated((x, floor_y_offset, floor_front_z))
+                .translated((x, floor_y_offset, floor_front_z - column_diameter / 2.0))
+                .into()
+        );
+        // Back column
+        nodes.push(
+            SceneNode::from(column.clone())
+                .scaled(column_scale)
+                .translated((x, floor_y_offset, -(floor_front_z - column_diameter / 2.0)))
                 .into()
         );
     }
 
+    // The ceiling
+    nodes.push(
+        SceneNode::from(Geometry::new(Cube, mat_column.clone()))
+            .scaled((floor_width, floor_height - column_height, floor_length))
+            .translated((0.0, floor_y_offset + column_height, 0.0))
+            .into()
+    );
+
+    // Each section contains an "idol" or "diety" which for this floor represents a cube and the
+    // three types of transformations on it
     let mat_idol = Arc::new(Material {
         //TODO: Replace this material
         diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
@@ -172,9 +197,7 @@ fn temple_floor_2() -> SceneNode {
         ..Material::default()
     });
 
-    // Each section contains an "idol" or "diety" which for this floor represents a cube and the
-    // three types of transformations on it
-    let extent = section_width.min(floor_height);
+    let extent = section_width.min(column_height);
     let base_idol = Arc::new(
         SceneNode::from(Geometry::new(Cube, mat_idol.clone()))
             .scaled(extent * 0.5)
@@ -189,11 +212,11 @@ fn temple_floor_2() -> SceneNode {
         SceneNode::from(vec![
             SceneNode::from(base_idol.clone())
                 .scaled(0.5)
-                .translated((-extent / 4.0, extent / 4.0, -1.0))
+                .translated((-extent / 4.0, extent / 8.0, -floor_length / 8.0))
                 .into(),
             SceneNode::from(base_idol.clone())
                 .scaled(0.5)
-                .translated((extent / 4.0, -extent / 4.0, 0.0))
+                .translated((extent / 4.0, -extent / 8.0, floor_length / 8.0))
                 .into(),
         ]),
     ];
@@ -202,9 +225,9 @@ fn temple_floor_2() -> SceneNode {
     for (i, idol) in idols.into_iter().enumerate() {
         let x = section_width * (i + 1) as f64 + section_spacing * i as f64
               // Center in the image and section width
-              - floor_width / 2.0 - section_width / 2.0;
+              - floor_width / 2.0 - section_width / 2.0 + column_diameter / 2.0;
         nodes.push(
-            idol.translated((x, floor_y_offset + floor_height / 2.0, floor_front_z)).into()
+            idol.translated((x, floor_y_offset + column_height / 2.0, 0.0)).into()
         );
     }
 
@@ -212,15 +235,7 @@ fn temple_floor_2() -> SceneNode {
 }
 
 /// A cylinderical column with center at its bottom middle
-fn cylinder_column() -> SceneNode {
-    let mat_column = Arc::new(Material {
-        //TODO: Replace this material
-        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
-        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
-        shininess: 25.0,
-        ..Material::default()
-    });
-
+fn cylinder_column(mat_column: Arc<Material>) -> SceneNode {
     SceneNode::from(vec![
         SceneNode::from(Geometry::new(Cube, mat_column.clone()))
             .scaled((3.2, 1.0, 3.2))
