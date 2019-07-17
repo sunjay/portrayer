@@ -32,17 +32,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .translated((0.0, 10.0, 0.0))
                 .into(),
 
-            SceneNode::from(Geometry::new(Cube, mat_temple_block.clone()))
-                .scaled((82.32, 20.0, 20.480001))
-                .translated((0.0, 70.0, 0.0))
-                .into(),
-
             hills()?.into(),
             lake()?.into(),
 
             temple_floor_1().into(),
             temple_floor_2().into(),
             temple_floor_3()?.into(),
+            temple_floor_4()?.into(),
         ]).into(),
 
         lights: vec![
@@ -283,6 +279,43 @@ fn temple_floor_3() -> Result<SceneNode, Box<dyn Error>> {
         SceneNode::from(puppet.clone())
             .rotated_y(Radians::from_degrees(-90.0))
             .translated((55.1, 0.0, 0.0))
+            .into(),
+    ]))
+}
+
+fn temple_floor_4() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_crystal = Arc::new(Material {
+        //TODO: Replace this material
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let monkey_model = Arc::new(MeshData::load_obj("assets/monkey.obj")?);
+    let teapot_model = Arc::new(MeshData::load_obj("assets/teapot.obj")?);
+    let cow_model = Arc::new(MeshData::load_obj("assets/cow.obj")?);
+
+    Ok(SceneNode::from(vec![
+        // Monkey
+        SceneNode::from(Geometry::new(KDMesh::new(&*monkey_model, Shading::Smooth), mat_crystal.clone()))
+            .scaled(8.0)
+            .rotated_xzy((Radians::from_degrees(-34.9072), Radians::from_degrees(25.0), Radians::from_degrees(0.0)))
+            .translated((-30.0, 64.214905, 1.0))
+            .into(),
+
+        // Teapot
+        SceneNode::from(Geometry::new(KDMesh::new(&*teapot_model, Shading::Smooth), mat_crystal.clone()))
+            .scaled(0.6)
+            .rotated_y(Radians::from_degrees(-55.0))
+            .translated((0.0, 59.857296, 0.0))
+            .into(),
+
+        // Cow
+        SceneNode::from(Geometry::new(KDMesh::new(&*cow_model, Shading::Smooth), mat_crystal.clone()))
+            .scaled(1.5)
+            .rotated_y(Radians::from_degrees(-125.0))
+            .translated((30.0, 65.31517, 0.0))
             .into(),
     ]))
 }
