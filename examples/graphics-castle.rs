@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         lights: vec![
             Light {
-                position: Vec3 {x: 50.0, y: 110.0, z: -120.0},
+                position: Vec3 {x: 65.0, y: 110.0, z: -120.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
                 ..Light::default()
             },
