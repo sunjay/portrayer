@@ -8,7 +8,7 @@ use rand::{Rng, SeedableRng, rngs::StdRng};
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Sphere, Cylinder, Mesh, MeshData, Shading},
+    primitive::{Cube, Sphere, Cylinder, MeshData, Shading},
     kdtree::KDMesh,
     material::{Material, WATER_REFRACTION_INDEX},
     light::Light,
@@ -64,7 +64,27 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
-    let castle_model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
+    let mat_puppet = Arc::new(Material {
+        //TODO: Replace this material
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
 
-    Ok(SceneNode::from(Geometry::new(Mesh::new(castle_model, Shading::Flat), mat_castle_walls.clone())))
+    let castle_model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
+    let puppet_castle_left_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_left_tower.obj")?);
+    let puppet_castle_right_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_right_tower.obj")?);
+
+    Ok(SceneNode::from(vec![
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_model, Shading::Flat), mat_castle_walls.clone()))
+            .into(),
+
+        SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_left_tower_model, Shading::Smooth), mat_puppet.clone()))
+            .translated((30.0, 33.6, 19.0))
+            .into(),
+        SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_right_tower_model, Shading::Smooth), mat_puppet.clone()))
+            .translated((-30.0, 33.6, 19.0))
+            .into(),
+    ]))
 }
