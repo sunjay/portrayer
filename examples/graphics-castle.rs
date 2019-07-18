@@ -83,8 +83,16 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_left_tower_model, Shading::Smooth), mat_puppet.clone()))
             .translated((30.0, 33.6, 19.0))
             .into(),
+        SceneNode::from(Geometry::new(Cylinder, mat_castle_walls.clone()))
+            .scaled(10.0)
+            .translated((30.0, 5.0, 20.0))
+            .into(),
         SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_right_tower_model, Shading::Smooth), mat_puppet.clone()))
             .translated((-30.0, 33.6, 19.0))
+            .into(),
+        SceneNode::from(Geometry::new(Cylinder, mat_castle_walls.clone()))
+            .scaled(10.0)
+            .translated((-30.0, 5.0, 20.0))
             .into(),
     ]))
 }
