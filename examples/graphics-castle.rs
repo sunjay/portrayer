@@ -25,6 +25,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .scaled(1.4)
                 .translated((0.0, 0.0, -229.0))
                 .into(),
+
+            lake()?.into(),
+            land()?.into(),
         ]).into(),
 
         lights: vec![
@@ -78,14 +81,8 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
-    let mat_grass = Arc::new(Material {
-        diffuse: Rgb {r: 0.376, g: 0.502, b: 0.22},
-        ..Material::default()
-    });
-
     let castle_model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
     let castle_stairs_side = Arc::new(MeshData::load_obj("assets/castle_stairs_side.obj")?);
-    let castle_hill_model = Arc::new(MeshData::load_obj("assets/castle_hill.obj")?);
     let puppet_castle_left_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_left_tower.obj")?);
     let puppet_castle_right_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_right_tower.obj")?);
 
@@ -98,10 +95,6 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
         SceneNode::from(Geometry::new(KDMesh::new(&castle_stairs_side, Shading::Flat), mat_stairs_side.clone()))
             .translated((11.0, 5.0, 19.0))
-            .into(),
-
-        SceneNode::from(Geometry::new(KDMesh::new(&castle_hill_model, Shading::Smooth), mat_grass.clone()))
-            .translated((0.0, 3.75, -15.75))
             .into(),
 
         SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_left_tower_model, Shading::Smooth), mat_puppet.clone()))
@@ -117,6 +110,59 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         SceneNode::from(Geometry::new(Cylinder, mat_castle_walls.clone()))
             .scaled(10.0)
             .translated((-30.0, 5.0, 20.0))
+            .into(),
+    ]))
+}
+
+fn lake() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_water = Arc::new(Material {
+        diffuse: Rgb {r: 0.0, g: 0.0, b: 0.1},
+        specular: Rgb {r: 0.5, g: 0.5, b: 0.5},
+        shininess: 100.0,
+        reflectivity: 0.9,
+        glossy_side_length: 1.0,
+        refraction_index: WATER_REFRACTION_INDEX,
+        ..Material::default()
+    });
+
+    let mat_dirt = Arc::new(Material {
+        // Color of algae makes the water blue!
+        diffuse: Rgb {r: 0.592, g: 0.671, b: 0.055},
+        ..Material::default()
+    });
+
+    let castle_water_dirt_model = Arc::new(MeshData::load_obj("assets/castle_water_dirt.obj")?);
+
+    Ok(SceneNode::from(vec![
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_water_dirt_model, Shading::Flat), mat_dirt))
+            .translated((0.0, -62.0, 125.0))
+            .into(),
+
+        SceneNode::from(Geometry::new(Cube, mat_water))
+            .scaled((640.0, 125.0, 250.0))
+            .translated((0.0, -62.0, 125.0))
+            .into(),
+    ]))
+}
+
+fn land() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_grass = Arc::new(Material {
+        diffuse: Rgb {r: 0.376, g: 0.502, b: 0.22},
+        ..Material::default()
+    });
+
+    let castle_hill_model = Arc::new(MeshData::load_obj("assets/castle_hill.obj")?);
+
+    Ok(SceneNode::from(vec![
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_hill_model, Shading::Smooth), mat_grass.clone()))
+            .translated((0.0, 3.75, -15.75))
+            .scaled(1.4)
+            .translated((0.0, 0.0, -229.0))
+            .into(),
+
+        SceneNode::from(Geometry::new(Cube, mat_grass.clone()))
+            .scaled((640.0, 6.0, 400.0))
+            .translated((0.0, -2.0, -200.0))
             .into(),
     ]))
 }
