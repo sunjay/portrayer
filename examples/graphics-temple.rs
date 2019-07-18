@@ -2,7 +2,11 @@
 //! Author: Sunjay Varma
 
 use std::error::Error;
+use std::iter::once;
 use std::sync::Arc;
+use std::collections::VecDeque;
+
+use rand::{Rng, SeedableRng, rngs::StdRng};
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
@@ -59,8 +63,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(25.0),
     };
 
-    let mut image = Image::new("graphics-temple.png", 1920, 1080)?;
+    // let mut image = Image::new("graphics-temple.png", 1920, 1080)?;
+    let mut image = Image::new("graphics-temple.png", 533, 300)?;
 
+    // image.slice_mut((152, 128), (382, 162)).render::<RenderProgress, _>(&scene, cam,
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.529, g: 0.808, b: 0.922} * (1.0 - uv.v) + Rgb {r: 0.086, g: 0.38, b: 0.745} * uv.v);
 
@@ -112,7 +118,64 @@ fn lake() -> Result<SceneNode, Box<dyn Error>> {
 }
 
 fn temple_floor_1() -> SceneNode {
-    SceneNode::from(vec![])
+    // Generates a maze pattern around the entire floor
+    let floor_width = 240.0;
+    let floor_length = 40.0;
+    let floor_height = 20.0;
+
+    // This number MUST evenly divide floor_width AND floor_length AND floor_height
+    let cell_size = 5.0;
+
+    let total_width = floor_width * 2.0 + floor_length * 2.0;
+    let total_height = floor_height;
+
+    let maze_cols = (total_width / cell_size) as usize;
+    let maze_rows = (total_height / cell_size) as usize;
+    assert_eq!(maze_cols as f64 * cell_size, total_width, "bug: cell size should evenly divide floor width");
+    assert_eq!(maze_rows as f64 * cell_size, total_height, "bug: cell size should evenly divide floor height");
+
+    let mut maze = vec![Cell::Filled; maze_cols * maze_rows];
+    generate_maze(&mut maze, maze_rows, maze_cols, (2, 0));
+
+    // Generate the floor walls via the maze
+    let mut nodes = Vec::new();
+
+    let mat_maze = Arc::new(Material {
+        //TODO: Replace this material
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+    let cell = Arc::new(SceneNode::from(Geometry::new(Cube, mat_maze))
+        .scaled(cell_size));
+
+    // The number of columns of the maze along the x-axis (front and back)
+    let x_cols = (floor_width / cell_size) as usize;
+    // The number of columns of the maze along the z-axis (left and right)
+    let z_cols = (floor_length / cell_size) as usize;
+
+    //TODO: NEED TO ACCOUNT FOR CORNERS (-4 number of columns)
+
+    // Draw the front and back
+    for i in 0..x_cols {
+        let x = i as f64 * cell_size;
+
+        for j in 0..maze_rows {
+            let y = j as f64 * cell_size;
+        }
+    }
+
+    // Draw the left and right
+    for i in 0..z_cols {
+        let x = i as f64 * cell_size;
+
+        for j in 0..maze_rows {
+            let y = j as f64 * cell_size;
+        }
+    }
+
+    SceneNode::from(nodes)
 }
 
 fn temple_floor_2() -> SceneNode {
@@ -345,4 +408,55 @@ fn cylinder_column(mat_column: Arc<Material>) -> SceneNode {
             .scaled((2.0, 6.0, 2.0))
             .into(),
     ]).translated((0.0, 4.3, 0.0))
+}
+
+/// A cell in the maze
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Cell {
+    Empty,
+    Filled,
+    // Spaces that will not be traversed by the generator
+    Reserved,
+}
+
+/// Fills the given cells with a maze. It is expected that the maze is initially filled completely
+/// with walls.
+fn generate_maze(
+    cells: &mut [Cell],
+    rows: usize,
+    cols: usize,
+    (start_row, start_col): (usize, usize),
+) {
+    assert_eq!(cells.len(), rows * cols);
+
+    //TODO: Generate an actual maze
+    // let mut set_cell = |row, col, value| cells[row * cols + col] = value;
+    // let adjacents = |row, col| {
+    //     let above = if row > 0 { Some((row - 1, col)) } else { None };
+    //     let below = if row < rows-1 { Some((row + 1, col)) } else { None };
+    //     let left = if col > 0 { Some((row, col - 1)) } else { None };
+    //     let right = if col < cols-1 { Some((row, col + 1)) } else { None };
+    //
+    //     above.into_iter().chain(below).chain(left).chain(right)
+    // };
+
+    // Want a random maze but want the same one every time
+    let mut rng = StdRng::seed_from_u64(193920103958);
+
+    //TODO: Delete this placeholder code that just fills in random values
+    for cell in &mut cells[..] {
+        if *cell == Cell::Reserved {
+            continue;
+        }
+
+        *cell = if rng.gen() { Cell::Filled } else { Cell::Empty };
+    }
+    cells[start_row * cols + start_col] = Cell::Empty;
+
+    // // Using a randomized Prim's algorithm as described here:
+    // // https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_Prim's_algorithm
+    // set_cell(start_row, start_col, Cell::Empty);
+    //
+    // let mut walls = VecDeque::new();
+    // walls.extend(adjacents(start_row, start_col));
 }
