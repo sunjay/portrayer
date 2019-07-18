@@ -6,7 +6,7 @@ use crate::scene::Scene;
 use crate::material::Material;
 
 /// Represents the result of a ray intersection and stores information about it
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RayIntersection {
     /// The smallest positive value of t for which the given ray intersects the target. Note that
     /// the smaller the t value, the closer the intersection is to the origin of the ray.
