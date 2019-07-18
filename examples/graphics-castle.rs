@@ -64,6 +64,14 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
+    let mat_stairs_side = Arc::new(Material {
+        //TODO: Replace this material
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
     let mat_puppet = Arc::new(Material {
         //TODO: Replace this material
         diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
@@ -72,12 +80,30 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
+    let mat_grass = Arc::new(Material {
+        diffuse: Rgb {r: 0.376, g: 0.502, b: 0.22},
+        ..Material::default()
+    });
+
     let castle_model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
+    let castle_stairs_side = Arc::new(MeshData::load_obj("assets/castle_stairs_side.obj")?);
+    let castle_hill_model = Arc::new(MeshData::load_obj("assets/castle_hill.obj")?);
     let puppet_castle_left_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_left_tower.obj")?);
     let puppet_castle_right_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_right_tower.obj")?);
 
     Ok(SceneNode::from(vec![
         SceneNode::from(Geometry::new(KDMesh::new(&castle_model, Shading::Flat), mat_castle_walls.clone()))
+            .into(),
+
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_stairs_side, Shading::Flat), mat_stairs_side.clone()))
+            .translated((-11.0, 5.0, 19.0))
+            .into(),
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_stairs_side, Shading::Flat), mat_stairs_side.clone()))
+            .translated((11.0, 5.0, 19.0))
+            .into(),
+
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_hill_model, Shading::Smooth), mat_grass.clone()))
+            .translated((0.0, 3.75, -15.75))
             .into(),
 
         SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_left_tower_model, Shading::Smooth), mat_puppet.clone()))
