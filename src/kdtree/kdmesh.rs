@@ -88,12 +88,10 @@ mod tests {
     use crate::light::Light;
 
     #[test]
-    #[ignore]
     fn mesh_equivalence() -> Result<(), Box<dyn Error>> {
         // Test that all the same points are hit for both meshes and k-d meshes
 
         let mat_castle_walls = Arc::new(Material {
-            //TODO: Replace this material
             diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
             specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
             shininess: 25.0,

@@ -93,7 +93,9 @@ impl BoundingBox {
 
     /// Returns the maximum distance between any two points within the bounding box
     pub fn extent(&self) -> f64 {
-        (self.max - self.min).magnitude()
+        //HACK: Using magnitude_squared instead of magnitude or else the k-d tree will miss points.
+        //TODO: Find a way to do this without the hack.
+        (self.max - self.min).magnitude_squared()
     }
 
     /// Returns the ray parameter value for which this bounding box will be hit by the given ray
