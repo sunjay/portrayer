@@ -45,10 +45,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(25.0),
     };
 
-    // let mut image = Image::new("graphics-castle.png", 1920, 1080)?;
-    let mut image = Image::new("graphics-castle.png", 533, 300)?;
+    let mut image = Image::new("graphics-castle.png", 1920, 1080)?;
 
-    // image.slice_mut((152, 128), (382, 162)).render::<RenderProgress, _>(&scene, cam,
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.529, g: 0.808, b: 0.922} * (1.0 - uv.v) + Rgb {r: 0.086, g: 0.38, b: 0.745} * uv.v);
 
