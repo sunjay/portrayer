@@ -71,3 +71,90 @@ impl RayHit for KDMesh {
         self.triangles.bounds().ray_hit(ray, t_range)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::error::Error;
+
+    use rayon::prelude::*;
+
+    use crate::math::{Rgb, Radians};
+    use crate::primitive::{Mesh, MeshData, Shading};
+    use crate::material::Material;
+    use crate::camera::{Camera, CameraSettings};
+    use crate::scene::{HierScene, SceneNode, Geometry};
+    use crate::light::Light;
+
+    #[test]
+    #[ignore]
+    fn mesh_equivalence() -> Result<(), Box<dyn Error>> {
+        // Test that all the same points are hit for both meshes and k-d meshes
+
+        let mat_castle_walls = Arc::new(Material {
+            //TODO: Replace this material
+            diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+            specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+            shininess: 25.0,
+            ..Material::default()
+        });
+
+        let model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
+        let scene_kd_mesh = HierScene {
+            root: SceneNode::from(Geometry::new(KDMesh::new(&model, Shading::Flat), mat_castle_walls.clone()))
+                .scaled(1.4)
+                .translated((0.0, 0.0, -229.0))
+                .into(),
+
+            lights: vec![
+                Light {
+                    position: Vec3 {x: 50.0, y: 110.0, z: -120.0},
+                    color: Rgb {r: 0.9, g: 0.9, b: 0.9},
+                    ..Light::default()
+                }
+            ],
+            ambient: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        };
+        let scene_mesh = HierScene {
+            root: SceneNode::from(Geometry::new(Mesh::new(model, Shading::Flat), mat_castle_walls.clone()))
+                .scaled(1.4)
+                .translated((0.0, 0.0, -229.0))
+                .into(),
+
+            lights: vec![
+                Light {
+                    position: Vec3 {x: 50.0, y: 110.0, z: -120.0},
+                    color: Rgb {r: 0.9, g: 0.9, b: 0.9},
+                    ..Light::default()
+                }
+            ],
+
+            ambient: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        };
+
+        let cam = CameraSettings {
+            eye: (0.0, 120.0, 240.0).into(),
+            center: (0.0, 100.0, -24.0).into(),
+            up: Vec3::up(),
+            fovy: Radians::from_degrees(25.0),
+        };
+        let width = 533.0;
+        let height = 300.0;
+        let camera = Camera::new(cam, (width, height));
+
+        // Ray cast against the front of the monkey's face
+        let n = 100000;
+        (0..n).into_par_iter().zip((0..n).into_par_iter()).for_each(|(i, j)| {
+            let x = width * i as f64 / n as f64;
+            let y = height * j as f64 / n as f64;
+
+            let ray = camera.ray_at((x, y));
+
+            assert_eq!(ray.color(&scene_mesh, Rgb::black(), 0), ray.color(&scene_kd_mesh, Rgb::black(), 0),
+                "pixels at (x={}, y={}) were not the same", x, y);
+        });
+
+        Ok(())
+    }
+}
