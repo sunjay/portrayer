@@ -65,6 +65,14 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
+    let mat_castle_door = Arc::new(Material {
+        //TODO: Replace this material
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
     let mat_castle_window_frames = Arc::new(Material {
         //TODO: Replace this material
         diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
@@ -90,6 +98,8 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     });
 
     let castle_model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
+    let castle_door_model = Arc::new(MeshData::load_obj("assets/castle_door.obj")?);
+    let castle_door_arch_model = Arc::new(MeshData::load_obj("assets/castle_door_arch.obj")?);
     let castle_towers_model = Arc::new(MeshData::load_obj("assets/castle_towers.obj")?);
     let castle_window_frames_model = Arc::new(MeshData::load_obj("assets/castle_window_frames.obj")?);
     let castle_stairs_side = Arc::new(MeshData::load_obj("assets/castle_stairs_side.obj")?);
@@ -105,6 +115,13 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
         SceneNode::from(Geometry::new(KDMesh::new(&castle_window_frames_model, Shading::Flat), mat_castle_window_frames.clone()))
             .translated((0.0, 83.739685, -3.0))
+            .into(),
+
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_door_model, Shading::Flat), mat_castle_door.clone()))
+            .translated((0.0, 21.739681, 10.0))
+            .into(),
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_door_arch_model, Shading::Flat), mat_castle_door.clone()))
+            .translated((0.0, 42.0, 9.0))
             .into(),
 
         SceneNode::from(Geometry::new(KDMesh::new(&castle_stairs_side, Shading::Flat), mat_stairs_side.clone()))

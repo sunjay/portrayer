@@ -125,7 +125,7 @@ fn make_castle() -> Result<SceneNode, Box<dyn Error>> {
     );
 
     // Castle door
-    let castle_door_model = Arc::new(MeshData::load_obj("assets/castle_door.obj")?);
+    let castle_door_model = Arc::new(MeshData::load_obj("assets/prim_castle_door.obj")?);
     nodes.push(
         SceneNode::from(Geometry::new(Mesh::new(castle_door_model, Shading::Smooth), mat_castle_door))
             .translated((0.0, 1.1, castle_length/2.0 + 0.1))
