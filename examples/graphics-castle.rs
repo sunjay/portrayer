@@ -178,8 +178,34 @@ fn land() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
 
         SceneNode::from(Geometry::new(Cube, mat_grass.clone()))
-            .scaled((640.0, 6.0, 400.0))
-            .translated((0.0, -2.0, -200.0))
+            .scaled((1280.0, 132.0, 400.0))
+            .translated((0.0, -65.0, -200.0))
             .into(),
+
+        outdoor_maze().into(),
     ]))
+}
+
+fn outdoor_maze() -> SceneNode {
+    let mat_maze = Arc::new(Material {
+        diffuse: Rgb {r: 0.038907, g: 0.117096, b: 0.040216},
+        ..Material::default()
+    });
+
+    SceneNode::from(vec![
+        //TODO: All of these cubes are placeholders
+        SceneNode::from(Geometry::new(Cube, mat_maze.clone()))
+            .scaled((1280.0, 8.0, 160.0))
+            .translated((0.0, 5.0, -100.0))
+            .into(),
+
+        SceneNode::from(Geometry::new(Cube, mat_maze.clone()))
+            .scaled((448.0, 8.0, 1040.0))
+            .translated((360.0, 5.0, -690.0))
+            .into(),
+        SceneNode::from(Geometry::new(Cube, mat_maze.clone()))
+            .scaled((448.0, 8.0, 1040.0))
+            .translated((-360.0, 5.0, -690.0))
+            .into(),
+    ])
 }
