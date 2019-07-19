@@ -32,8 +32,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         lights: vec![
             Light {
-                position: Vec3 {x: 65.0, y: 110.0, z: -120.0},
+                position: Vec3 {x: 65.0, y: 130.0, z: -120.0},
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
+                ..Light::default()
+            },
+
+            // Dim lights inside each tower to light inside
+            Light {
+                position: Vec3 {x: -42.0, y: 112.0, z: -229.0},
+                color: Rgb {r: 0.3, g: 0.3, b: 0.3},
+                ..Light::default()
+            },
+            Light {
+                position: Vec3 {x: 42.0, y: 112.0, z: -229.0},
+                color: Rgb {r: 0.3, g: 0.3, b: 0.3},
+                ..Light::default()
+            },
+            Light {
+                position: Vec3 {x: 0.0, y: 160.0, z: -260.0},
+                color: Rgb {r: 0.3, g: 0.3, b: 0.3},
                 ..Light::default()
             },
         ],
@@ -98,10 +115,9 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     });
 
     let castle_model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
+    let castle_window_frames_model = Arc::new(MeshData::load_obj("assets/castle_window_frames.obj")?);
     let castle_door_model = Arc::new(MeshData::load_obj("assets/castle_door.obj")?);
     let castle_door_arch_model = Arc::new(MeshData::load_obj("assets/castle_door_arch.obj")?);
-    let castle_towers_model = Arc::new(MeshData::load_obj("assets/castle_towers.obj")?);
-    let castle_window_frames_model = Arc::new(MeshData::load_obj("assets/castle_window_frames.obj")?);
     let castle_stairs_side = Arc::new(MeshData::load_obj("assets/castle_stairs_side.obj")?);
     let puppet_castle_left_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_left_tower.obj")?);
     let puppet_castle_right_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_right_tower.obj")?);
@@ -110,11 +126,8 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         SceneNode::from(Geometry::new(KDMesh::new(&castle_model, Shading::Flat), mat_castle_walls.clone()))
             .translated((0.0, 30.0, -30.0))
             .into(),
-        SceneNode::from(Geometry::new(KDMesh::new(&castle_towers_model, Shading::Smooth), mat_castle_walls.clone()))
-            .translated((0.0, 55.0, -24.0))
-            .into(),
         SceneNode::from(Geometry::new(KDMesh::new(&castle_window_frames_model, Shading::Flat), mat_castle_window_frames.clone()))
-            .translated((0.0, 83.739685, -3.0))
+            .translated((0.0, 105.5746, -2.25))
             .into(),
 
         SceneNode::from(Geometry::new(KDMesh::new(&castle_door_model, Shading::Flat), mat_castle_door.clone()))
