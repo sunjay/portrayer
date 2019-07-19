@@ -100,7 +100,7 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         SceneNode::from(Geometry::new(KDMesh::new(&castle_model, Shading::Flat), mat_castle_walls.clone()))
             .translated((0.0, 30.0, -30.0))
             .into(),
-        SceneNode::from(Geometry::new(KDMesh::new(&castle_towers_model, Shading::Flat), mat_castle_walls.clone()))
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_towers_model, Shading::Smooth), mat_castle_walls.clone()))
             .translated((0.0, 55.0, -24.0))
             .into(),
         SceneNode::from(Geometry::new(KDMesh::new(&castle_window_frames_model, Shading::Flat), mat_castle_window_frames.clone()))
