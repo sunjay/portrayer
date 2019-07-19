@@ -208,8 +208,8 @@ fn land() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
 
         SceneNode::from(Geometry::new(Cube, mat_grass.clone()))
-            .scaled((2560.0, 132.0, 400.0))
-            .translated((0.0, -65.0, -200.0))
+            .scaled((2560.0, 132.0, 1040.0))
+            .translated((0.0, -65.0, -520.0))
             .into(),
 
         outdoor_maze().into(),
