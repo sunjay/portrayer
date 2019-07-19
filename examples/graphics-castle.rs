@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ..Light::default()
             },
             Light {
-                position: Vec3 {x: 0.0, y: 160.0, z: -260.0},
+                position: Vec3 {x: 0.0, y: 129.0, z: -260.0},
                 color: Rgb {r: 0.3, g: 0.3, b: 0.3},
                 ..Light::default()
             },
@@ -127,7 +127,7 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
             .translated((0.0, 30.0, -30.0))
             .into(),
         SceneNode::from(Geometry::new(KDMesh::new(&castle_window_frames_model, Shading::Flat), mat_castle_window_frames.clone()))
-            .translated((0.0, 105.5746, -2.25))
+            .translated((0.0, 83.5746, -2.25))
             .into(),
 
         SceneNode::from(Geometry::new(KDMesh::new(&castle_door_model, Shading::Flat), mat_castle_door.clone()))
