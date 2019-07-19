@@ -1,3 +1,5 @@
+use std::env;
+
 use crate::scene::Scene;
 use crate::math::Vec3;
 use crate::bounding_box::Bounds;
@@ -6,6 +8,8 @@ use crate::flat_scene::{FlatScene, FlatSceneNode};
 use super::{KDTreeNode, KDLeaf, NodeBounds, PartitionConfig};
 
 /// The maximum depth of any k-d tree
+///
+/// Can be set via the KD_DEPTH environment variable
 const MAX_TREE_DEPTH: usize = 10;
 
 /// A scene organized as a KDTree for fast intersections
@@ -27,7 +31,13 @@ impl From<FlatScene> for KDTreeScene {
             target_max_merit: 3,
             max_tries: 10,
         };
-        let root = leaf.partitioned(Vec3::unit_x(), MAX_TREE_DEPTH, part_conf);
+
+        // Allow overriding the max tree depth for bigger scenes
+        let max_tree_depth = env::var("KD_DEPTH").ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(MAX_TREE_DEPTH);
+
+        let root = leaf.partitioned(Vec3::unit_x(), max_tree_depth, part_conf);
 
         Self {root, lights, ambient}
     }

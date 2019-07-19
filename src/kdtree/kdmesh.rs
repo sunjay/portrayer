@@ -1,3 +1,4 @@
+use std::env;
 use std::sync::Arc;
 use std::ops::Range;
 
@@ -9,6 +10,8 @@ use crate::ray::{RayHit, Ray, RayIntersection};
 use super::{KDTreeNode, KDLeaf, PartitionConfig, NodeBounds};
 
 /// The maximum depth of any k-d tree
+///
+/// Can be set via the KD_MESH_DEPTH environment variable
 const MAX_TREE_DEPTH: usize = 10;
 
 /// A Mesh backed by a k-d tree to store the triangles
@@ -43,7 +46,13 @@ impl KDMesh {
             target_max_merit: 3,
             max_tries: 10,
         };
-        let root = leaf.partitioned(Vec3::unit_x(), MAX_TREE_DEPTH, part_conf);
+
+        // Allow overriding the max tree depth for bigger scenes
+        let max_tree_depth = env::var("KD_MESH_DEPTH").ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(MAX_TREE_DEPTH);
+
+        let root = leaf.partitioned(Vec3::unit_x(), max_tree_depth, part_conf);
 
         Self {triangles: Arc::new(root)}
     }
