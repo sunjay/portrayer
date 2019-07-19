@@ -8,7 +8,7 @@ use rand::{Rng, SeedableRng, rngs::StdRng};
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Sphere, Cylinder, MeshData, Shading},
+    primitive::{Cube, Cylinder, MeshData, Shading},
     kdtree::KDMesh,
     material::{Material, WATER_REFRACTION_INDEX},
     light::Light,
@@ -28,6 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             lake()?.into(),
             land()?.into(),
+            outdoor_maze().into(),
         ]).into(),
 
         lights: vec![
@@ -211,31 +212,131 @@ fn land() -> Result<SceneNode, Box<dyn Error>> {
             .scaled((2560.0, 132.0, 1040.0))
             .translated((0.0, -65.0, -520.0))
             .into(),
-
-        outdoor_maze().into(),
     ]))
 }
 
 fn outdoor_maze() -> SceneNode {
+    // Needs to be a size that works proportionally with the rest of the scene
+    let cell_width = 4.0;
+    let cell_length = cell_width;
+
+    // Chosen to be evenly divisible by cell_width
+    let maze_width = 1660.0;
+    // Chosen to be evenly divisible by cell_length
+    let maze_length = 1280.0;
+    // Constant for all cells / the whole maze
+    let maze_height = 8.0;
+
+    // Area around the castle
+    // Chosen to be evenly divisible by cell_width
+    let castle_area_width = 312.0;
+    // Chosen to be evenly divisible by cell_length
+    let castle_area_length = 160.0;
+    // Centered at the castle but then offset relative to maze pos (see last line of this function)
+    let castle_pos = Vec3 {x: 0.0, y: 0.0, z: -660.0 - (-260.0)};
+
+    // Entrance position (assumed to be in the bottom row)
+    let entrance_x = -100.0;
+
+    let maze_cols = (maze_width / cell_width) as usize;
+    let maze_rows = (maze_length / cell_length) as usize;
+
+    // Assume last row
+    let entrance_row = maze_rows - 1;
+    let entrance_col = ((entrance_x + maze_width / 2.0) / cell_width) as usize;
+
+    // Find the boundary around the castle
+    let back_corner_row = ((castle_pos.z - castle_area_length/2.0 + maze_length / 2.0) / cell_length) as usize;
+    let back_corner_col = ((castle_pos.x - castle_area_width/2.0 + maze_width / 2.0) / cell_width) as usize;
+    let front_corner_row = ((castle_pos.z + castle_area_length/2.0 + maze_length / 2.0) / cell_length) as usize;
+    let front_corner_col = ((castle_pos.x + castle_area_width/2.0 + maze_width / 2.0) / cell_width) as usize;
+
+    let mut maze = Maze::new(maze_rows, maze_cols);
+    maze.reserve((back_corner_row, back_corner_col), (front_corner_row, front_corner_col));
+    maze.fill_maze((entrance_row, entrance_col));
+
     let mat_maze = Arc::new(Material {
         diffuse: Rgb {r: 0.038907, g: 0.117096, b: 0.040216},
         ..Material::default()
     });
 
-    SceneNode::from(vec![
-        //TODO: All of these cubes are placeholders
-        SceneNode::from(Geometry::new(Cube, mat_maze.clone()))
-            .scaled((1280.0, 8.0, 160.0))
-            .translated((0.0, 5.0, -100.0))
-            .into(),
+    let mut nodes = Vec::new();
+    for (i, row) in maze.cells.iter().enumerate() {
+        let z = i as f64 * cell_length - maze_length / 2.0;
 
-        SceneNode::from(Geometry::new(Cube, mat_maze.clone()))
-            .scaled((672.0, 8.0, 1040.0))
-            .translated((490.0, 5.0, -690.0))
-            .into(),
-        SceneNode::from(Geometry::new(Cube, mat_maze.clone()))
-            .scaled((672.0, 8.0, 1040.0))
-            .translated((-490.0, 5.0, -690.0))
-            .into(),
-    ])
+        for (j, cell) in row.iter().enumerate() {
+            match cell {
+                Cell::Empty => continue,
+                Cell::Wall => {},
+            }
+
+            let x = j as f64 * cell_width - maze_width / 2.0;
+
+            nodes.push(
+                SceneNode::from(Geometry::new(Cube, mat_maze.clone()))
+                    .scaled((cell_width, maze_height, cell_length))
+                    .translated((x, 0.0, z))
+                    .into(),
+            );
+        }
+    }
+
+    // Translate the maze to its correct position in the scene
+    SceneNode::from(nodes).translated((0.0, maze_height/2.0 + 1.0, -660.0))
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Cell {
+    Empty,
+    Wall,
+}
+
+#[derive(Debug, Clone)]
+struct Maze {
+    /// The rows of the maze, stored row-wise
+    cells: Vec<Vec<Cell>>,
+}
+
+impl Maze {
+    pub fn new(rows: usize, cols: usize) -> Self {
+        Self {
+            cells: vec![vec![Cell::Wall; cols]; rows],
+        }
+    }
+
+    /// Reserves the given range of cells so that no walls will be placed there.
+    ///
+    /// The ranges are inclusive on both ends.
+    pub fn reserve(&mut self, (row1, col1): (usize, usize), (row2, col2): (usize, usize)) {
+        for row in row1..=row2 {
+            for col in col1..=col2 {
+                self.cells[row][col] = Cell::Empty;
+            }
+        }
+    }
+
+    /// Generate the maze by filling the cells starting at the given point
+    pub fn fill_maze(&mut self, (start_row, start_col): (usize, usize)) {
+        // Want a random maze but want the same one every time
+        let mut rng = StdRng::seed_from_u64(193920103958);
+
+        //TODO: Delete this placeholder code that just fills in random values
+        for row in &mut self.cells {
+            for cell in row {
+                if *cell == Cell::Empty {
+                    continue;
+                }
+
+                *cell = if rng.gen() { Cell::Wall } else { Cell::Empty };
+            }
+        }
+        self.cells[start_row][start_col] = Cell::Empty;
+
+        // // Using a randomized Prim's algorithm as described here:
+        // // https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_Prim's_algorithm
+        // set_cell(start_row, start_col, Cell::Empty);
+        //
+        // let mut walls = VecDeque::new();
+        // walls.extend(adjacents(start_row, start_col));
+    }
 }
