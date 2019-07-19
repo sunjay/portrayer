@@ -59,8 +59,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let cam = CameraSettings {
-        eye: (0.0, 111.25914, 539.31665).into(),
-        center: (0.0, -41.326401, -590.425537).into(),
+        eye: (0.0, 123.722778, 587.455566).into(),
+        center: (0.0, -28.862762, -542.286621).into(),
         up: Vec3::up(),
         fovy: Radians::from_degrees(25.0),
     };
@@ -208,7 +208,7 @@ fn land() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
 
         SceneNode::from(Geometry::new(Cube, mat_grass.clone()))
-            .scaled((1280.0, 132.0, 400.0))
+            .scaled((2560.0, 132.0, 400.0))
             .translated((0.0, -65.0, -200.0))
             .into(),
 
@@ -230,12 +230,12 @@ fn outdoor_maze() -> SceneNode {
             .into(),
 
         SceneNode::from(Geometry::new(Cube, mat_maze.clone()))
-            .scaled((448.0, 8.0, 1040.0))
-            .translated((360.0, 5.0, -690.0))
+            .scaled((672.0, 8.0, 1040.0))
+            .translated((490.0, 5.0, -690.0))
             .into(),
         SceneNode::from(Geometry::new(Cube, mat_maze.clone()))
-            .scaled((448.0, 8.0, 1040.0))
-            .translated((-360.0, 5.0, -690.0))
+            .scaled((672.0, 8.0, 1040.0))
+            .translated((-490.0, 5.0, -690.0))
             .into(),
     ])
 }
