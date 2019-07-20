@@ -11,7 +11,7 @@ use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
     primitive::{Cube, Cylinder, MeshData, Shading},
     kdtree::KDMesh,
-    material::{Material, WATER_REFRACTION_INDEX},
+    material::{Material, WATER_REFRACTION_INDEX, WINDOW_GLASS_REFRACTION_INDEX},
     light::Light,
     render::Image,
     reporter::RenderProgress,
@@ -100,6 +100,15 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
+    let mat_ceiling_glass = Arc::new(Material {
+        diffuse: Rgb {r: 0.088418, g: 0.249559, b: 0.067798},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 100.0,
+        reflectivity: 0.8,
+        refraction_index: WINDOW_GLASS_REFRACTION_INDEX,
+        ..Material::default()
+    });
+
     let mat_stairs_side = Arc::new(Material {
         //TODO: Replace this material
         diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
@@ -118,6 +127,7 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
 
     let castle_model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
     let castle_window_frames_model = Arc::new(MeshData::load_obj("assets/castle_window_frames.obj")?);
+    let castle_glass_ceilings_model = Arc::new(MeshData::load_obj("assets/castle_glass_ceilings.obj")?);
     let castle_door_model = Arc::new(MeshData::load_obj("assets/castle_door.obj")?);
     let castle_door_arch_model = Arc::new(MeshData::load_obj("assets/castle_door_arch.obj")?);
     let castle_stairs_side = Arc::new(MeshData::load_obj("assets/castle_stairs_side.obj")?);
@@ -130,6 +140,9 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
         SceneNode::from(Geometry::new(KDMesh::new(&castle_window_frames_model, Shading::Flat), mat_castle_window_frames.clone()))
             .translated((0.0, 83.5746, -2.25))
+            .into(),
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_glass_ceilings_model, Shading::Flat), mat_ceiling_glass.clone()))
+            .translated((0.0, 96.0, -23.0))
             .into(),
 
         SceneNode::from(Geometry::new(KDMesh::new(&castle_door_model, Shading::Flat), mat_castle_door.clone()))
