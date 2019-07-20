@@ -3,8 +3,10 @@
 
 use std::error::Error;
 use std::sync::Arc;
+use std::convert::TryInto;
+use std::collections::{VecDeque, HashSet};
 
-use rand::{Rng, SeedableRng, rngs::StdRng};
+use rand::{Rng, SeedableRng, rngs::StdRng, seq::SliceRandom};
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
@@ -66,8 +68,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(25.0),
     };
 
-    let mut image = Image::new("graphics-castle.png", 1920, 1080)?;
+    // let mut image = Image::new("graphics-castle.png", 1920, 1080)?;
+    let mut image = Image::new("graphics-castle.png", 533, 300)?;
 
+    // image.slice_mut((152, 128), (382, 162)).render::<RenderProgress, _>(&scene, cam,
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.529, g: 0.808, b: 0.922} * (1.0 - uv.v) + Rgb {r: 0.086, g: 0.38, b: 0.745} * uv.v);
 
@@ -217,11 +221,11 @@ fn land() -> Result<SceneNode, Box<dyn Error>> {
 
 fn outdoor_maze() -> SceneNode {
     // Needs to be a size that works proportionally with the rest of the scene
-    let cell_width = 4.0;
+    let cell_width = 8.0;
     let cell_length = cell_width;
 
     // Chosen to be evenly divisible by cell_width
-    let maze_width = 1660.0;
+    let maze_width = 1664.0;
     // Chosen to be evenly divisible by cell_length
     let maze_length = 1280.0;
     // Constant for all cells / the whole maze
@@ -253,7 +257,23 @@ fn outdoor_maze() -> SceneNode {
 
     let mut maze = Maze::new(maze_rows, maze_cols);
     maze.reserve((back_corner_row, back_corner_col), (front_corner_row, front_corner_col));
-    maze.fill_maze((entrance_row, entrance_col));
+    // maze.fill_maze((entrance_row, entrance_col));
+
+    {
+        let mut m = Maze::new(10, 10);
+        m.reserve((1, 1), (3, 3));
+        m.fill_maze((9, 2));
+
+        for r in &m.cells {
+            for c in r {
+                match c {
+                    Cell::Empty => print!("_"),
+                    Cell::Wall => print!("W"),
+                }
+            }
+            println!();
+        }
+    }
 
     let mat_maze = Arc::new(Material {
         diffuse: Rgb {r: 0.038907, g: 0.117096, b: 0.040216},
@@ -299,6 +319,9 @@ struct Maze {
 
 impl Maze {
     pub fn new(rows: usize, cols: usize) -> Self {
+        // Rest of the code relies on these being non-empty
+        assert!(rows > 0 && cols > 0);
+
         Self {
             cells: vec![vec![Cell::Wall; cols]; rows],
         }
@@ -317,26 +340,101 @@ impl Maze {
 
     /// Generate the maze by filling the cells starting at the given point
     pub fn fill_maze(&mut self, (start_row, start_col): (usize, usize)) {
+        let rows = self.cells.len();
+        let cols = self.cells[0].len();
+
+        // Utility function for finding the adjacents of a given cell and storing the result in a
+        // pre-allocated array
+        let find_adjacents = |adjacents: &mut [_; 4], row, col| {
+            adjacents[0] = if row > 0 { Some((row - 1, col)) } else { None };
+            adjacents[1] = if row < rows-1 { Some((row + 1, col)) } else { None };
+            adjacents[2] = if col > 0 { Some((row, col - 1)) } else { None };
+            adjacents[3] = if col < cols-1 { Some((row, col + 1)) } else { None };
+        };
+
+        // Utility function for finding the pairs of adjacents of a given cell and storing the
+        // result in a pre-allocated array
+        let find_adjacent_pairs = |adjacent_pairs: &mut [_; 2], row, col| {
+            let above = if row > 0 { Some((row - 1, col)) } else { None };
+            let below = if row < rows-1 { Some((row + 1, col)) } else { None };
+            let left = if col > 0 { Some((row, col - 1)) } else { None };
+            let right = if col < cols-1 { Some((row, col + 1)) } else { None };
+
+            adjacent_pairs[0] = above.and_then(|a| below.map(|b| (a, b)));
+            adjacent_pairs[1] = left.and_then(|a| right.map(|b| (a, b)));
+        };
+
         // Want a random maze but want the same one every time
         let mut rng = StdRng::seed_from_u64(193920103958);
 
-        //TODO: Delete this placeholder code that just fills in random values
-        for row in &mut self.cells {
-            for cell in row {
-                if *cell == Cell::Empty {
-                    continue;
-                }
+        // Reuse memory to store adjacents
+        let mut adjacents = [None; 4];
+        let mut adjacent_pairs = [None; 2];
 
-                *cell = if rng.gen() { Cell::Wall } else { Cell::Empty };
-            }
-        }
+        // Using a randomized Prim's algorithm as described here:
+        // https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_Prim's_algorithm
         self.cells[start_row][start_col] = Cell::Empty;
 
-        // // Using a randomized Prim's algorithm as described here:
-        // // https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_Prim's_algorithm
-        // set_cell(start_row, start_col, Cell::Empty);
-        //
-        // let mut walls = VecDeque::new();
-        // walls.extend(adjacents(start_row, start_col));
+        let mut walls = VecDeque::new();
+        find_adjacents(&mut adjacents, start_row, start_col);
+        walls.extend(adjacents.iter().flatten().cloned());
+
+        let mut seen = HashSet::new();
+        while let Some((row, col)) = walls.pop_front() {
+            if seen.contains(&(row, col)) {
+                continue;
+            }
+            seen.insert((row, col));
+
+            // Go through adjacent pairs in a random order so the maze has some variation
+            find_adjacent_pairs(&mut adjacent_pairs, row, col);
+            adjacent_pairs.shuffle(&mut rng);
+            for adj_pair in &adjacent_pairs {
+                if let &Some(((adj1_row, adj1_col), (adj2_row, adj2_col))) = adj_pair {
+                    // If only one of the cells divided by this wall is empty, make the wall into a
+                    // passage that connects to that empty tile
+                    match (self.cells[adj1_row][adj1_col], self.cells[adj2_row][adj2_col]) {
+                        (Cell::Empty, Cell::Wall) => {
+                            // Make a passage
+                            self.cells[row][col] = Cell::Empty;
+
+                            // Add the wall to the walls list
+                            walls.push_back((adj2_row, adj2_col));
+
+                            // Stop processing adjacents once we've created a passage
+                            break;
+                        },
+                        (Cell::Wall, Cell::Empty) => {
+                            // Same as above but for the other adjacent
+                            self.cells[row][col] = Cell::Empty;
+
+                            // Add the wall to the walls list
+                            walls.push_back((adj1_row, adj1_col));
+
+                            // Stop processing adjacents once we've created a passage
+                            break;
+                        },
+                        // Cannot create a passage
+                        _ => {}
+                    }
+                }
+            }
+
+            // Shuffle the list of walls for next time so we pick a random wall every time
+            let (front, back) = walls.as_mut_slices();
+            front.shuffle(&mut rng);
+            back.shuffle(&mut rng);
+
+            for r in &self.cells {
+                for c in r {
+                    match c {
+                        Cell::Empty => print!("_"),
+                        Cell::Wall => print!("W"),
+                    }
+                }
+                println!();
+            }
+            println!();
+        }
     }
 }
