@@ -327,10 +327,21 @@ impl Maze {
         // Utility function for finding the adjacents of a given cell and storing the result in a
         // pre-allocated array
         let find_adjacents = |adjacents: &mut [_; 4], row, col| {
-            adjacents[0] = if row > 0 { Some((row - 1, col)) } else { None };
-            adjacents[1] = if row < rows-1 { Some((row + 1, col)) } else { None };
-            adjacents[2] = if col > 0 { Some((row, col - 1)) } else { None };
-            adjacents[3] = if col < cols-1 { Some((row, col + 1)) } else { None };
+            // Leave the first and last row/column untouched
+            adjacents[0] = if row > 1 { Some((row - 1, col)) } else { None };
+            adjacents[1] = if row < rows-2 { Some((row + 1, col)) } else { None };
+            adjacents[2] = if col > 1 { Some((row, col - 1)) } else { None };
+            adjacents[3] = if col < cols-2 { Some((row, col + 1)) } else { None };
+        };
+
+        // Utility function for finding the diagonal adjacents of a given cell and storing the
+        // result in a pre-allocated array
+        let find_diagonal_adjacents = |adjacents: &mut [_; 4], row, col| {
+            // Leave the first and last row/column untouched
+            adjacents[0] = if row > 1 && col > 1 { Some((row - 1, col - 1)) } else { None };
+            adjacents[1] = if row < rows-2 && col > 1 { Some((row + 1, col - 1)) } else { None };
+            adjacents[2] = if row > 1 && col < cols-2 { Some((row - 1, col + 1)) } else { None };
+            adjacents[3] = if row < rows-2 && col < cols-2 { Some((row + 1, col + 1)) } else { None };
         };
 
         // Want a random maze but want the same one every time
@@ -358,15 +369,25 @@ impl Maze {
                 continue;
             }
 
-            find_adjacents(&mut adjacents, row, col);
+            // Diagonal lines of empty cells look ugly, so we filter them out
+            find_diagonal_adjacents(&mut adjacents, row, col);
+            let empty_diagonals = adjacents.iter()
+                .flatten()
+                .filter(|&&(row, col)| self.cells[row][col] == Cell::Empty)
+                .count();
+            if empty_diagonals > 1 {
+                continue;
+            }
 
+            // Compute adjacents later so we can reuse them
+            find_adjacents(&mut adjacents, row, col);
             let empty_adjs = adjacents.iter()
                 .flatten()
                 .filter(|&&(row, col)| self.cells[row][col] == Cell::Empty)
                 .count();
 
-            // Don't want to inadvertantly create any passages
-            if empty_adjs != 1 {
+            // Don't want to inadvertantly create any loops
+            if empty_adjs > 1 {
                 continue;
             }
 
@@ -375,15 +396,16 @@ impl Maze {
 
             // Add its adjacent walls to the queue in a random order
             adjacents.shuffle(&mut rng);
-            walls.extend(adjacents.iter()
+            let mut adj_walls = adjacents.iter()
                 .flatten()
                 .cloned()
-                .filter(|&(row, col)| self.cells[row][col] == Cell::Wall));
+                .filter(|&(row, col)| self.cells[row][col] == Cell::Wall);
 
-            // Shuffle the list of walls for next time so we pick a random wall every time
-            let (front, back) = walls.as_mut_slices();
-            front.shuffle(&mut rng);
-            back.shuffle(&mut rng);
+            // Go depth first to create longer paths
+            if let Some(wall) = adj_walls.next() {
+                walls.push_front(wall);
+            }
+            walls.extend(adj_walls);
         }
     }
 }
