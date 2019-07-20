@@ -109,6 +109,15 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
+    let mat_window_glass = Arc::new(Material {
+        diffuse: Rgb {r: 0.088418, g: 0.249559, b: 0.067798},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 100.0,
+        reflectivity: 0.8,
+        refraction_index: WINDOW_GLASS_REFRACTION_INDEX,
+        ..Material::default()
+    });
+
     let mat_stairs_side = Arc::new(Material {
         //TODO: Replace this material
         diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
@@ -135,6 +144,7 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     let puppet_castle_right_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_right_tower.obj")?);
 
     Ok(SceneNode::from(vec![
+        // Main castle body
         SceneNode::from(Geometry::new(KDMesh::new(&castle_model, Shading::Flat), mat_castle_walls.clone()))
             .translated((0.0, 30.0, -30.0))
             .into(),
@@ -145,6 +155,24 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
             .translated((0.0, 96.0, -23.0))
             .into(),
 
+        // Windows
+        SceneNode::from(Geometry::new(Cube, mat_window_glass.clone()))
+            .scaled((9.1, 0.05, 12.7))
+            .rotated_x(Radians::from_degrees(90.0))
+            .translated((-30.0, 70.7, 12.7))
+            .into(),
+        SceneNode::from(Geometry::new(Cube, mat_window_glass.clone()))
+            .scaled((9.1, 0.05, 12.7))
+            .rotated_x(Radians::from_degrees(90.0))
+            .translated((30.0, 70.7, 12.7))
+            .into(),
+        SceneNode::from(Geometry::new(Cube, mat_window_glass.clone()))
+            .scaled((13.4, 0.05, 18.8))
+            .rotated_x(Radians::from_degrees(90.0))
+            .translated((0.0, 79.4, -2.9))
+            .into(),
+
+        // Door
         SceneNode::from(Geometry::new(KDMesh::new(&castle_door_model, Shading::Flat), mat_castle_door.clone()))
             .translated((0.0, 21.739681, 10.0))
             .into(),
@@ -152,6 +180,7 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
             .translated((0.0, 42.0, 9.0))
             .into(),
 
+        // Stairs
         SceneNode::from(Geometry::new(KDMesh::new(&castle_stairs_side, Shading::Flat), mat_stairs_side.clone()))
             .translated((-11.0, 5.0, 19.0))
             .into(),
@@ -159,6 +188,7 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
             .translated((11.0, 5.0, 19.0))
             .into(),
 
+        // Statues / Guardians
         SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_left_tower_model, Shading::Smooth), mat_puppet.clone()))
             .translated((30.0, 33.6, 19.0))
             .into(),
