@@ -3,10 +3,9 @@
 
 use std::error::Error;
 use std::sync::Arc;
-use std::convert::TryInto;
 use std::collections::{VecDeque, HashSet};
 
-use rand::{Rng, SeedableRng, rngs::StdRng, seq::SliceRandom};
+use rand::{SeedableRng, rngs::StdRng, seq::SliceRandom};
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
@@ -221,7 +220,7 @@ fn land() -> Result<SceneNode, Box<dyn Error>> {
 
 fn outdoor_maze() -> SceneNode {
     // Needs to be a size that works proportionally with the rest of the scene
-    let cell_width = 8.0;
+    let cell_width = 4.0;
     let cell_length = cell_width;
 
     // Chosen to be evenly divisible by cell_width
@@ -257,23 +256,7 @@ fn outdoor_maze() -> SceneNode {
 
     let mut maze = Maze::new(maze_rows, maze_cols);
     maze.reserve((back_corner_row, back_corner_col), (front_corner_row, front_corner_col));
-    // maze.fill_maze((entrance_row, entrance_col));
-
-    {
-        let mut m = Maze::new(10, 10);
-        m.reserve((1, 1), (3, 3));
-        m.fill_maze((9, 2));
-
-        for r in &m.cells {
-            for c in r {
-                match c {
-                    Cell::Empty => print!("_"),
-                    Cell::Wall => print!("W"),
-                }
-            }
-            println!();
-        }
-    }
+    maze.fill_maze((entrance_row, entrance_col));
 
     let mat_maze = Arc::new(Material {
         diffuse: Rgb {r: 0.038907, g: 0.117096, b: 0.040216},
@@ -352,89 +335,57 @@ impl Maze {
             adjacents[3] = if col < cols-1 { Some((row, col + 1)) } else { None };
         };
 
-        // Utility function for finding the pairs of adjacents of a given cell and storing the
-        // result in a pre-allocated array
-        let find_adjacent_pairs = |adjacent_pairs: &mut [_; 2], row, col| {
-            let above = if row > 0 { Some((row - 1, col)) } else { None };
-            let below = if row < rows-1 { Some((row + 1, col)) } else { None };
-            let left = if col > 0 { Some((row, col - 1)) } else { None };
-            let right = if col < cols-1 { Some((row, col + 1)) } else { None };
-
-            adjacent_pairs[0] = above.and_then(|a| below.map(|b| (a, b)));
-            adjacent_pairs[1] = left.and_then(|a| right.map(|b| (a, b)));
-        };
-
         // Want a random maze but want the same one every time
         let mut rng = StdRng::seed_from_u64(193920103958);
 
         // Reuse memory to store adjacents
         let mut adjacents = [None; 4];
-        let mut adjacent_pairs = [None; 2];
-
-        // Using a randomized Prim's algorithm as described here:
-        // https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_Prim's_algorithm
-        self.cells[start_row][start_col] = Cell::Empty;
 
         let mut walls = VecDeque::new();
+        let mut seen = HashSet::new();
+
+        // Set the start cell to empty and explore its adjacents
+        self.cells[start_row][start_col] = Cell::Empty;
         find_adjacents(&mut adjacents, start_row, start_col);
         walls.extend(adjacents.iter().flatten().cloned());
 
-        let mut seen = HashSet::new();
         while let Some((row, col)) = walls.pop_front() {
             if seen.contains(&(row, col)) {
                 continue;
             }
             seen.insert((row, col));
 
-            // Go through adjacent pairs in a random order so the maze has some variation
-            find_adjacent_pairs(&mut adjacent_pairs, row, col);
-            adjacent_pairs.shuffle(&mut rng);
-            for adj_pair in &adjacent_pairs {
-                if let &Some(((adj1_row, adj1_col), (adj2_row, adj2_col))) = adj_pair {
-                    // If only one of the cells divided by this wall is empty, make the wall into a
-                    // passage that connects to that empty tile
-                    match (self.cells[adj1_row][adj1_col], self.cells[adj2_row][adj2_col]) {
-                        (Cell::Empty, Cell::Wall) => {
-                            // Make a passage
-                            self.cells[row][col] = Cell::Empty;
-
-                            // Add the wall to the walls list
-                            walls.push_back((adj2_row, adj2_col));
-
-                            // Stop processing adjacents once we've created a passage
-                            break;
-                        },
-                        (Cell::Wall, Cell::Empty) => {
-                            // Same as above but for the other adjacent
-                            self.cells[row][col] = Cell::Empty;
-
-                            // Add the wall to the walls list
-                            walls.push_back((adj1_row, adj1_col));
-
-                            // Stop processing adjacents once we've created a passage
-                            break;
-                        },
-                        // Cannot create a passage
-                        _ => {}
-                    }
-                }
+            if self.cells[row][col] == Cell::Empty {
+                // Cell is probably reserved
+                continue;
             }
+
+            find_adjacents(&mut adjacents, row, col);
+
+            let empty_adjs = adjacents.iter()
+                .flatten()
+                .filter(|&&(row, col)| self.cells[row][col] == Cell::Empty)
+                .count();
+
+            // Don't want to inadvertantly create any passages
+            if empty_adjs != 1 {
+                continue;
+            }
+
+            // Add the cell to the maze
+            self.cells[row][col] = Cell::Empty;
+
+            // Add its adjacent walls to the queue in a random order
+            adjacents.shuffle(&mut rng);
+            walls.extend(adjacents.iter()
+                .flatten()
+                .cloned()
+                .filter(|&(row, col)| self.cells[row][col] == Cell::Wall));
 
             // Shuffle the list of walls for next time so we pick a random wall every time
             let (front, back) = walls.as_mut_slices();
             front.shuffle(&mut rng);
             back.shuffle(&mut rng);
-
-            for r in &self.cells {
-                for c in r {
-                    match c {
-                        Cell::Empty => print!("_"),
-                        Cell::Wall => print!("W"),
-                    }
-                }
-                println!();
-            }
-            println!();
         }
     }
 }
