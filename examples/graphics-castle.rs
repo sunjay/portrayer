@@ -207,6 +207,17 @@ fn lake() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
+    let dock = Arc::new(Texture::from(ImageTexture::open("assets/Wood_018_basecolor_cubemap.jpg")?));
+    let dock_normals = Arc::new(NormalMap::open("assets/Wood_018_normal_cubemap.jpg")?);
+    let mat_dock = Arc::new(Material {
+        // diffuse comes from texture
+        specular: Rgb {r: 0.5, g: 0.5, b: 0.5},
+        shininess: 100.0,
+        texture: Some(dock.clone()),
+        normals: Some(dock_normals.clone()),
+        ..Material::default()
+    });
+
     let mat_dirt = Arc::new(Material {
         // Color of algae makes the water blue!
         diffuse: Rgb {r: 0.592, g: 0.671, b: 0.055},
@@ -223,6 +234,12 @@ fn lake() -> Result<SceneNode, Box<dyn Error>> {
         SceneNode::from(Geometry::new(Cube, mat_water))
             .scaled((640.0, 125.0, 250.0))
             .translated((0.0, -62.0, 125.0))
+            .into(),
+
+        // Dock
+        SceneNode::from(Geometry::new(Cube, mat_dock))
+            .scaled((30.0, 4.0, 36.0))
+            .translated((-100.0, 0.0, 18.0))
             .into(),
     ]))
 }
