@@ -288,11 +288,11 @@ fn outdoor_maze() -> SceneNode {
 
     // Area around the castle
     // Chosen to be evenly divisible by cell_width
-    let castle_area_width = 312.0;
+    let castle_area_width = 280.0;
     // Chosen to be evenly divisible by cell_length
-    let castle_area_length = 160.0;
+    let castle_area_length = 260.0;
     // Centered at the castle but then offset relative to maze pos (see last line of this function)
-    let castle_pos = Vec3 {x: 0.0, y: 0.0, z: -660.0 - (-260.0)};
+    let castle_pos = Vec3 {x: 0.0, y: 0.0, z: -260.0 - (-660.0)};
 
     // Entrance position (assumed to be in the bottom row)
     let entrance_x = -100.0;
