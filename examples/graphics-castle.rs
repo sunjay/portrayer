@@ -246,7 +246,7 @@ fn lake() -> Result<SceneNode, Box<dyn Error>> {
 
 fn land() -> Result<SceneNode, Box<dyn Error>> {
     let mat_grass = Arc::new(Material {
-        diffuse: Rgb {r: 0.162029, g: 0.337164, b: 0.008023},
+        diffuse: Rgb {r: 0.116971, g: 0.278894, b: 0.0},
         ..Material::default()
     });
 
