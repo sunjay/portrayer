@@ -39,23 +39,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 color: Rgb {r: 0.9, g: 0.9, b: 0.9},
                 ..Light::default()
             },
-
-            // Dim lights inside each tower to light inside
-            Light {
-                position: Vec3 {x: -30.0, y: 80.0, z: 0.0},
-                color: Rgb {r: 0.3, g: 0.3, b: 0.3},
-                ..Light::default()
-            },
-            Light {
-                position: Vec3 {x: 30.0, y: 80.0, z: 0.0},
-                color: Rgb {r: 0.3, g: 0.3, b: 0.3},
-                ..Light::default()
-            },
-            Light {
-                position: Vec3 {x: 0.0, y: 93.0, z: -23.0},
-                color: Rgb {r: 0.3, g: 0.3, b: 0.3},
-                ..Light::default()
-            },
         ],
 
         ambient: Rgb {r: 0.3, g: 0.3, b: 0.3},
