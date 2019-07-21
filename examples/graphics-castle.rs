@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             lake()?.into(),
             land()?.into(),
-            outdoor_maze().into(),
+            // outdoor_maze().into(),
         ]).into(),
 
         lights: vec![
@@ -51,8 +51,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(24.0),
     };
 
-    let mut image = Image::new("graphics-castle.png", 1920, 1080)?;
+    // let mut image = Image::new("graphics-castle.png", 1920, 1080)?;
+    let mut image = Image::new("graphics-castle.png", 533, 300)?;
 
+    // image.slice_mut((254, 44), (408, 190)).render::<RenderProgress, _>(&scene, cam,
     image.render::<RenderProgress, _>(&scene, cam,
         |uv: Uv| Rgb {r: 0.529, g: 0.808, b: 0.922} * (1.0 - uv.v) + Rgb {r: 0.086, g: 0.38, b: 0.745} * uv.v);
 
@@ -202,7 +204,7 @@ fn lake() -> Result<SceneNode, Box<dyn Error>> {
         specular: Rgb {r: 0.5, g: 0.5, b: 0.5},
         shininess: 100.0,
         reflectivity: 0.9,
-        glossy_side_length: 1.0,
+        glossy_side_length: 0.5,
         refraction_index: WATER_REFRACTION_INDEX,
         ..Material::default()
     });
