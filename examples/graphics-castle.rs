@@ -69,8 +69,8 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     let wood_normals = Arc::new(NormalMap::open("assets/old_planks_02_nor_1k.png")?);
     let mat_castle_door = Arc::new(Material {
         // diffuse comes from texture
-        texture: Some(wood),
-        normals: Some(wood_normals),
+        texture: Some(wood.clone()),
+        normals: Some(wood_normals.clone()),
         ..Material::default()
     });
 
@@ -104,6 +104,13 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
+    let mat_tapestry = Arc::new(Material {
+        // diffuse comes from texture
+        texture: Some(wood.clone()),
+        normals: Some(wood_normals.clone()),
+        ..Material::default()
+    });
+
     let mat_puppet = Arc::new(Material {
         diffuse: Rgb {r: 0.06998, g: 0.06998, b: 0.06998},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
@@ -114,9 +121,15 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     let castle_model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
     let castle_window_frames_model = Arc::new(MeshData::load_obj("assets/castle_window_frames.obj")?);
     let castle_glass_ceilings_model = Arc::new(MeshData::load_obj("assets/castle_glass_ceilings.obj")?);
+
     let castle_door_model = Arc::new(MeshData::load_obj("assets/castle_door.obj")?);
     let castle_door_arch_model = Arc::new(MeshData::load_obj("assets/castle_door_arch.obj")?);
-    let castle_stairs_side = Arc::new(MeshData::load_obj("assets/castle_stairs_side.obj")?);
+
+    let castle_tapestry_model = Arc::new(MeshData::load_obj("assets/castle_tapestry.obj")?);
+
+    let castle_stairs_side_model = Arc::new(MeshData::load_obj("assets/castle_stairs_side.obj")?);
+    let castle_stairs_side = KDMesh::new(&castle_stairs_side_model, Shading::Flat);
+
     let puppet_castle_left_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_left_tower.obj")?);
     let puppet_castle_right_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_right_tower.obj")?);
 
@@ -158,10 +171,10 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
 
         // Stairs
-        SceneNode::from(Geometry::new(KDMesh::new(&castle_stairs_side, Shading::Flat), mat_stairs_side.clone()))
+        SceneNode::from(Geometry::new(castle_stairs_side.clone(), mat_stairs_side.clone()))
             .translated((-11.0, 5.0, 19.0))
             .into(),
-        SceneNode::from(Geometry::new(KDMesh::new(&castle_stairs_side, Shading::Flat), mat_stairs_side.clone()))
+        SceneNode::from(Geometry::new(castle_stairs_side.clone(), mat_stairs_side.clone()))
             .translated((11.0, 5.0, 19.0))
             .into(),
 
@@ -171,6 +184,14 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
         SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_right_tower_model, Shading::Smooth), mat_puppet.clone()))
             .translated((-30.0, 33.6, 19.0))
+            .into(),
+
+        // Tapestries
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_tapestry_model, Shading::Smooth), mat_tapestry.clone()))
+            .translated((60.0, 37.0, 10.0))
+            .into(),
+        SceneNode::from(Geometry::new(KDMesh::new(&castle_tapestry_model, Shading::Smooth), mat_tapestry.clone()))
+            .translated((-60.0, 37.0, 10.0))
             .into(),
     ]))
 }
