@@ -403,7 +403,7 @@ impl Maze {
         };
 
         // Want a random maze but want the same one every time
-        let mut rng = StdRng::seed_from_u64(193920103958);
+        let mut rng = StdRng::seed_from_u64(19392103958);
 
         // Reuse memory to store adjacents
         let mut adjacents = [None; 4];
