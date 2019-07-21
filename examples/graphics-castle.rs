@@ -78,7 +78,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn castle() -> Result<SceneNode, Box<dyn Error>> {
     let mat_castle_walls = Arc::new(Material {
         //TODO: Replace this material
-        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        diffuse: Rgb {r: 0.249559, g: 0.249559, b: 0.249559},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
         ..Material::default()
