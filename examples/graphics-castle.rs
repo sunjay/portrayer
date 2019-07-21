@@ -280,7 +280,7 @@ fn outdoor_maze() -> SceneNode {
     let cell_length = cell_width;
 
     // Chosen to be evenly divisible by cell_width
-    let maze_width = 1664.0;
+    let maze_width = 1328.0;
     // Chosen to be evenly divisible by cell_length
     let maze_length = 1280.0;
     // Constant for all cells / the whole maze
