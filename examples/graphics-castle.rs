@@ -17,7 +17,7 @@ use portrayer::{
     render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
-    math::{Radians, Vec3, Mat3, Rgb, Uv},
+    math::{Radians, Vec3, Rgb, Uv},
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -60,30 +60,22 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn castle() -> Result<SceneNode, Box<dyn Error>> {
-    let bricks = Arc::new(Texture::from(ImageTexture::open("assets/rough_block_wall_diff_1k.png")?));
-    let bricks_normals = Arc::new(NormalMap::open("assets/rough_block_wall_nor_1k.png")?);
     let mat_castle_walls = Arc::new(Material {
-        // diffuse comes from texture
-        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
-        shininess: 25.0,
-        texture: Some(bricks),
-        normals: Some(bricks_normals),
+        diffuse: Rgb {r: 0.25, g: 0.25, b: 0.25},
         ..Material::default()
     });
 
+    let wood = Arc::new(Texture::from(ImageTexture::open("assets/old_planks_02_diff_1k.png")?));
+    let wood_normals = Arc::new(NormalMap::open("assets/old_planks_02_nor_1k.png")?);
     let mat_castle_door = Arc::new(Material {
-        //TODO: Replace this material
-        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
-        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
-        shininess: 25.0,
+        // diffuse comes from texture
+        texture: Some(wood),
+        normals: Some(wood_normals),
         ..Material::default()
     });
 
     let mat_castle_window_frames = Arc::new(Material {
-        //TODO: Replace this material
-        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
-        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
-        shininess: 25.0,
+        diffuse: Rgb {r: 0.132866, g: 0.132866, b: 0.132866},
         ..Material::default()
     });
 
@@ -106,21 +98,16 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     });
 
     let mat_stairs_side = Arc::new(Material {
-        //TODO: Replace this material
-        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        diffuse: Rgb {r: 0.132866, g: 0.132866, b: 0.132866},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
         ..Material::default()
     });
 
-    let rock = Arc::new(Texture::from(ImageTexture::open("assets/rock_01_diff_1k.png")?));
-    let rock_normals = Arc::new(NormalMap::open("assets/rock_01_Nor_1k.png")?);
     let mat_puppet = Arc::new(Material {
-        // diffuse comes from texture
+        diffuse: Rgb {r: 0.06998, g: 0.06998, b: 0.06998},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
-        texture: Some(rock),
-        normals: Some(rock_normals),
         ..Material::default()
     });
 
@@ -220,13 +207,8 @@ fn lake() -> Result<SceneNode, Box<dyn Error>> {
 }
 
 fn land() -> Result<SceneNode, Box<dyn Error>> {
-    let grass = Arc::new(Texture::from(ImageTexture::open("assets/forrest_ground_01_diff_1k.png")?));
-    let grass_normals = Arc::new(NormalMap::open("assets/forrest_ground_01_nor_1k.png")?);
     let mat_grass = Arc::new(Material {
-        // diffuse comes from texture
-        texture: Some(grass),
-        normals: Some(grass_normals),
-        uv_trans: Mat3::scaling_3d(1500.0),
+        diffuse: Rgb {r: 0.162029, g: 0.337164, b: 0.008023},
         ..Material::default()
     });
 
