@@ -134,6 +134,13 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
+    let mat_teapot = Arc::new(Material {
+        diffuse: Rgb {r: 0.8, g: 0.214141, b: 0.794883},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
     let castle_model = Arc::new(MeshData::load_obj("assets/castle.obj")?);
     let castle_window_frames_model = Arc::new(MeshData::load_obj("assets/castle_window_frames.obj")?);
     let castle_glass_ceilings_model = Arc::new(MeshData::load_obj("assets/castle_glass_ceilings.obj")?);
@@ -142,6 +149,7 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     let castle_stairs_side = Arc::new(MeshData::load_obj("assets/castle_stairs_side.obj")?);
     let puppet_castle_left_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_left_tower.obj")?);
     let puppet_castle_right_tower_model = Arc::new(MeshData::load_obj("assets/puppet_castle_right_tower.obj")?);
+    let teapot_model = Arc::new(MeshData::load_obj("assets/teapot.obj")?);
 
     Ok(SceneNode::from(vec![
         // Main castle body
@@ -157,19 +165,26 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
 
         // Windows
         SceneNode::from(Geometry::new(Cube, mat_window_glass.clone()))
-            .scaled((9.1, 0.05, 12.7))
+            .scaled((9.1, 1.0, 12.7))
             .rotated_x(Radians::from_degrees(90.0))
             .translated((-30.0, 70.7, 12.7))
             .into(),
         SceneNode::from(Geometry::new(Cube, mat_window_glass.clone()))
-            .scaled((9.1, 0.05, 12.7))
+            .scaled((9.1, 1.0, 12.7))
             .rotated_x(Radians::from_degrees(90.0))
             .translated((30.0, 70.7, 12.7))
             .into(),
         SceneNode::from(Geometry::new(Cube, mat_window_glass.clone()))
-            .scaled((13.4, 0.05, 18.8))
+            .scaled((13.4, 1.0, 18.8))
             .rotated_x(Radians::from_degrees(90.0))
             .translated((0.0, 79.4, -2.9))
+            .into(),
+
+        // Tower objects
+        SceneNode::from(Geometry::new(KDMesh::new(&teapot_model, Shading::Smooth), mat_teapot.clone()))
+            .scaled(0.64)
+            .rotated_y(Radians::from_degrees(-60.0))
+            .translated((0.0, 74.0, -23.0))
             .into(),
 
         // Door
