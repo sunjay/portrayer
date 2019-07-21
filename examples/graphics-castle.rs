@@ -17,7 +17,7 @@ use portrayer::{
     render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
-    math::{Radians, Vec3, Rgb, Uv},
+    math::{Radians, Vec3, Mat3, Rgb, Uv},
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -237,8 +237,13 @@ fn lake() -> Result<SceneNode, Box<dyn Error>> {
 }
 
 fn land() -> Result<SceneNode, Box<dyn Error>> {
+    let grass = Arc::new(Texture::from(ImageTexture::open("assets/forrest_ground_01_diff_1k.png")?));
+    let grass_normals = Arc::new(NormalMap::open("assets/forrest_ground_01_nor_1k.png")?);
     let mat_grass = Arc::new(Material {
-        diffuse: Rgb {r: 0.376, g: 0.502, b: 0.22},
+        // diffuse comes from texture
+        texture: Some(grass),
+        normals: Some(grass_normals),
+        uv_trans: Mat3::scaling_3d(1500.0),
         ..Material::default()
     });
 

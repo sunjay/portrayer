@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use rand::{Rng, thread_rng};
 
-use crate::math::{EPSILON, INFINITY, Vec3, Mat3, Uv, Rgb};
+use crate::math::{EPSILON, INFINITY, Vec3, Vec2, Mat3, Uv, Rgb};
 use crate::scene::Scene;
 use crate::ray::{Ray, RayCast};
 use crate::texture::{Texture, NormalMap, TextureSource};
@@ -75,6 +75,12 @@ pub struct Material {
     pub refraction_index: f64,
     /// The texture to sample the diffuse color from
     pub texture: Option<Arc<Texture>>,
+    /// An additional transform to apply to the texture coordinate uv before sampling the texture
+    ///
+    /// This can be used to tweak the UV mapping on a per material basis.
+    ///
+    /// Note: this will change the sampled coordinate for both texture mapping and normal mapping.
+    pub uv_trans: Mat3,
     /// The texture to sample the shading normal from
     pub normals: Option<Arc<NormalMap>>,
 }
@@ -103,6 +109,12 @@ impl Material {
         // Note that this is the same as -ray.direction() since the ray intersects with the
         // hit point
         let view = -ray_dir;
+
+        // Apply any UV transformation
+        let tex_coord = tex_coord.map(|uv| {
+            let uv_vec = Vec3::from_point_2d(Vec2::from(uv.into_array()));
+            Uv::from(Vec2::from(self.uv_trans * uv_vec))
+        });
 
         // Surface normal of hit point
         //
