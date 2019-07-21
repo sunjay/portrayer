@@ -61,8 +61,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let cam = CameraSettings {
-        eye: (173.709274, 140.108261, 584.803467).into(),
-        center: (-430.5495, -135.887848, -1449.477173).into(),
+        eye: (110.877441, 30.43659, 373.276886).into(),
+        center: (-412.953094, 65.409714, -1390.236328).into(),
         up: Vec3::up(),
         fovy: Radians::from_degrees(24.0),
     };
@@ -276,13 +276,13 @@ fn land() -> Result<SceneNode, Box<dyn Error>> {
 
 fn outdoor_maze() -> SceneNode {
     // Needs to be a size that works proportionally with the rest of the scene
-    let cell_width = 4.0;
+    let cell_width = 12.0;
     let cell_length = cell_width;
 
     // Chosen to be evenly divisible by cell_width
-    let maze_width = 1568.0;
+    let maze_width = 1572.0;
     // Chosen to be evenly divisible by cell_length
-    let maze_length = 1280.0;
+    let maze_length = 1284.0;
     // Constant for all cells / the whole maze
     let maze_height = 8.0;
 
@@ -290,9 +290,9 @@ fn outdoor_maze() -> SceneNode {
 
     // Area around the castle
     // Chosen to be evenly divisible by cell_width
-    let castle_area_width = 280.0;
+    let castle_area_width = 276.0;
     // Chosen to be evenly divisible by cell_length
-    let castle_area_length = 260.0;
+    let castle_area_length = 264.0;
     // Centered at the castle but then offset relative to maze pos (see last line of this function)
     let castle_pos = Vec3 {x: 0.0 - maze_pos.x, y: 0.0, z: -260.0 - maze_pos.z};
 
