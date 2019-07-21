@@ -61,10 +61,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let cam = CameraSettings {
-        eye: (110.877441, 30.43659, 373.276886).into(),
-        center: (-412.953094, 65.409714, -1390.236328).into(),
+        eye: (173.709274, 140.108261, 584.803467).into(),
+        center: (-430.5495, -135.887848, -1449.477173).into(),
         up: Vec3::up(),
-        fovy: Radians::from_degrees(25.0),
+        fovy: Radians::from_degrees(24.0),
     };
 
     let mut image = Image::new("graphics-castle.png", 1920, 1080)?;
@@ -280,11 +280,13 @@ fn outdoor_maze() -> SceneNode {
     let cell_length = cell_width;
 
     // Chosen to be evenly divisible by cell_width
-    let maze_width = 1328.0;
+    let maze_width = 1568.0;
     // Chosen to be evenly divisible by cell_length
     let maze_length = 1280.0;
     // Constant for all cells / the whole maze
     let maze_height = 8.0;
+
+    let maze_pos = Vec3 {x: -450.0, y: maze_height/2.0 + 1.0, z: -660.0};
 
     // Area around the castle
     // Chosen to be evenly divisible by cell_width
@@ -292,10 +294,10 @@ fn outdoor_maze() -> SceneNode {
     // Chosen to be evenly divisible by cell_length
     let castle_area_length = 260.0;
     // Centered at the castle but then offset relative to maze pos (see last line of this function)
-    let castle_pos = Vec3 {x: 0.0, y: 0.0, z: -260.0 - (-660.0)};
+    let castle_pos = Vec3 {x: 0.0 - maze_pos.x, y: 0.0, z: -260.0 - maze_pos.z};
 
     // Entrance position (assumed to be in the bottom row)
-    let entrance_x = -100.0;
+    let entrance_x = -100.0 - maze_pos.x;
 
     let maze_cols = (maze_width / cell_width) as usize;
     let maze_rows = (maze_length / cell_length) as usize;
@@ -341,7 +343,7 @@ fn outdoor_maze() -> SceneNode {
     }
 
     // Translate the maze to its correct position in the scene
-    SceneNode::from(nodes).translated((0.0, maze_height/2.0 + 1.0, -660.0))
+    SceneNode::from(nodes).translated(maze_pos)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
