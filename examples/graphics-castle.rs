@@ -17,7 +17,7 @@ use portrayer::{
     render::Image,
     reporter::RenderProgress,
     camera::CameraSettings,
-    math::{Radians, Vec3, Rgb, Uv},
+    math::{Radians, Vec3, Mat3, Rgb, Uv},
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             lake()?.into(),
             land()?.into(),
-            outdoor_maze().into(),
+            outdoor_maze()?.into(),
         ]).into(),
 
         lights: vec![
@@ -274,7 +274,7 @@ fn land() -> Result<SceneNode, Box<dyn Error>> {
     ]))
 }
 
-fn outdoor_maze() -> SceneNode {
+fn outdoor_maze() -> Result<SceneNode, Box<dyn Error>> {
     // Needs to be a size that works proportionally with the rest of the scene
     let cell_width = 12.0;
     let cell_length = cell_width;
@@ -316,8 +316,11 @@ fn outdoor_maze() -> SceneNode {
     maze.reserve((back_corner_row, back_corner_col), (front_corner_row, front_corner_col));
     maze.fill_maze((entrance_row, entrance_col));
 
+    let shrub = Arc::new(Texture::from(ImageTexture::open("assets/shrub.png")?));
     let mat_maze = Arc::new(Material {
-        diffuse: Rgb {r: 0.038907, g: 0.117096, b: 0.040216},
+        // diffuse comes from texture
+        uv_trans: Mat3::scaling_3d((1.0, maze_height, 1.0)),
+        texture: Some(shrub),
         ..Material::default()
     });
 
@@ -343,7 +346,7 @@ fn outdoor_maze() -> SceneNode {
     }
 
     // Translate the maze to its correct position in the scene
-    SceneNode::from(nodes).translated(maze_pos)
+    Ok(SceneNode::from(nodes).translated(maze_pos))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
