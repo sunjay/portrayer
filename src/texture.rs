@@ -1,8 +1,6 @@
 use std::fmt;
 use std::path::Path;
 
-use vek::Clamp;
-
 use crate::math::{GAMMA, Uv, Rgb, Vec3, Mat3};
 
 pub trait TextureSource {
@@ -105,12 +103,33 @@ impl RgbImageBuffer {
 
 impl TextureSource for RgbImageBuffer {
     fn at(&self, uv: Uv) -> Rgb {
-        // Need to clamp to 0.0 to 1.0 to account for floating point error and ensure we never
-        // accidentally index out of bounds
-        let uv = Clamp::<f64>::clamp01(uv);
+        //TODO: This function will no longer be needed once the method is stabilized:
+        // https://github.com/rust-lang/rust/issues/49048
+        fn rem_euclid(value: i64, rhs: i64) -> i64 {
+            let r = value % rhs;
+            if r < 0 {
+                if rhs < 0 {
+                    r - rhs
+                } else {
+                    r + rhs
+                }
+            } else {
+                r
+            }
+        }
+
+        // Using i64 because it supports the full range of u32 as both positive and negative numbers
+        let width = self.buffer.width() as i64;
+        let height = self.buffer.height() as i64;
+
         // Need to subtract 1 because the final index is width - 1 and height - 1
-        let x = (uv.u * (self.buffer.width() - 1) as f64) as u32;
-        let y = (uv.v * (self.buffer.height() - 1) as f64) as u32;
+        let x = (uv.u * (width - 1) as f64) as i64;
+        let y = (uv.v * (height - 1) as f64) as i64;
+        // Wrap around if out of bounds
+        //TODO: Make clamp vs wrap around behaviour configurable
+        let x = rem_euclid(x, width) as u32;
+        let y = rem_euclid(y, height) as u32;
+
         let [r, g, b] = self.buffer.get_pixel(x, y).data;
 
         Rgb {

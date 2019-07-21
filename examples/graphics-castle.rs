@@ -9,7 +9,7 @@ use rand::{SeedableRng, rngs::StdRng, seq::SliceRandom};
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Cylinder, MeshData, Shading},
+    primitive::{Cube, MeshData, Shading},
     kdtree::KDMesh,
     material::{Material, WATER_REFRACTION_INDEX, WINDOW_GLASS_REFRACTION_INDEX},
     texture::{Texture, ImageTexture, NormalMap},
@@ -77,10 +77,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn castle() -> Result<SceneNode, Box<dyn Error>> {
+    let bricks = Arc::new(Texture::from(ImageTexture::open("assets/rough_block_wall_diff_1k.png")?));
+    let bricks_normals = Arc::new(NormalMap::open("assets/rough_block_wall_nor_1k.png")?);
     let mat_castle_walls = Arc::new(Material {
-        diffuse: Rgb {r: 0.249559, g: 0.249559, b: 0.249559},
+        // diffuse comes from texture
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
+        texture: Some(bricks),
+        normals: Some(bricks_normals),
         ..Material::default()
     });
 
@@ -195,16 +199,8 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
         SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_left_tower_model, Shading::Smooth), mat_puppet.clone()))
             .translated((30.0, 33.6, 19.0))
             .into(),
-        SceneNode::from(Geometry::new(Cylinder, mat_castle_walls.clone()))
-            .scaled(10.0)
-            .translated((30.0, 5.0, 20.0))
-            .into(),
         SceneNode::from(Geometry::new(KDMesh::new(&puppet_castle_right_tower_model, Shading::Smooth), mat_puppet.clone()))
             .translated((-30.0, 33.6, 19.0))
-            .into(),
-        SceneNode::from(Geometry::new(Cylinder, mat_castle_walls.clone()))
-            .scaled(10.0)
-            .translated((-30.0, 5.0, 20.0))
             .into(),
     ]))
 }
