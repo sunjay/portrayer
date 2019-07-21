@@ -80,7 +80,7 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     });
 
     let mat_ceiling_glass = Arc::new(Material {
-        diffuse: Rgb {r: 0.088418, g: 0.249559, b: 0.067798},
+        diffuse: Rgb {r: 0.147337, g: 0.239555, b: 0.034547},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 100.0,
         reflectivity: 0.8,
@@ -89,7 +89,7 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     });
 
     let mat_window_glass = Arc::new(Material {
-        diffuse: Rgb {r: 0.091208, g: 0.14981, b: 0.084696},
+        diffuse: Rgb {r: 0.147337, g: 0.239555, b: 0.034547},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 100.0,
         reflectivity: 1.0,
