@@ -9,7 +9,7 @@ use rand::{SeedableRng, rngs::StdRng, seq::SliceRandom};
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, MeshData, Shading},
+    primitive::{Cube, Cylinder, MeshData, Shading},
     kdtree::KDMesh,
     material::{Material, WATER_REFRACTION_INDEX, WINDOW_GLASS_REFRACTION_INDEX},
     texture::{Texture, ImageTexture, NormalMap},
