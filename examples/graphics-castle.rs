@@ -61,8 +61,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let cam = CameraSettings {
-        eye: (0.0, 115.785934, 528.691223).into(),
-        center: (0.0, -130.492584, -1294.752441).into(),
+        eye: (110.877441, 30.43659, 373.276886).into(),
+        center: (-412.953094, 65.409714, -1390.236328).into(),
         up: Vec3::up(),
         fovy: Radians::from_degrees(25.0),
     };
