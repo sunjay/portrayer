@@ -127,11 +127,13 @@ fn castle() -> Result<SceneNode, Box<dyn Error>> {
     });
 
     let rock = Arc::new(Texture::from(ImageTexture::open("assets/rock_01_diff_1k.png")?));
+    let rock_normals = Arc::new(NormalMap::open("assets/rock_01_Nor_1k.png")?);
     let mat_puppet = Arc::new(Material {
         // diffuse comes from texture
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
         shininess: 25.0,
         texture: Some(rock),
+        normals: Some(rock_normals),
         ..Material::default()
     });
 

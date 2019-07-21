@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::ray::{Ray, RayHit, RayIntersection};
-use crate::math::{Vec3, Uv};
+use crate::math::{Vec3, Uv, Mat3};
 use crate::bounding_box::{BoundingBox, Bounds};
 
 /// A triangle with the given 3 vertices
@@ -88,9 +88,9 @@ impl RayHit for Triangle {
         };
 
         let tex_coord = match self.tex_coords {
-            Some((ta, tb, tc)) => {
+            Some((uv_a, uv_b, uv_c)) => {
                 let alpha = 1.0 - beta - gamma;
-                let uv = ta * alpha + tb * beta + tc * gamma;
+                let uv = uv_a * alpha + uv_b * beta + uv_c * gamma;
                 // Need to reverse uv because we've been using a top-to-bottom convention where the
                 // rest of the world uses a bottom to top convention
                 //TODO: Consider reversing this everywhere else in the code instead so that we
@@ -100,12 +100,49 @@ impl RayHit for Triangle {
             None => None,
         };
 
+        let normal_map_transform = match self.tex_coords {
+            Some((uv_a, uv_b, uv_c)) => {
+                // Using formulas from: https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+
+                let Self {a, b, c, ..} = *self;
+
+                let edge1 = b - a;
+                let edge2 = c - a;
+
+                let delta_uv_1 = uv_b - uv_a;
+                let delta_uv_2 = uv_c - uv_a;
+
+                let tangent = Vec3 {
+                    x: delta_uv_2.v * edge1.x - delta_uv_1.v * edge2.x,
+                    y: delta_uv_2.v * edge1.y - delta_uv_1.v * edge2.y,
+                    z: delta_uv_2.v * edge1.z - delta_uv_1.v * edge2.z,
+                };
+                let bitangent = Vec3 {
+                    x: -delta_uv_2.u * edge1.x + delta_uv_1.u * edge2.x,
+                    y: -delta_uv_2.u * edge1.y + delta_uv_1.u * edge2.y,
+                    z: -delta_uv_2.u * edge1.z + delta_uv_1.u * edge2.z,
+                };
+
+                let coeff = delta_uv_1.u * delta_uv_2.v - delta_uv_2.u * delta_uv_1.v;
+                let tangent = (tangent / coeff).normalized();
+                let bitangent = (bitangent / coeff).normalized();
+                let normal = normal.normalized();
+
+                Some(Mat3::from_col_arrays([
+                    tangent.into_array(),
+                    normal.into_array(),
+                    bitangent.into_array(),
+                ]))
+            },
+            None => None,
+        };
+
         Some(RayIntersection {
             ray_parameter: t,
             hit_point: ray.at(t),
             normal,
             tex_coord,
-            normal_map_transform: None,
+            normal_map_transform,
         })
     }
 }
