@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
-    primitive::{Cube, Plane, MeshData, Shading},
+    primitive::{Mesh, Cube, Plane, MeshData, Shading},
     kdtree::KDMesh,
     material::Material,
     texture::{Texture, ImageTexture, NormalMap},
@@ -21,6 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let scene = HierScene {
         root: SceneNode::from(vec![
             room()?.into(),
+            robot()?.into(),
         ]).into(),
 
         lights: vec![
@@ -57,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn room() -> Result<SceneNode, Box<dyn Error>> {
-    let wallpaper = Arc::new(Texture::from(ImageTexture::open("assets/wallpaper.jpg")?));
+    let wallpaper = Arc::new(Texture::from(ImageTexture::open("assets/robot/wallpaper.jpg")?));
     let mat_wall = Arc::new(Material {
         // diffuse comes from texture
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
@@ -92,4 +93,106 @@ fn room() -> Result<SceneNode, Box<dyn Error>> {
             .translated((-2.0, 0.0, 0.0))
             .into(),
     ]))
+}
+
+fn robot() -> Result<SceneNode, Box<dyn Error>> {
+    Ok(SceneNode::from(vec![
+        robot_base()?.into(),
+    ]))
+}
+
+fn robot_base() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_robot_metal = Arc::new(Material {
+        diffuse: Rgb {r: 0.211857, g: 0.772537, b: 0.8971},
+        specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
+        shininess: 100.0,
+        reflectivity: 0.3,
+        glossy_side_length: 0.5,
+        ..Material::default()
+    });
+
+    let robot_base_model = Arc::new(MeshData::load_obj("assets/robot/robot_base.obj")?);
+
+    Ok(SceneNode::from(vec![
+        SceneNode::from(Geometry::new(KDMesh::new(&robot_base_model, Shading::Smooth), mat_robot_metal.clone()))
+            .translated((0.0, 1.002795, -0.209603))
+            .into(),
+
+        clock()?
+            .into(),
+
+        clock_buttons()?
+            .into(),
+    ]))
+}
+
+fn clock() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_clock_case = Arc::new(Material {
+        diffuse: Rgb {r: 1.0, g: 1.0, b: 1.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let mat_time_bg = Arc::new(Material {
+        diffuse: Rgb {r: 0.059252, g: 0.059252, b: 0.059252},
+        ..Material::default()
+    });
+
+    let mat_time = Arc::new(Material {
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        ..Material::default()
+    });
+
+    let clock_case_model = Arc::new(MeshData::load_obj("assets/robot/robot_base_clock_case.obj")?);
+    let clock_time_model = Arc::new(MeshData::load_obj("assets/robot/robot_base_clock_time.obj")?);
+
+    let angle = -6.62911;
+    Ok(SceneNode::from(vec![
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(clock_case_model, Shading::Smooth), mat_clock_case))
+            .rotated_x(Radians::from_degrees(angle))
+            .translated((0.0, 1.228179, 0.350087))
+            .into(),
+
+        SceneNode::from(Geometry::new(Plane, mat_time_bg))
+            .scaled((2.966855, 1.0, 0.684205))
+            .rotated_x(Radians::from_degrees(90.0 + angle))
+            .translated((0.0, 1.294323, 0.919223))
+            .into(),
+
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(clock_time_model, Shading::Flat), mat_time))
+            .rotated_x(Radians::from_degrees(83.2518 - 90.0))
+            .translated((0.0, 1.535768, 0.921095))
+            .into(),
+    ]))
+}
+
+fn clock_buttons() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_clock_button = Arc::new(Material {
+        diffuse: Rgb {r: 0.8, g: 0.103095, b: 0.086502},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let x_values = &[-1.2, -0.4, 0.4, 1.2];
+
+    let clock_button_model = Arc::new(MeshData::load_obj("assets/robot/robot_base_clock_button.obj")?);
+    //TODO: KDMesh doesn't work for this for some reason...
+    let clock_button = Arc::new(SceneNode::from(Geometry::new(Mesh::new(clock_button_model, Shading::Smooth), mat_clock_button)));
+
+    let mut nodes = Vec::new();
+
+    for &x in x_values {
+        nodes.push(
+            SceneNode::from(clock_button.clone())
+                .rotated_x(Radians::from_degrees(15.0))
+                .translated((x, 1.7, -0.2))
+                .into()
+        );
+    }
+
+    Ok(SceneNode::from(nodes))
 }
