@@ -95,7 +95,7 @@ fn room() -> Result<SceneNode, Box<dyn Error>> {
 
 fn robot() -> Result<SceneNode, Box<dyn Error>> {
     let mat_robot_metal = Arc::new(Material {
-        diffuse: Rgb {r: 0.211857, g: 0.772537, b: 0.8971},
+        diffuse: Rgb {r: 0.006512, g: 0.08022, b: 0.417885},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 100.0,
         reflectivity: 0.3,
