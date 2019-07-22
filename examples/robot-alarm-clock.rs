@@ -8,7 +8,7 @@ use portrayer::{
     scene::{HierScene, SceneNode, Geometry},
     primitive::{Mesh, Cube, Plane, MeshData, Shading},
     kdtree::KDMesh,
-    material::Material,
+    material::{Material, OPTICAL_GLASS_REFRACTION_INDEX},
     texture::{Texture, ImageTexture, NormalMap},
     light::{Light, Parallelogram},
     render::Image,
@@ -94,19 +94,6 @@ fn room() -> Result<SceneNode, Box<dyn Error>> {
 }
 
 fn robot() -> Result<SceneNode, Box<dyn Error>> {
-    let mat_connector = Arc::new(Material {
-        diffuse: Rgb {r: 0.048247, g: 0.048247, b: 0.048247},
-        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
-        shininess: 25.0,
-        ..Material::default()
-    });
-
-    Ok(SceneNode::from(vec![
-        robot_base(mat_connector.clone())?.into(),
-    ]))
-}
-
-fn robot_base(mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
     let mat_robot_metal = Arc::new(Material {
         diffuse: Rgb {r: 0.211857, g: 0.772537, b: 0.8971},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
@@ -116,6 +103,20 @@ fn robot_base(mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>>
         ..Material::default()
     });
 
+    let mat_connector = Arc::new(Material {
+        diffuse: Rgb {r: 0.048247, g: 0.048247, b: 0.048247},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    Ok(SceneNode::from(vec![
+        robot_base(mat_robot_metal.clone(), mat_connector.clone())?.into(),
+        robot_torso(mat_robot_metal.clone(), mat_connector.clone())?.into(),
+    ]))
+}
+
+fn robot_base(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
     let robot_base_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_base.obj")?);
 
     Ok(SceneNode::from(vec![
@@ -223,4 +224,64 @@ fn base_connectors(mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Er
     }
 
     Ok(SceneNode::from(nodes))
+}
+
+fn robot_torso(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
+    let robot_torso_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_torso.obj")?);
+    let robot_torso_display_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_torso_display.obj")?);
+    let robot_torso_text_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_torso_text.obj")?);
+
+    let mat_torso_display = Arc::new(Material {
+        diffuse: Rgb {r: 0.204899, g: 0.066919, b: 0.086002},
+        reflectivity: 0.1,
+        refraction_index: OPTICAL_GLASS_REFRACTION_INDEX,
+        ..Material::default()
+    });
+
+    let mat_torso_text = Arc::new(Material {
+        diffuse: Rgb {r: 1.0, g: 0.0, b: 0.0},
+        ..Material::default()
+    });
+
+    Ok(SceneNode::from(vec![
+        SceneNode::from(Geometry::new(KDMesh::new(&robot_torso_model, Shading::Smooth), mat_robot_metal))
+            .translated((0.0, 3.781665, -0.7))
+            .into(),
+
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(robot_torso_display_model, Shading::Smooth), mat_torso_display))
+            .translated((0.0, 3.828179, -0.255186))
+            .into(),
+
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(robot_torso_text_model, Shading::Flat), mat_torso_text))
+            .translated((-0.016937, 3.806762, 0.040324))
+            .into(),
+
+        arm_sockets()?.into(),
+    ]))
+}
+
+fn arm_sockets() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_arm_socket = Arc::new(Material {
+        diffuse: Rgb {r: 1.0, g: 1.0, b: 1.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let arm_socket_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_arm_socket.obj")?);
+
+    Ok(SceneNode::from(vec![
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(arm_socket_model.clone(), Shading::Smooth), mat_arm_socket.clone()))
+            .translated((2.1, 3.8, -0.7))
+            .into(),
+
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(arm_socket_model, Shading::Smooth), mat_arm_socket.clone()))
+            .rotated_y(Radians::from_degrees(180.0))
+            .translated((-2.1, 3.8, -0.7))
+            .into(),
+    ]))
 }
