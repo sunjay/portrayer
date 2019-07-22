@@ -99,7 +99,7 @@ fn robot() -> Result<SceneNode, Box<dyn Error>> {
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
         shininess: 100.0,
         reflectivity: 0.3,
-        glossy_side_length: 0.5,
+        glossy_side_length: 2.0,
         ..Material::default()
     });
 
