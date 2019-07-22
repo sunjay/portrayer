@@ -82,71 +82,59 @@ fn main() -> Result<(), Box<dyn Error>> {
         ..Material::default()
     });
 
-    let scene = HierScene {
-        root: SceneNode::from(vec![
-            // Floor
-            SceneNode::from(Geometry::new(Plane, mat_wall_floor))
-                .scaled(40.0)
-                .translated((0.0, -1.0, 0.0))
-                .into(),
+    let scene_root = Arc::new(SceneNode::from(vec![
+        // Floor
+        SceneNode::from(Geometry::new(Plane, mat_wall_floor))
+            .scaled(40.0)
+            .translated((0.0, -1.0, 0.0))
+            .into(),
 
-            // Left - Texture Only
-            SceneNode::from(Geometry::new(Plane, mat_tex_plane))
-                .scaled(6.0)
-                .rotated_x(Radians::from_degrees(90.0))
-                .translated((-4.0, 2.0, -6.0))
-                .into(),
+        // Left - Texture Only
+        SceneNode::from(Geometry::new(Plane, mat_tex_plane))
+            .scaled(6.0)
+            .rotated_x(Radians::from_degrees(90.0))
+            .translated((-4.0, 2.0, -6.0))
+            .into(),
 
-            SceneNode::from(Geometry::new(Cube, mat_tex_cube.clone()))
-                .scaled(2.0)
-                .translated((-7.0, 0.0, -1.0))
-                .into(),
-            SceneNode::from(Geometry::new(Sphere, mat_tex_sphere.clone()))
-                .translated((-7.0, 2.0, -1.0))
-                .into(),
+        SceneNode::from(Geometry::new(Cube, mat_tex_cube.clone()))
+            .scaled(2.0)
+            .translated((-7.0, 0.0, -1.0))
+            .into(),
+        SceneNode::from(Geometry::new(Sphere, mat_tex_sphere.clone()))
+            .translated((-7.0, 2.0, -1.0))
+            .into(),
 
-            SceneNode::from(Geometry::new(Cube, mat_tex_cube.clone()))
-                .scaled(2.0)
-                .translated((-2.0, 0.0, 3.0))
-                .into(),
-            SceneNode::from(Geometry::new(Sphere, mat_tex_sphere.clone()))
-                .translated((-2.0, 2.0, 3.0))
-                .into(),
+        SceneNode::from(Geometry::new(Cube, mat_tex_cube.clone()))
+            .scaled(2.0)
+            .translated((-2.0, 0.0, 3.0))
+            .into(),
+        SceneNode::from(Geometry::new(Sphere, mat_tex_sphere.clone()))
+            .translated((-2.0, 2.0, 3.0))
+            .into(),
 
-            // Right - Normal + Texture
-            SceneNode::from(Geometry::new(Plane, mat_tex_plane_norm))
-                .scaled(6.0)
-                .rotated_x(Radians::from_degrees(90.0))
-                .translated((4.0, 2.0, -6.0))
-                .into(),
+        // Right - Normal + Texture
+        SceneNode::from(Geometry::new(Plane, mat_tex_plane_norm))
+            .scaled(6.0)
+            .rotated_x(Radians::from_degrees(90.0))
+            .translated((4.0, 2.0, -6.0))
+            .into(),
 
-            SceneNode::from(Geometry::new(Cube, mat_tex_cube_norm.clone()))
-                .scaled(2.0)
-                .translated((7.0, 0.0, -1.0))
-                .into(),
-            SceneNode::from(Geometry::new(Sphere, mat_tex_sphere_norm.clone()))
-                .translated((7.0, 2.0, -1.0))
-                .into(),
+        SceneNode::from(Geometry::new(Cube, mat_tex_cube_norm.clone()))
+            .scaled(2.0)
+            .translated((7.0, 0.0, -1.0))
+            .into(),
+        SceneNode::from(Geometry::new(Sphere, mat_tex_sphere_norm.clone()))
+            .translated((7.0, 2.0, -1.0))
+            .into(),
 
-            SceneNode::from(Geometry::new(Cube, mat_tex_cube_norm.clone()))
-                .scaled(2.0)
-                .translated((2.0, 0.0, 3.0))
-                .into(),
-            SceneNode::from(Geometry::new(Sphere, mat_tex_sphere_norm.clone()))
-                .translated((2.0, 2.0, 3.0))
-                .into(),
-        ]).into(),
-
-        lights: vec![
-            Light {
-                position: Vec3 {x: 0.0, y: 8.0, z: 10.0},
-                color: Rgb {r: 0.9, g: 0.9, b: 0.9},
-                ..Light::default()
-            },
-        ],
-
-        ambient: Rgb {r: 0.2, g: 0.2, b: 0.2},
-    };
+        SceneNode::from(Geometry::new(Cube, mat_tex_cube_norm.clone()))
+            .scaled(2.0)
+            .translated((2.0, 0.0, 3.0))
+            .into(),
+        SceneNode::from(Geometry::new(Sphere, mat_tex_sphere_norm.clone()))
+            .translated((2.0, 2.0, 3.0))
+            .into(),
+    ]));
 
     let cam = CameraSettings {
         eye: (0.0, 8.07551, 23.078941).into(),
@@ -155,10 +143,36 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(22.0),
     };
 
-    let mut image = Image::new("normal-mapping.png", 910, 512)?;
+    let image_configs = &[
+        ("normal-mapping.png", Vec3 {x: 0.0, y: 8.0, z: 10.0}),
+        ("normal-mapping-left.png", Vec3 {x: -8.0, y: 8.0, z: 10.0}),
+        ("normal-mapping-right.png", Vec3 {x: 8.0, y: 8.0, z: 10.0}),
+    ];
 
-    image.render::<RenderProgress, _>(&scene, cam,
-        |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
+    for &(path, light_pos) in image_configs {
+        println!("Generating {}...", path);
 
-    Ok(image.save()?)
+        let scene = HierScene {
+            root: scene_root.clone(),
+
+            lights: vec![
+                Light {
+                    position: light_pos,
+                    color: Rgb {r: 0.9, g: 0.9, b: 0.9},
+                    ..Light::default()
+                },
+            ],
+
+            ambient: Rgb {r: 0.2, g: 0.2, b: 0.2},
+        };
+
+        let mut image = Image::new(path, 910, 512)?;
+
+        image.render::<RenderProgress, _>(&scene, cam,
+            |uv: Uv| Rgb {r: 0.2, g: 0.4, b: 0.6} * (1.0 - uv.v) + Rgb::blue() * uv.v);
+
+        image.save()?;
+    }
+
+    Ok(())
 }
