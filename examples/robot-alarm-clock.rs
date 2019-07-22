@@ -113,6 +113,7 @@ fn robot() -> Result<SceneNode, Box<dyn Error>> {
     Ok(SceneNode::from(vec![
         robot_base(mat_robot_metal.clone(), mat_connector.clone())?.into(),
         robot_torso(mat_robot_metal.clone(), mat_connector.clone())?.into(),
+        robot_head(mat_robot_metal.clone(), mat_connector.clone())?.into(),
     ]))
 }
 
@@ -304,6 +305,87 @@ fn torso_connectors(mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn E
                 .translated((0.0, y, -0.712655))
                 .into()
         );
+    }
+
+    Ok(SceneNode::from(nodes))
+}
+
+fn robot_head(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
+    let mat_smile = Arc::new(Material {
+        diffuse: Rgb {r: 0.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let mat_eyeball = Arc::new(Material {
+        diffuse: Rgb {r: 1.0, g: 1.0, b: 1.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let mat_pupil = Arc::new(Material {
+        diffuse: Rgb {r: 0.0, g: 0.0, b: 0.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let robot_head_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_head.obj")?);
+    let robot_smile_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_smile.obj")?);
+    let robot_eyeball_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_eyeball.obj")?);
+    let robot_pupil_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_pupil.obj")?);
+
+    let eyeball = Arc::new(SceneNode::from(vec![
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(robot_eyeball_model, Shading::Smooth), mat_eyeball))
+            .into(),
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(robot_pupil_model, Shading::Smooth), mat_pupil))
+            .into(),
+    ]));
+
+    Ok(SceneNode::from(vec![
+        SceneNode::from(Geometry::new(KDMesh::new(&robot_head_model, Shading::Smooth), mat_robot_metal))
+            .translated((0.0, 5.95, -0.7))
+            .into(),
+
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(robot_smile_model, Shading::Smooth), mat_smile))
+            .translated((0.0, 6.137964, -0.117689))
+            .into(),
+
+        head_connectors(mat_connector)?.into(),
+
+        SceneNode::from(eyeball.clone())
+            .translated((-0.6, 7.53, -0.7))
+            .into(),
+        SceneNode::from(eyeball.clone())
+            .translated((0.6, 7.53, -0.7))
+            .into(),
+    ]))
+}
+
+fn head_connectors(mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
+    let x_values = &[-0.6, 0.6];
+    let height = 0.2;
+    let y_offset = 6.583508;
+
+    let connector_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_head_connector.obj")?);
+    let connector = Arc::new(SceneNode::from(Geometry::new(KDMesh::new(&connector_model, Shading::Flat), mat_connector)));
+
+    let mut nodes = Vec::new();
+    for &x in x_values {
+        for i in 0..3 {
+            let y = y_offset + i as f64 * height;
+
+            nodes.push(
+                SceneNode::from(connector.clone())
+                .translated((x, y, -0.712655))
+                .into()
+            );
+        }
     }
 
     Ok(SceneNode::from(nodes))
