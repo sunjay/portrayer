@@ -37,13 +37,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let scene = HierScene {
         root: SceneNode::from(vec![
             SceneNode::from(Geometry::new(Cylinder, mat_cylinder))
-                .scaled((1.0, 2.0, 1.0))
-                .translated((-1.0, 0.0, 1.0))
+                .scaled(2.0)
+                .translated((-2.0, 1.0, 0.0))
                 .into(),
 
             SceneNode::from(Geometry::new(Cone, mat_cone))
                 .scaled(2.0)
-                .translated((1.0, 0.0, 1.0))
+                .translated((2.0, 1.0, 0.0))
                 .into(),
 
             // Floor
@@ -63,10 +63,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let cam = CameraSettings {
-        eye: (0.250838, 6.095396, 10.50759).into(),
-        center: (-0.476061, -4.056432, -6.574658).into(),
+        eye: (0.760838, 8.095396, 10.50759).into(),
+        center: (-0.41716, -3.477774, -5.761218).into(),
         up: Vec3::up(),
-        fovy: Radians::from_degrees(15.0),
+        fovy: Radians::from_degrees(25.0),
     };
 
     let mut image = Image::new("primitives-simple.png", 910, 512)?;
