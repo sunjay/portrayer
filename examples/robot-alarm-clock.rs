@@ -245,7 +245,7 @@ fn robot_torso(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> 
     });
 
     Ok(SceneNode::from(vec![
-        SceneNode::from(Geometry::new(KDMesh::new(&robot_torso_model, Shading::Smooth), mat_robot_metal))
+        SceneNode::from(Geometry::new(KDMesh::new(&robot_torso_model, Shading::Smooth), mat_robot_metal.clone()))
             .translated((0.0, 3.781665, -0.7))
             .into(),
 
@@ -260,6 +260,8 @@ fn robot_torso(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> 
             .into(),
 
         arm_sockets()?.into(),
+
+        arms(mat_robot_metal)?.into(),
 
         torso_connectors(mat_connector)?.into(),
     ]))
@@ -285,6 +287,40 @@ fn arm_sockets() -> Result<SceneNode, Box<dyn Error>> {
         SceneNode::from(Geometry::new(Mesh::new(arm_socket_model, Shading::Smooth), mat_arm_socket.clone()))
             .rotated_y(Radians::from_degrees(180.0))
             .translated((-2.1, 3.8, -0.7))
+            .into(),
+    ]))
+}
+
+fn arms(mat_robot_metal: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
+    let mat_hand = Arc::new(Material {
+        diffuse: Rgb {r: 1.0, g: 1.0, b: 1.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
+    let arm_left_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_arm_left.obj")?);
+    let arm_right_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_arm_right.obj")?);
+    let hand_left_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_hand_left.obj")?);
+    let hand_right_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_hand_right.obj")?);
+
+    Ok(SceneNode::from(vec![
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(arm_left_model, Shading::Smooth), mat_robot_metal.clone()))
+            .translated((2.1, 3.8, -0.7))
+            .into(),
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(arm_right_model, Shading::Smooth), mat_robot_metal.clone()))
+            .translated((-2.1, 3.8, -0.7))
+            .into(),
+
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(hand_left_model, Shading::Smooth), mat_hand.clone()))
+            .translated((2.95, 5.45, -0.7))
+            .into(),
+        //TODO: KDMesh doesn't work for this for some reason...
+        SceneNode::from(Geometry::new(Mesh::new(hand_right_model, Shading::Smooth), mat_hand.clone()))
+            .translated((-2.95, 5.45, -0.7))
             .into(),
     ]))
 }
