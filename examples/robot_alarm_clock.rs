@@ -47,8 +47,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         fovy: Radians::from_degrees(23.0),
     };
 
-    // let mut image = Image::new("robot.png", 1920, 1080)?;
-    let mut image = Image::new("robot.png", 533, 300)?;
+    // let mut image = Image::new("robot_alarm_clock.png", 1920, 1080)?;
+    let mut image = Image::new("robot_alarm_clock.png", 533, 300)?;
 
     // image.slice_mut((254, 44), (408, 190)).render::<RenderProgress, _>(&scene, cam,
     image.render::<RenderProgress, _>(&scene, cam,
@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn room() -> Result<SceneNode, Box<dyn Error>> {
-    let wallpaper = Arc::new(Texture::from(ImageTexture::open("assets/robot/wallpaper.jpg")?));
+    let wallpaper = Arc::new(Texture::from(ImageTexture::open("assets/robot_alarm_clock/wallpaper.jpg")?));
     let mat_wall = Arc::new(Material {
         // diffuse comes from texture
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
@@ -111,7 +111,7 @@ fn robot_base() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
-    let robot_base_model = Arc::new(MeshData::load_obj("assets/robot/robot_base.obj")?);
+    let robot_base_model = Arc::new(MeshData::load_obj("assets/robot_alarm_clock/robot_base.obj")?);
 
     Ok(SceneNode::from(vec![
         SceneNode::from(Geometry::new(KDMesh::new(&robot_base_model, Shading::Smooth), mat_robot_metal.clone()))
@@ -144,8 +144,8 @@ fn clock() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
-    let clock_case_model = Arc::new(MeshData::load_obj("assets/robot/robot_base_clock_case.obj")?);
-    let clock_time_model = Arc::new(MeshData::load_obj("assets/robot/robot_base_clock_time.obj")?);
+    let clock_case_model = Arc::new(MeshData::load_obj("assets/robot_alarm_clock/robot_base_clock_case.obj")?);
+    let clock_time_model = Arc::new(MeshData::load_obj("assets/robot_alarm_clock/robot_base_clock_time.obj")?);
 
     let angle = -6.62911;
     Ok(SceneNode::from(vec![
@@ -179,7 +179,7 @@ fn clock_buttons() -> Result<SceneNode, Box<dyn Error>> {
 
     let x_values = &[-1.2, -0.4, 0.4, 1.2];
 
-    let clock_button_model = Arc::new(MeshData::load_obj("assets/robot/robot_base_clock_button.obj")?);
+    let clock_button_model = Arc::new(MeshData::load_obj("assets/robot_alarm_clock/robot_base_clock_button.obj")?);
     //TODO: KDMesh doesn't work for this for some reason...
     let clock_button = Arc::new(SceneNode::from(Geometry::new(Mesh::new(clock_button_model, Shading::Smooth), mat_clock_button)));
 
