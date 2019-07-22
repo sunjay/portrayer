@@ -152,7 +152,7 @@ mod tests {
 
         // Ray cast against the front of the monkey's face
         let n = 100000;
-        (0..n).into_par_iter().zip((0..n).into_par_iter()).for_each(|(i, j)| {
+        (0..n).into_par_iter().zip((0..n).into_par_iter()).panic_fuse().for_each(|(i, j)| {
             let x = width * i as f64 / n as f64;
             let y = height * j as f64 / n as f64;
 

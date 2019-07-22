@@ -33,7 +33,7 @@ fn render_single_pixel<R: RayCast + Send + Sync, T: TextureSource>(
         v: y as f64 / height,
     });
 
-    let total_color: Rgb = (0..samples).into_par_iter().map(|_| {
+    let total_color: Rgb = (0..samples).into_par_iter().panic_fuse().map(|_| {
         // Choose a random point in the pixel square
         let mut rng = thread_rng();
         let (x, y) = (x as f64 + rng.gen::<f64>(), y as f64 + rng.gen::<f64>());
@@ -127,6 +127,7 @@ impl<'a> ImageSliceMut<'a> {
         self.image.buffer.par_chunks_mut(3)
             .map(image::Rgb::from_slice_mut)
             .enumerate()
+            .panic_fuse()
             .for_each(|(i, pixel)| {
                 let x = i % width as usize;
                 let y = i / width as usize;
