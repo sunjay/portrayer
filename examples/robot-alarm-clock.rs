@@ -66,6 +66,13 @@ fn room() -> Result<SceneNode, Box<dyn Error>> {
         ..Material::default()
     });
 
+    let mat_ceiling = Arc::new(Material {
+        diffuse: Rgb {r: 1.0, g: 1.0, b: 1.0},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
     let wood = Arc::new(Texture::from(ImageTexture::open("assets/Wood_018_basecolor_cubemap.jpg")?));
     let wood_normals = Arc::new(NormalMap::open("assets/Wood_018_normal_cubemap.jpg")?);
     let mat_table = Arc::new(Material {
@@ -80,12 +87,38 @@ fn room() -> Result<SceneNode, Box<dyn Error>> {
     });
 
     Ok(SceneNode::from(vec![
+        // Back wall
         SceneNode::from(Geometry::new(Plane, mat_wall.clone()))
             .scaled(20.0)
             .rotated_x(Radians::from_degrees(90.0))
             .translated((-2.0, 8.0, -5.0))
             .into(),
+        // Front wall (behind camera for the sake of reflections)
+        SceneNode::from(Geometry::new(Plane, mat_wall.clone()))
+            .scaled(20.0)
+            .rotated_x(Radians::from_degrees(-90.0))
+            .translated((-2.0, 8.0, 21.0))
+            .into(),
+        // Right wall
+        SceneNode::from(Geometry::new(Plane, mat_wall.clone()))
+            .scaled(40.0)
+            .rotated_z(Radians::from_degrees(90.0))
+            .translated((8.0, 8.0, 5.0))
+            .into(),
+        // Left wall
+        SceneNode::from(Geometry::new(Plane, mat_wall.clone()))
+            .scaled(40.0)
+            .rotated_z(Radians::from_degrees(-90.0))
+            .translated((-12.0, 8.0, 5.0))
+            .into(),
 
+        // Ceiling
+        SceneNode::from(Geometry::new(Plane, mat_ceiling.clone()))
+            .scaled(40.0)
+            .translated((-2.0, 18.0, 5.0))
+            .into(),
+
+        // Table
         SceneNode::from(Geometry::new(Cube, mat_table.clone()))
             .scaled((20.0, 1.0, 10.0))
             .translated((-2.0, 0.0, 0.0))
