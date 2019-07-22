@@ -259,6 +259,8 @@ fn robot_torso(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> 
             .into(),
 
         arm_sockets()?.into(),
+
+        torso_connectors(mat_connector)?.into(),
     ]))
 }
 
@@ -284,4 +286,25 @@ fn arm_sockets() -> Result<SceneNode, Box<dyn Error>> {
             .translated((-2.1, 3.8, -0.7))
             .into(),
     ]))
+}
+
+fn torso_connectors(mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
+    let height = 0.2;
+    let y_offset = 4.783508;
+
+    let connector_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_torso_connector.obj")?);
+    let connector = Arc::new(SceneNode::from(Geometry::new(KDMesh::new(&connector_model, Shading::Flat), mat_connector)));
+
+    let mut nodes = Vec::new();
+    for i in 0..4 {
+        let y = y_offset + i as f64 * height;
+
+        nodes.push(
+            SceneNode::from(connector.clone())
+                .translated((0.0, y, -0.712655))
+                .into()
+        );
+    }
+
+    Ok(SceneNode::from(nodes))
 }
