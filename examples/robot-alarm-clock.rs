@@ -119,9 +119,13 @@ fn robot() -> Result<SceneNode, Box<dyn Error>> {
 
 fn robot_base(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
     let robot_base_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_base.obj")?);
+    let robot_base_sides_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_base_sides.obj")?);
 
     Ok(SceneNode::from(vec![
         SceneNode::from(Geometry::new(KDMesh::new(&robot_base_model, Shading::Smooth), mat_robot_metal.clone()))
+            .translated((0.0, 1.002795, -0.209603))
+            .into(),
+        SceneNode::from(Geometry::new(KDMesh::new(&robot_base_sides_model, Shading::Flat), mat_robot_metal.clone()))
             .translated((0.0, 1.002795, -0.209603))
             .into(),
 
@@ -229,6 +233,7 @@ fn base_connectors(mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Er
 
 fn robot_torso(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
     let robot_torso_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_torso.obj")?);
+    let robot_torso_sides_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_torso_sides.obj")?);
     let robot_torso_display_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_torso_display.obj")?);
     let robot_torso_text_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_torso_text.obj")?);
 
@@ -246,6 +251,9 @@ fn robot_torso(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> 
 
     Ok(SceneNode::from(vec![
         SceneNode::from(Geometry::new(KDMesh::new(&robot_torso_model, Shading::Smooth), mat_robot_metal.clone()))
+            .translated((0.0, 3.781665, -0.7))
+            .into(),
+        SceneNode::from(Geometry::new(KDMesh::new(&robot_torso_sides_model, Shading::Flat), mat_robot_metal.clone()))
             .translated((0.0, 3.781665, -0.7))
             .into(),
 
@@ -371,6 +379,7 @@ fn robot_head(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> R
     });
 
     let robot_head_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_head.obj")?);
+    let robot_head_sides_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_head_sides.obj")?);
     let robot_smile_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_smile.obj")?);
     let robot_eyeball_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_eyeball.obj")?);
     let robot_pupil_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_pupil.obj")?);
@@ -385,7 +394,10 @@ fn robot_head(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> R
     ]));
 
     Ok(SceneNode::from(vec![
-        SceneNode::from(Geometry::new(KDMesh::new(&robot_head_model, Shading::Smooth), mat_robot_metal))
+        SceneNode::from(Geometry::new(KDMesh::new(&robot_head_model, Shading::Smooth), mat_robot_metal.clone()))
+            .translated((0.0, 5.95, -0.7))
+            .into(),
+        SceneNode::from(Geometry::new(KDMesh::new(&robot_head_sides_model, Shading::Flat), mat_robot_metal.clone()))
             .translated((0.0, 5.95, -0.7))
             .into(),
 
