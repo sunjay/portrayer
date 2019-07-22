@@ -94,12 +94,19 @@ fn room() -> Result<SceneNode, Box<dyn Error>> {
 }
 
 fn robot() -> Result<SceneNode, Box<dyn Error>> {
+    let mat_connector = Arc::new(Material {
+        diffuse: Rgb {r: 0.048247, g: 0.048247, b: 0.048247},
+        specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
+        shininess: 25.0,
+        ..Material::default()
+    });
+
     Ok(SceneNode::from(vec![
-        robot_base()?.into(),
+        robot_base(mat_connector.clone())?.into(),
     ]))
 }
 
-fn robot_base() -> Result<SceneNode, Box<dyn Error>> {
+fn robot_base(mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
     let mat_robot_metal = Arc::new(Material {
         diffuse: Rgb {r: 0.211857, g: 0.772537, b: 0.8971},
         specular: Rgb {r: 0.8, g: 0.8, b: 0.8},
@@ -120,6 +127,9 @@ fn robot_base() -> Result<SceneNode, Box<dyn Error>> {
             .into(),
 
         clock_buttons()?
+            .into(),
+
+        base_connectors(mat_connector)?
             .into(),
     ]))
 }
@@ -182,12 +192,32 @@ fn clock_buttons() -> Result<SceneNode, Box<dyn Error>> {
     let clock_button = Arc::new(SceneNode::from(Geometry::new(Mesh::new(clock_button_model, Shading::Smooth), mat_clock_button)));
 
     let mut nodes = Vec::new();
-
     for &x in x_values {
         nodes.push(
             SceneNode::from(clock_button.clone())
                 .rotated_x(Radians::from_degrees(15.0))
                 .translated((x, 1.7, -0.2))
+                .into()
+        );
+    }
+
+    Ok(SceneNode::from(nodes))
+}
+
+fn base_connectors(mat_connector: Arc<Material>) -> Result<SceneNode, Box<dyn Error>> {
+    let height = 0.2;
+    let y_offset = 1.960454;
+
+    let connector_model = Arc::new(MeshData::load_obj("assets/robot-alarm-clock/robot_base_connector.obj")?);
+    let connector = Arc::new(SceneNode::from(Geometry::new(KDMesh::new(&connector_model, Shading::Flat), mat_connector)));
+
+    let mut nodes = Vec::new();
+    for i in 0..5 {
+        let y = y_offset + i as f64 * height;
+
+        nodes.push(
+            SceneNode::from(connector.clone())
+                .translated((0.0, y, -0.712655))
                 .into()
         );
     }
