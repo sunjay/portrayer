@@ -365,16 +365,14 @@ fn robot_head(mat_robot_metal: Arc<Material>, mat_connector: Arc<Material>) -> R
     let mat_eyeball = Arc::new(Material {
         diffuse: Rgb {r: 1.0, g: 1.0, b: 1.0},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
-        shininess: 100.0,
-        reflectivity: 0.3,
-        glossy_side_length: 0.5,
+        shininess: 25.0,
         ..Material::default()
     });
 
     let mat_pupil = Arc::new(Material {
         diffuse: Rgb {r: 0.0, g: 0.0, b: 0.0},
         specular: Rgb {r: 0.3, g: 0.3, b: 0.3},
-        shininess: 100.0,
+        shininess: 25.0,
         ..Material::default()
     });
 
