@@ -1,4 +1,4 @@
-//! Title: "Robot Alarm Clock"
+//! Title: "Andy the Alarm Clock"
 //! Author: Sunjay Varma
 
 use std::error::Error;
