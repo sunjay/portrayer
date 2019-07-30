@@ -33,7 +33,7 @@ The following models and images were created by other people and then released
 either completely for free or free for personal-use only:
 
 * [`assets/earth.jpg`](https://www.solarsystemscope.com/textures/)
-* [`assets/robot-alarm-clock/wallpaper.jpg`](https://bit.ly/32VxPba)
+* [`assets/robot-alarm-clock/wallpaper.jpg`](http://www.plaintextures.com/singletexture.php?urlcode=nbaF6PB5BbcUMgKORS9B1OnN8299hiDam7R%2BKP%2BfRLYcHo83mqyXwu5fqH0P%2Bo7rfGHVi08m0CQu8uO207VC6Q%3D%3D)
 * [`assets/shrub.png`](https://freestocktextures.com/texture/shrub-nature-evergreen,810.html)
 * [`assets/fish.*`](https://free3d.com/3d-model/3d-fish-model-low-poly-63627.html)
 * [`assets/teapot.obj`](https://graphics.stanford.edu/courses/cs148-10-summer/as3/as3.html) - Utah Teapot
