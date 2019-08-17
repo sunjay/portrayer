@@ -5,7 +5,7 @@ use crate::math::Vec3;
 use crate::material::Material;
 use crate::bounding_box::{BoundingBox, Bounds};
 use crate::ray::{RayCast, RayHit, Ray, RayIntersection};
-use crate::primitive::{InfinitePlane, PlaneSide};
+use crate::primitive::{InfinitePlane, InfinitePlaneRight, InfinitePlaneUp, InfinitePlaneFront, PlaneSide};
 
 use super::KDTreeNode;
 
@@ -66,6 +66,53 @@ pub(super) struct PartitionConfig {
     pub max_tries: usize,
 }
 
+/// The axis being partitioned on
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum PartitionAxis {
+    X,
+    Y,
+    Z,
+}
+
+impl Default for PartitionAxis {
+    fn default() -> Self {
+        // The default axis to start partitioning on
+        PartitionAxis::X
+    }
+}
+
+impl From<PartitionAxis> for Vec3 {
+    fn from(axis: PartitionAxis) -> Vec3 {
+        match axis {
+            PartitionAxis::X => Vec3::up(),
+            PartitionAxis::Y => Vec3::right(),
+            PartitionAxis::Z => Vec3::back_rh(),
+        }
+    }
+}
+
+impl PartitionAxis {
+    /// Returns the next axis in the partitioning sequence
+    fn next(self) -> Self {
+        use PartitionAxis::*;
+        match self {
+            X => Y,
+            Y => Z,
+            Z => X,
+        }
+    }
+
+    /// Creates an infinite plane (a separating plane) for the given partitioning axis
+    fn sep_plane(self, point: Vec3) -> InfinitePlane {
+        use PartitionAxis::*;
+        match self {
+            X => InfinitePlaneRight {point}.into(),
+            Y => InfinitePlaneUp {point}.into(),
+            Z => InfinitePlaneFront {point}.into(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub(crate) struct KDLeaf<T> {
     /// A bounding box that encompases all of the scene nodes in this leaf node
@@ -86,20 +133,15 @@ impl<T> KDLeaf<T> {
     /// The provided axis vector must be a positive unit vector: (1,0,0), (0,1,0), or (0,0,1)
     ///
     /// When max_depth == 0, the remaining nodes will be returned in a single leaf node
-    pub(in super) fn partitioned(self, axis: Vec3, max_depth: usize, part_conf: PartitionConfig) -> KDTreeNode<T> {
+    pub(in super) fn partitioned(
+        self,
+        axis: PartitionAxis,
+        max_depth: usize,
+        part_conf: PartitionConfig,
+    ) -> KDTreeNode<T> {
         let PartitionConfig {target_max_nodes, target_max_merit, max_tries} = part_conf;
         if max_depth == 0 || self.nodes.len() <= target_max_nodes {
             return KDTreeNode::Leaf(self);
-        }
-
-        /// Produces the next axis to partition by "rotating"/"shifting" all elements down:
-        /// (1,0,0) -> (0,1,0) -> (0,0,1)
-        fn next_axis(mut axis: Vec3) -> Vec3 {
-            let temp = axis.z;
-            axis.z = axis.y;
-            axis.y = axis.x;
-            axis.x = temp;
-            axis
         }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -133,14 +175,12 @@ impl<T> KDLeaf<T> {
         let KDLeaf {bounds, nodes} = self;
 
         // Find the center of the bounding box along the given axis
-        let min_axis = axis * bounds.min();
-        let max_axis = axis * bounds.max();
+        let axis_vec = Vec3::from(axis);
+        let min_axis = axis_vec * bounds.min();
+        let max_axis = axis_vec * bounds.max();
         // The plane is infinite, so it doesn't actually matter where this point is
         // (e.g. it does not need to depend on the previous split if any)
-        let mut sep_plane = InfinitePlane {
-            normal: axis,
-            point: min_axis + (max_axis - min_axis) / 2.0,
-        };
+        let mut sep_plane = axis.sep_plane(min_axis + (max_axis - min_axis) / 2.0);
 
         // This variable represents the valid range that the partitioning plane can exist in
         // Once we find that we need to move the plane forwards or backwards, the valid range
@@ -185,18 +225,20 @@ impl<T> KDLeaf<T> {
             // * Every node in front of the plane is between sep_plane.point and max_axis.
 
             // The separating plane is currently in this range:
+            let sep_plane_point = sep_plane.point();
             let (plane_min, plane_max) = plane_range;
             if front > back {
+
                 // plane must be in the forward half of its range
-                plane_range = (sep_plane.point, plane_max);
+                plane_range = (sep_plane_point, plane_max);
                 // Move plane forward
-                sep_plane.point = sep_plane.point + (plane_max - sep_plane.point) / 2.0;
+                *sep_plane.point_mut() += (plane_max - sep_plane_point) / 2.0;
 
             } else {
                 // plane must be in the back half of its range
-                plane_range = (plane_min, sep_plane.point);
+                plane_range = (plane_min, sep_plane_point);
                 // Move plane backward
-                sep_plane.point = plane_min + (sep_plane.point - plane_min) / 2.0;
+                *sep_plane.point_mut() = plane_min + (sep_plane_point - plane_min) / 2.0;
             }
         }
 
@@ -214,7 +256,7 @@ impl<T> KDLeaf<T> {
             }
         }
 
-        let next = next_axis(axis);
+        let next = axis.next();
         KDTreeNode::Split {
             sep_plane,
             // Copy the bounds from the original leaf since it already encompases all the nodes
@@ -279,12 +321,12 @@ mod tests {
             nodes,
         };
 
-        let root = leaf.partitioned(Vec3::unit_x(), 5, part_conf);
+        let root = leaf.partitioned(PartitionAxis::default(), 5, part_conf);
 
         let back_nodes = vec![node_a, node_b];
         let front_nodes = vec![node_c, node_d, node_e];
         let expected_root = KDTreeNode::Split {
-            sep_plane: InfinitePlane {normal: Vec3::unit_x(), point: Vec3::zero()},
+            sep_plane: InfinitePlaneRight {point: Vec3::zero()}.into(),
             bounds: nodes_bounds,
             front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 bounds: front_nodes.bounds(),
@@ -336,15 +378,14 @@ mod tests {
             nodes,
         };
 
-        let root = leaf.partitioned(Vec3::unit_x(), 5, part_conf);
+        let root = leaf.partitioned(PartitionAxis::default(), 5, part_conf);
 
         let back_nodes = vec![node_a, node_b, node_c];
         let front_nodes = vec![node_d, node_e];
         let expected_root = KDTreeNode::Split {
-            sep_plane: InfinitePlane {
-                normal: Vec3::unit_x(),
+            sep_plane: InfinitePlaneRight {
                 point: Vec3 {x: 4.0, y: 0.0, z: 0.0},
-            },
+            }.into(),
             bounds: nodes_bounds,
             front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 bounds: front_nodes.bounds(),

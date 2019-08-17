@@ -4,7 +4,14 @@ use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::{EPSILON, Vec3, Mat3, Uv};
 use crate::bounding_box::{BoundingBox, Bounds};
 
-use super::InfinitePlane;
+use super::{
+    InfinitePlaneUp,
+    InfinitePlaneDown,
+    InfinitePlaneRight,
+    InfinitePlaneLeft,
+    InfinitePlaneFront,
+    InfinitePlaneBack,
+};
 
 /// L = length/width/height of the cube
 const L: f64 = 1.0;
@@ -37,58 +44,62 @@ impl Bounds for Cube {
 
 impl RayHit for Cube {
     fn ray_hit(&self, ray: &Ray, init_t_range: &Range<f64>) -> Option<RayIntersection> {
-        // Define the six faces of a cube and the conversion to each face's texture coordinate
+        // Find the nearest intersection
+        let mut t_range = init_t_range.clone();
+        // The nearest plane and hit (if any)
+        let mut nearest_plane_hit = None;
+
+        // Using a macro to avoid duplicating the code for each type of plane
+        macro_rules! intersect_face {
+            ($plane:expr, $axis_direction:expr, $texture_offset:expr) => {
+                let plane = $plane;
+
+                if let Some(hit) = plane.ray_hit(ray, &t_range) {
+                    // Need to check if the cube actually contains the hit point since each
+                    // plane is infinite
+                    if self.contains(hit.hit_point) {
+                        // Limit the search of the next face using the current t value so we only
+                        // get another hit if it is closer to the ray origin
+                        t_range.end = hit.ray_parameter;
+                        nearest_plane_hit = Some((plane.normal(), $axis_direction, $texture_offset, hit))
+                    }
+                }
+            };
+        }
+
+        // Intersect the six faces of the cube and the conversion to each face's texture coordinate
         // system: (plane, axis_direction, texture_offset)
         //
         // Texture coordinate offset comes from the cubemap being a 4x3 grid:
         // Each offset can be calculated from (col * 1/4, row * 1/3) where col = 0..=2 and row = 0..=3
         // For a reference image: https://learnopengl.com/Advanced-OpenGL/Cubemaps
-        static FACES: [(InfinitePlane, Uv, Uv); 6] = [
-            // Right
-            (InfinitePlane {point: Vec3 {x: L2, y: 0.0, z: 0.0}, normal: Vec3 {x: 1.0, y: 0.0, z: 0.0}},
-                Uv {u: -1.0, v: 1.0}, Uv {u: 1.0/2.0, v: 1.0/3.0}),
-            // Left
-            (InfinitePlane {point: Vec3 {x: -L2, y: 0.0, z: 0.0}, normal: Vec3 {x: -1.0, y: 0.0, z: 0.0}},
-                Uv {u: 1.0, v: 1.0}, Uv {u: 0.0, v: 1.0/3.0}),
-            // Top
-            (InfinitePlane {point: Vec3 {x: 0.0, y: L2, z: 0.0}, normal: Vec3 {x: 0.0, y: 1.0, z: 0.0}},
-                Uv {u: 1.0, v: -1.0}, Uv {u: 1.0/4.0, v: 0.0}),
-            // Bottom
-            (InfinitePlane {point: Vec3 {x: 0.0, y: -L2, z: 0.0}, normal: Vec3 {x: 0.0, y: -1.0, z: 0.0}},
-                Uv {u: 1.0, v: 1.0}, Uv {u: 1.0/4.0, v: 2.0/3.0}),
-            // Near
-            (InfinitePlane {point: Vec3 {x: 0.0, y: 0.0, z: L2}, normal: Vec3 {x: 0.0, y: 0.0, z: 1.0}},
-                Uv {u: 1.0, v: 1.0}, Uv {u: 1.0/4.0, v: 1.0/3.0}),
-            // Far
-            (InfinitePlane {point: Vec3 {x: 0.0, y: 0.0, z: -L2}, normal: Vec3 {x: 0.0, y: 0.0, z: -1.0}},
-                Uv {u: -1.0, v: 1.0}, Uv {u: 3.0/4.0, v: 1.0/3.0}),
-        ];
 
-        //TODO: Experiment with parallelism via rayon (might not be worth it for 6 checks)
+        // Right
+        intersect_face!(InfinitePlaneRight {point: Vec3 {x: L2, y: 0.0, z: 0.0}},
+            Uv {u: -1.0, v: 1.0}, Uv {u: 1.0/2.0, v: 1.0/3.0});
+        // Left
+        intersect_face!(InfinitePlaneLeft {point: Vec3 {x: -L2, y: 0.0, z: 0.0}},
+            Uv {u: 1.0, v: 1.0}, Uv {u: 0.0, v: 1.0/3.0});
+        // Top
+        intersect_face!(InfinitePlaneUp {point: Vec3 {x: 0.0, y: L2, z: 0.0}},
+            Uv {u: 1.0, v: -1.0}, Uv {u: 1.0/4.0, v: 0.0});
+        // Bottom
+        intersect_face!(InfinitePlaneDown {point: Vec3 {x: 0.0, y: -L2, z: 0.0}},
+            Uv {u: 1.0, v: 1.0}, Uv {u: 1.0/4.0, v: 2.0/3.0});
+        // Near
+        intersect_face!(InfinitePlaneFront {point: Vec3 {x: 0.0, y: 0.0, z: L2}},
+            Uv {u: 1.0, v: 1.0}, Uv {u: 1.0/4.0, v: 1.0/3.0});
+        // Far
+        intersect_face!(InfinitePlaneBack {point: Vec3 {x: 0.0, y: 0.0, z: -L2}},
+            Uv {u: -1.0, v: 1.0}, Uv {u: 3.0/4.0, v: 1.0/3.0});
 
-        // Find the nearest intersection
-        let mut t_range = init_t_range.clone();
-        FACES.iter().fold(None, |hit, face| {
-            let (plane, _, _) = face;
-            match plane.ray_hit(ray, &t_range) {
-                // Need to check if the cube actually contains the hit point since each
-                // plane is infinite
-                Some(p_hit) => if self.contains(p_hit.hit_point) {
-                    // Limit the search of the next face using the current t value
-                    t_range.end = p_hit.ray_parameter;
-                    Some((face, p_hit))
-                } else { hit },
-                None => hit,
-            }
-        }).map(|(face, mut hit)| {
-            // Additional hit properties are computed once at the end to avoid wasted computations
-            let &(ref plane, uv_axis, uv_offset) = face;
-
+        // Additional hit properties are computed once at the end to avoid wasted computations
+        if let Some((normal, uv_axis, uv_offset, mut hit)) = nearest_plane_hit {
             // Compute texture coordinate by finding 2D intersection coordinate on cube face
 
             // Get the uv coordinate on the face by finding the right set of two points
             let hit_p = hit.hit_point;
-            let face_uv = match plane.normal {
+            let face_uv = match normal {
                 n if n.x != 0.0 => Uv {u: hit_p.z, v: hit_p.y},
                 n if n.y != 0.0 => Uv {u: hit_p.x, v: hit_p.z},
                 n if n.z != 0.0 => Uv {u: hit_p.x, v: hit_p.y},
@@ -121,21 +132,23 @@ impl RayHit for Cube {
                 // Special case: top or bottom face, return standard basis aligned with normal
                 Mat3::from_col_arrays([
                     Vec3::right().into_array(),
-                    plane.normal.into_array(),
-                    if plane.normal.y > 0.0 { Vec3::back_rh() } else { Vec3::forward_rh() }.into_array(),
+                    normal.into_array(),
+                    if normal.y > 0.0 { Vec3::back_rh() } else { Vec3::forward_rh() }.into_array(),
                 ])
             } else {
-                let horizontal_tangent = to_top.cross(plane.normal);
-                let vertical_tangent = plane.normal.cross(horizontal_tangent);
+                let horizontal_tangent = to_top.cross(normal);
+                let vertical_tangent = normal.cross(horizontal_tangent);
                 Mat3::from_col_arrays([
                     horizontal_tangent.into_array(),
-                    plane.normal.into_array(),
+                    normal.into_array(),
                     vertical_tangent.into_array(),
                 ])
             };
             hit.normal_map_transform = Some(normal_map_transform);
 
-            hit
-        })
+            Some(hit)
+        } else {
+            None
+        }
     }
 }

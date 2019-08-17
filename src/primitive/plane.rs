@@ -4,7 +4,7 @@ use crate::ray::{Ray, RayHit, RayIntersection};
 use crate::math::{EPSILON, Vec3, Uv, Mat3};
 use crate::bounding_box::{BoundingBox, Bounds};
 
-use super::InfinitePlane;
+use super::InfinitePlaneUp;
 
 /// L = length/width of the plane (the height is 0.0)
 const L: f64 = 1.0;
@@ -34,7 +34,7 @@ fn contains(Vec3 {x, y: _, z}: Vec3) -> bool {
 
 impl RayHit for Plane {
     fn ray_hit(&self, ray: &Ray, t_range: &Range<f64>) -> Option<RayIntersection> {
-        InfinitePlane {normal: Vec3::up(), point: Vec3::zero()}
+        InfinitePlaneUp {point: Vec3::zero()}
             .ray_hit(ray, t_range)
             .and_then(|mut hit| if contains(hit.hit_point) {
                 hit.tex_coord = Some(Uv {

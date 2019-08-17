@@ -2,12 +2,11 @@ use std::env;
 use std::sync::Arc;
 use std::ops::Range;
 
-use crate::math::Vec3;
 use crate::bounding_box::{BoundingBox, Bounds};
 use crate::primitive::{MeshData, Shading, Triangle};
 use crate::ray::{RayHit, Ray, RayIntersection};
 
-use super::{KDTreeNode, KDLeaf, PartitionConfig, NodeBounds};
+use super::{KDTreeNode, KDLeaf, PartitionConfig, PartitionAxis, NodeBounds};
 
 /// The maximum depth of any k-d tree
 ///
@@ -52,7 +51,7 @@ impl KDMesh {
             .and_then(|v| v.parse().ok())
             .unwrap_or(MAX_TREE_DEPTH);
 
-        let root = leaf.partitioned(Vec3::unit_x(), max_tree_depth, part_conf);
+        let root = leaf.partitioned(PartitionAxis::default(), max_tree_depth, part_conf);
 
         Self {triangles: Arc::new(root)}
     }
@@ -89,7 +88,7 @@ mod tests {
 
     use rayon::prelude::*;
 
-    use crate::math::{Rgb, Radians};
+    use crate::math::{Vec3, Rgb, Radians};
     use crate::primitive::{Mesh, MeshData, Shading};
     use crate::material::Material;
     use crate::camera::{Camera, CameraSettings};

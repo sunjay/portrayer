@@ -71,43 +71,6 @@ impl<T> KDTreeNode<T> {
         cast_ray: &mut F,
     ) -> Option<R>
         where F: FnMut(&[Arc<NodeBounds<T>>], &Ray, &mut Range<f64>) -> Option<R> {
-        // To find the t value of the plane intersection, we exploit the fact that the plane is
-        // axis-aligned and thus we already know one of the components of the hit_point that would
-        // be returned from any other call to ray_hit.
-        //
-        // The ray_hit implementation of InfinitePlane suffers from some numerical issues when the
-        // ray is right on the plane itself. This isn't typical for most scenes, but it can easily
-        // happen in the k-d tree when the separating plane cross the eye point.
-        //
-        // This function takes advantage of the fact that the ray is defined as r(t) = p + t*d and
-        // that this equation can produce the same value of t regardless of which of the following
-        // alternatives we use: r_x = p_x + t*d_x   or   r_y = p_y + t*d_y   or   r_z = p_z + t*d_z
-        // We can thus use the fact that (r_x, r_y, r_z) = sep_plane.point to find a value for t
-        // without going through the full hit calculation. We only use the component of the plane
-        // that corresponds to the non-zero component of the normal since we know that the
-        // intersection point we would get from the full ray_hit must have that value for that
-        // component in the hit_point it would have returned.
-        fn ray_hit_axis_aligned_plane(
-            sep_plane: &InfinitePlane,
-            ray: &Ray,
-            t_range: &Range<f64>,
-        ) -> Option<f64> {
-            // Multiplying by the normal will set two components to zero and sum() will
-            // let us fish out the non-zero value.
-            let plane_value = (sep_plane.normal * sep_plane.point).sum();
-            let ray_origin = (sep_plane.normal * ray.origin()).sum();
-            let ray_direction = (sep_plane.normal * ray.direction()).sum();
-
-            // Need to add t_min because we used ray_start as the ray origin above
-            let t = (plane_value - ray_origin) / ray_direction;
-
-            // Must always ensure that we respect t_range or things can go *very* wrong
-            if t_range.contains(&t) {
-                Some(t)
-            } else {
-                None
-            }
-        }
 
         use KDTreeNode::*;
         match self {
@@ -143,7 +106,7 @@ impl<T> KDTreeNode<T> {
                         // limiting the t_range based on the value of t for which the ray
                         // intersects the plane.
 
-                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray, t_range)
+                        let RayIntersection {ray_parameter: plane_t, ..} = sep_plane.ray_hit(ray, t_range)
                             .expect("bug: ray should definitely hit infinite plane");
 
                         // Only going to continue with this range if it hits
@@ -174,7 +137,7 @@ impl<T> KDTreeNode<T> {
                         // limiting the t_range based on the value of t for which the ray
                         // intersects the plane.
 
-                        let plane_t = ray_hit_axis_aligned_plane(sep_plane, ray, t_range)
+                        let RayIntersection {ray_parameter: plane_t, ..} = sep_plane.ray_hit(ray, t_range)
                             .expect("bug: ray should definitely hit infinite plane");
 
                         // Only going to continue with this range if it hits
@@ -214,7 +177,7 @@ mod tests {
     use crate::flat_scene::FlatSceneNode;
     use crate::material::Material;
     use crate::scene::Geometry;
-    use crate::primitive::Plane;
+    use crate::primitive::{Plane, InfinitePlaneFront};
 
     #[test]
     fn ray_cast_edge_case() {
@@ -270,7 +233,7 @@ mod tests {
         });
 
         let root = KDTreeNode::Split {
-            sep_plane: InfinitePlane {normal: Vec3::unit_z(), point: Vec3::zero()},
+            sep_plane: InfinitePlaneFront {point: Vec3::zero()}.into(),
             bounds: vec![b_node_bounds.clone(), c_node_bounds.clone()].bounds(),
             front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 // leaf bounds do not matter currently
@@ -328,7 +291,7 @@ mod tests {
         });
 
         let root = KDTreeNode::Split {
-            sep_plane: InfinitePlane {normal: Vec3::unit_z(), point: Vec3::zero()},
+            sep_plane: InfinitePlaneFront {point: Vec3::zero()}.into(),
             bounds: vec![b_node_bounds.clone(), c_node_bounds.clone()].bounds(),
             front_nodes: Box::new(KDTreeNode::Leaf(KDLeaf {
                 // leaf bounds do not matter currently
