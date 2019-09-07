@@ -1,4 +1,4 @@
-# portrayer
+# portrayer [![Build Status](https://travis-ci.com/sunjay/portrayer.svg?branch=master)](https://travis-ci.com/sunjay/portrayer) [![](https://tokei.rs/b1/github/sunjay/portrayer)](https://github.com/sunjay/portrayer)
 
 This ray tracer is called "portrayer". There are two main reasons for this:
 
