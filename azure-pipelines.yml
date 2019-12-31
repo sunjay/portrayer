@@ -56,5 +56,5 @@ steps:
     source ./run-all-examples.sh --verbose --features render_bounding_volumes
     source ./run-all-examples.sh --verbose --features flat_scene
     source ./run-all-examples.sh --verbose --features kdtree
-  env: { SAMPLES: "2" }
+  env: { CI: "true", SAMPLES: "2" }
   displayName: run all examples
